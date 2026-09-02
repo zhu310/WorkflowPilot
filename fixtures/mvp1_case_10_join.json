@@ -1,0 +1,19 @@
+{
+  "case_id":"mvp1_case_10_join",
+  "title":"MVP 1 最小 AND-join 语义",
+  "instruction":"让“材料校验”和“权限校验”并行执行；两个都完成后才能进入“最终审批”。在最终审批节点上明确标记这个 AND-join 语义。",
+  "graph":{"nodes":[
+    {"id":"start","type":"start","label":"开始","x":0,"y":0},
+    {"id":"material","type":"task","label":"材料校验","x":220,"y":0},
+    {"id":"permission","type":"task","label":"权限校验","x":440,"y":0},
+    {"id":"approval","type":"task","label":"最终审批","x":660,"y":0},
+    {"id":"end","type":"end","label":"结束","x":880,"y":0}
+  ],"edges":[
+    {"id":"e1","source":"start","target":"material","label":""},
+    {"id":"e2","source":"material","target":"permission","label":""},
+    {"id":"e3","source":"permission","target":"approval","label":""},
+    {"id":"e4","source":"approval","target":"end","label":""}
+  ]},
+  "acceptance":{"node_delta":0,"edge_delta":1,"unchanged_node_ids":["start","material","permission","end"],"expected_nodes":[{"id":"approval","join":{"mode":"all"}}],"expected_edges":[{"source":"start","target":"material"},{"source":"start","target":"permission"},{"source":"material","target":"approval"},{"source":"permission","target":"approval"},{"source":"approval","target":"end"}],"forbidden_edges":[{"source":"material","target":"permission"}]},
+  "human_review_points":["approval 的 join.mode=all 明确表示等待两个分支","不存在不带 join 语义的隐含 AND 汇合"]
+}

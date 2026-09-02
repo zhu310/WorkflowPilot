@@ -1,0 +1,10 @@
+{
+  "case_id":"case_10", "title":"全局重构与类型边界", "instruction":"让“资料校验”和“预算校验”并行执行，两个都完成后再进入“最终审批”，同时保留人工复核路径。",
+  "graph":{"nodes":[
+    {"id":"start","type":"start","label":"开始","x":0,"y":0}, {"id":"doc","type":"task","label":"资料校验","x":200,"y":0}, {"id":"budget","type":"task","label":"预算校验","x":400,"y":0}, {"id":"review","type":"human_review","label":"人工复核","x":400,"y":140}, {"id":"approve","type":"task","label":"最终审批","x":600,"y":0}, {"id":"end","type":"end","label":"结束","x":800,"y":0}
+  ],"edges":[
+    {"id":"e1","source":"start","target":"doc","label":""}, {"id":"e2","source":"doc","target":"budget","label":""}, {"id":"e3","source":"budget","target":"approve","label":""}, {"id":"e4","source":"budget","target":"review","label":"需复核"}, {"id":"e5","source":"review","target":"approve","label":""}, {"id":"e6","source":"approve","target":"end","label":""}
+  ]},
+  "acceptance":{"node_delta":0,"edge_delta":0,"unchanged_node_ids":["start","doc","budget","review","approve","end"],"expected_edges":[{"source":"review","target":"approve"},{"source":"approve","target":"end"}]},
+  "human_review_points":["当前最小类型与普通边能否无歧义表达 fork/join", "若不能，记录为未来增加 parallel 类型的实证，而不是预设实现"]
+}

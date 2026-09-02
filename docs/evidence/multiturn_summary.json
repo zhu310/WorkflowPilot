@@ -1,0 +1,5117 @@
+{
+  "root": "experiments\\runs\\stage3-multiturn-acceptance-20260902-135210",
+  "totals": {
+    "cases": 4,
+    "passed_cases": 4,
+    "rounds": 10,
+    "correct_execution": 9,
+    "correct_clarification": 1,
+    "false_success": 0,
+    "incorrect_execution": 0,
+    "invalid_graph": 0,
+    "unintended_change": 0,
+    "version_consistency_checked": 7,
+    "version_consistency_passed": 7,
+    "history_reference_used": 1
+  },
+  "cases": [
+    {
+      "case": "MT1",
+      "description": "rename risk_check, then refer to renamed node for move and failure redirect",
+      "passed": true,
+      "rounds": [
+        {
+          "round_id": "round_1",
+          "instruction": "Rename risk_check to Risk Assessment.",
+          "status": "success",
+          "version_before": null,
+          "version_after": null,
+          "correct_execution": true,
+          "correct_clarification": false,
+          "false_success": false,
+          "invalid_graph": false,
+          "unintended_change": false,
+          "first_failure_layer": null,
+          "details": {
+            "changed_nodes": [
+              "risk_check"
+            ],
+            "steps": [
+              {
+                "op": "update_node",
+                "node_id": "risk_check",
+                "changes": {
+                  "label": "Risk Assessment"
+                }
+              }
+            ],
+            "error": null,
+            "history_reference_used": false
+          }
+        },
+        {
+          "round_id": "round_2",
+          "instruction": "Move Risk Assessment 120 pixels to the right.",
+          "status": "success",
+          "version_before": null,
+          "version_after": null,
+          "correct_execution": true,
+          "correct_clarification": false,
+          "false_success": false,
+          "invalid_graph": false,
+          "unintended_change": false,
+          "first_failure_layer": null,
+          "details": {
+            "changed_nodes": [
+              "risk_check"
+            ],
+            "steps": [
+              {
+                "op": "move_node",
+                "node_id": "risk_check",
+                "x": 480,
+                "y": 0
+              }
+            ],
+            "error": null,
+            "history_reference_used": false
+          }
+        },
+        {
+          "round_id": "round_3",
+          "instruction": "Redirect Risk Assessment failure edge to manual_review.",
+          "status": "success",
+          "version_before": null,
+          "version_after": null,
+          "correct_execution": true,
+          "correct_clarification": false,
+          "false_success": false,
+          "invalid_graph": false,
+          "unintended_change": false,
+          "first_failure_layer": null,
+          "details": {
+            "changed_nodes": [],
+            "steps": [
+              {
+                "op": "remove_edge",
+                "edge_id": "e5"
+              },
+              {
+                "op": "add_edge",
+                "source": "risk_check",
+                "target": "manual_review",
+                "label": "failure"
+              }
+            ],
+            "error": null,
+            "history_reference_used": false
+          }
+        }
+      ]
+    },
+    {
+      "case": "MT2",
+      "description": "correction instruction after prior move without adding memory architecture",
+      "passed": true,
+      "rounds": [
+        {
+          "round_id": "round_1",
+          "instruction": "Move the selected nodes 120 pixels to the right.",
+          "status": "success",
+          "version_before": "v1",
+          "version_after": "v2",
+          "correct_execution": true,
+          "correct_clarification": false,
+          "false_success": false,
+          "invalid_graph": false,
+          "unintended_change": false,
+          "first_failure_layer": null,
+          "details": {
+            "changed_nodes": [
+              "identity_check",
+              "risk_check"
+            ],
+            "steps": [
+              {
+                "op": "move_node",
+                "node_id": "identity_check",
+                "x": 300,
+                "y": 0
+              },
+              {
+                "op": "move_node",
+                "node_id": "risk_check",
+                "x": 480,
+                "y": 0
+              }
+            ],
+            "error": null,
+            "history_reference_used": false
+          }
+        },
+        {
+          "round_id": "round_2",
+          "instruction": "Undo the identity_check move and keep risk_check as it is.",
+          "status": "success",
+          "version_before": "v2",
+          "version_after": "v3",
+          "correct_execution": true,
+          "correct_clarification": false,
+          "false_success": false,
+          "invalid_graph": false,
+          "unintended_change": false,
+          "first_failure_layer": null,
+          "details": {
+            "changed_nodes": [
+              "identity_check"
+            ],
+            "steps": [
+              {
+                "op": "move_node",
+                "node_id": "identity_check",
+                "x": 180,
+                "y": 0
+              }
+            ],
+            "error": null,
+            "history_reference_used": true
+          }
+        }
+      ],
+      "version_state": {
+        "versions": {
+          "v1": {
+            "version_id": "v1",
+            "parent_version_id": null,
+            "graph_snapshot": {
+              "nodes": [
+                {
+                  "id": "start",
+                  "type": "start",
+                  "label": "Start",
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "id": "identity_check",
+                  "type": "task",
+                  "label": "Identity Check",
+                  "x": 180,
+                  "y": 0
+                },
+                {
+                  "id": "risk_check",
+                  "type": "task",
+                  "label": "Risk Check",
+                  "x": 360,
+                  "y": 0
+                },
+                {
+                  "id": "approval",
+                  "type": "task",
+                  "label": "Approval",
+                  "x": 540,
+                  "y": 0
+                },
+                {
+                  "id": "manual_review",
+                  "type": "human_review",
+                  "label": "Manual Review",
+                  "x": 540,
+                  "y": 150
+                },
+                {
+                  "id": "reject",
+                  "type": "end",
+                  "label": "Reject",
+                  "x": 720,
+                  "y": -130
+                },
+                {
+                  "id": "end",
+                  "type": "end",
+                  "label": "End",
+                  "x": 720,
+                  "y": 0
+                }
+              ],
+              "edges": [
+                {
+                  "id": "e1",
+                  "source": "start",
+                  "target": "identity_check",
+                  "label": ""
+                },
+                {
+                  "id": "e2",
+                  "source": "identity_check",
+                  "target": "risk_check",
+                  "label": ""
+                },
+                {
+                  "id": "e3",
+                  "source": "risk_check",
+                  "target": "approval",
+                  "label": ""
+                },
+                {
+                  "id": "e4",
+                  "source": "approval",
+                  "target": "end",
+                  "label": ""
+                },
+                {
+                  "id": "e5",
+                  "source": "risk_check",
+                  "target": "reject",
+                  "label": "failure"
+                },
+                {
+                  "id": "e6",
+                  "source": "manual_review",
+                  "target": "risk_check",
+                  "label": "retry"
+                }
+              ]
+            },
+            "created_at": "2026-09-01T00:00:00+00:00"
+          },
+          "v2": {
+            "version_id": "v2",
+            "parent_version_id": "v1",
+            "graph_snapshot": {
+              "nodes": [
+                {
+                  "id": "start",
+                  "type": "start",
+                  "label": "Start",
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "id": "identity_check",
+                  "type": "task",
+                  "label": "Identity Check",
+                  "x": 300,
+                  "y": 0
+                },
+                {
+                  "id": "risk_check",
+                  "type": "task",
+                  "label": "Risk Check",
+                  "x": 480,
+                  "y": 0
+                },
+                {
+                  "id": "approval",
+                  "type": "task",
+                  "label": "Approval",
+                  "x": 540,
+                  "y": 0
+                },
+                {
+                  "id": "manual_review",
+                  "type": "human_review",
+                  "label": "Manual Review",
+                  "x": 540,
+                  "y": 150
+                },
+                {
+                  "id": "reject",
+                  "type": "end",
+                  "label": "Reject",
+                  "x": 720,
+                  "y": -130
+                },
+                {
+                  "id": "end",
+                  "type": "end",
+                  "label": "End",
+                  "x": 720,
+                  "y": 0
+                }
+              ],
+              "edges": [
+                {
+                  "id": "e1",
+                  "source": "start",
+                  "target": "identity_check",
+                  "label": ""
+                },
+                {
+                  "id": "e2",
+                  "source": "identity_check",
+                  "target": "risk_check",
+                  "label": ""
+                },
+                {
+                  "id": "e3",
+                  "source": "risk_check",
+                  "target": "approval",
+                  "label": ""
+                },
+                {
+                  "id": "e4",
+                  "source": "approval",
+                  "target": "end",
+                  "label": ""
+                },
+                {
+                  "id": "e5",
+                  "source": "risk_check",
+                  "target": "reject",
+                  "label": "failure"
+                },
+                {
+                  "id": "e6",
+                  "source": "manual_review",
+                  "target": "risk_check",
+                  "label": "retry"
+                }
+              ]
+            },
+            "created_at": "2026-09-02T05:52:17+00:00"
+          },
+          "v3": {
+            "version_id": "v3",
+            "parent_version_id": "v2",
+            "graph_snapshot": {
+              "nodes": [
+                {
+                  "id": "start",
+                  "type": "start",
+                  "label": "Start",
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "id": "identity_check",
+                  "type": "task",
+                  "label": "Identity Check",
+                  "x": 180,
+                  "y": 0
+                },
+                {
+                  "id": "risk_check",
+                  "type": "task",
+                  "label": "Risk Check",
+                  "x": 480,
+                  "y": 0
+                },
+                {
+                  "id": "approval",
+                  "type": "task",
+                  "label": "Approval",
+                  "x": 540,
+                  "y": 0
+                },
+                {
+                  "id": "manual_review",
+                  "type": "human_review",
+                  "label": "Manual Review",
+                  "x": 540,
+                  "y": 150
+                },
+                {
+                  "id": "reject",
+                  "type": "end",
+                  "label": "Reject",
+                  "x": 720,
+                  "y": -130
+                },
+                {
+                  "id": "end",
+                  "type": "end",
+                  "label": "End",
+                  "x": 720,
+                  "y": 0
+                }
+              ],
+              "edges": [
+                {
+                  "id": "e1",
+                  "source": "start",
+                  "target": "identity_check",
+                  "label": ""
+                },
+                {
+                  "id": "e2",
+                  "source": "identity_check",
+                  "target": "risk_check",
+                  "label": ""
+                },
+                {
+                  "id": "e3",
+                  "source": "risk_check",
+                  "target": "approval",
+                  "label": ""
+                },
+                {
+                  "id": "e4",
+                  "source": "approval",
+                  "target": "end",
+                  "label": ""
+                },
+                {
+                  "id": "e5",
+                  "source": "risk_check",
+                  "target": "reject",
+                  "label": "failure"
+                },
+                {
+                  "id": "e6",
+                  "source": "manual_review",
+                  "target": "risk_check",
+                  "label": "retry"
+                }
+              ]
+            },
+            "created_at": "2026-09-02T05:52:19+00:00"
+          }
+        },
+        "version_order": [
+          "v1",
+          "v2",
+          "v3"
+        ],
+        "current_version_id": "v3",
+        "transactions": [
+          {
+            "transaction_id": "tx1",
+            "parent_version_id": "v1",
+            "instruction": "Move the selected nodes 120 pixels to the right.",
+            "selection": {
+              "node_ids": [
+                "identity_check",
+                "risk_check"
+              ],
+              "edge_ids": []
+            },
+            "target": {
+              "selection": {
+                "node_ids": [
+                  "identity_check",
+                  "risk_check"
+                ],
+                "edge_ids": []
+              }
+            },
+            "specification": {
+              "instruction": "Move the selected nodes 120 pixels to the right.",
+              "selection": {
+                "node_ids": [
+                  "identity_check",
+                  "risk_check"
+                ],
+                "edge_ids": []
+              },
+              "request_context": {
+                "selected_node_ids": [
+                  "identity_check",
+                  "risk_check"
+                ],
+                "selected_edge_ids": [],
+                "visible_area": null,
+                "recent_transaction_diff": null
+              },
+              "grounded_requirements": [
+                {
+                  "id": "r1",
+                  "text": "Move the selected nodes 120 pixels to the right.",
+                  "references": {
+                    "resolved_scope_node_ids": [
+                      "identity_check",
+                      "risk_check"
+                    ]
+                  },
+                  "grounded_desired_state": {
+                    "abstract_goals": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "target_entity_ref": "identity_check",
+                        "source_requirement_id": "r1",
+                        "derivations": {
+                          "x": "grounded_position_offset",
+                          "y": "grounded_position_offset"
+                        },
+                        "changes": {
+                          "x": 300,
+                          "y": 0
+                        }
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "target_entity_ref": "risk_check",
+                        "source_requirement_id": "r1",
+                        "derivations": {
+                          "x": "grounded_position_offset",
+                          "y": "grounded_position_offset"
+                        },
+                        "changes": {
+                          "x": 480,
+                          "y": 0
+                        }
+                      }
+                    ],
+                    "explicit_relations": [],
+                    "absent_entities": [],
+                    "clarification": {
+                      "needed": false,
+                      "question": "",
+                      "reason": ""
+                    },
+                    "scope_policy": {
+                      "kind": "selected_only",
+                      "selected_only": true,
+                      "node_ids": [
+                        "identity_check",
+                        "risk_check"
+                      ]
+                    }
+                  }
+                }
+              ],
+              "grounded_references": [
+                {
+                  "resolved_scope_node_ids": [
+                    "identity_check",
+                    "risk_check"
+                  ]
+                }
+              ],
+              "spec_units": [
+                {
+                  "unit_id": "u1",
+                  "requirement_ids": [
+                    "r1"
+                  ],
+                  "requirements": [
+                    {
+                      "id": "r1",
+                      "text": "Move the selected nodes 120 pixels to the right.",
+                      "references": {
+                        "resolved_scope_node_ids": [
+                          "identity_check",
+                          "risk_check"
+                        ]
+                      },
+                      "grounded_desired_state": {
+                        "abstract_goals": [],
+                        "properties": [
+                          {
+                            "node_id": "identity_check",
+                            "target_entity_ref": "identity_check",
+                            "source_requirement_id": "r1",
+                            "derivations": {
+                              "x": "grounded_position_offset",
+                              "y": "grounded_position_offset"
+                            },
+                            "changes": {
+                              "x": 300,
+                              "y": 0
+                            }
+                          },
+                          {
+                            "node_id": "risk_check",
+                            "target_entity_ref": "risk_check",
+                            "source_requirement_id": "r1",
+                            "derivations": {
+                              "x": "grounded_position_offset",
+                              "y": "grounded_position_offset"
+                            },
+                            "changes": {
+                              "x": 480,
+                              "y": 0
+                            }
+                          }
+                        ],
+                        "explicit_relations": [],
+                        "absent_entities": [],
+                        "clarification": {
+                          "needed": false,
+                          "question": "",
+                          "reason": ""
+                        },
+                        "scope_policy": {
+                          "kind": "selected_only",
+                          "selected_only": true,
+                          "node_ids": [
+                            "identity_check",
+                            "risk_check"
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "references": [
+                    {
+                      "resolved_scope_node_ids": [
+                        "identity_check",
+                        "risk_check"
+                      ]
+                    }
+                  ],
+                  "local_graph_facts": {
+                    "node_ids": [
+                      "identity_check",
+                      "risk_check"
+                    ],
+                    "context_node_ids": [
+                      "approval",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "edge_ids": [
+                      "e2"
+                    ],
+                    "relation_types": [
+                      ""
+                    ]
+                  },
+                  "signature": {
+                    "kind": "topology",
+                    "nodes": [
+                      "identity_check",
+                      "risk_check"
+                    ],
+                    "relation_types": [
+                      ""
+                    ]
+                  }
+                }
+              ],
+              "requirement_conservation": {
+                "grounded_requirement_ids": [
+                  "r1"
+                ],
+                "owner_mapping": {
+                  "r1": "u1"
+                },
+                "missing_owners": [],
+                "duplicate_owners": {},
+                "valid": true
+              },
+              "unit_contracts": [
+                {
+                  "allowed_structural_relation_types": [],
+                  "allowed_auxiliary_relation_types": [],
+                  "allowed_auxiliary_relation_groups": [],
+                  "allowed_existing_node_ids": [
+                    "approval",
+                    "identity_check",
+                    "manual_review",
+                    "reject",
+                    "risk_check",
+                    "start"
+                  ],
+                  "allow_new_entities": false,
+                  "allowed_property_targets": [
+                    "identity_check",
+                    "risk_check"
+                  ],
+                  "allow_absent_entities": false
+                }
+              ],
+              "global_obligations": {
+                "auxiliary": [],
+                "properties": [
+                  {
+                    "node_id": "identity_check",
+                    "target_entity_ref": "identity_check",
+                    "property": "x",
+                    "kind": "x",
+                    "value": 300,
+                    "source_requirement_id": "r1",
+                    "derivation": "grounded_position_offset"
+                  },
+                  {
+                    "node_id": "identity_check",
+                    "target_entity_ref": "identity_check",
+                    "property": "y",
+                    "kind": "y",
+                    "value": 0,
+                    "source_requirement_id": "r1",
+                    "derivation": "grounded_position_offset"
+                  },
+                  {
+                    "node_id": "risk_check",
+                    "target_entity_ref": "risk_check",
+                    "property": "x",
+                    "kind": "x",
+                    "value": 480,
+                    "source_requirement_id": "r1",
+                    "derivation": "grounded_position_offset"
+                  },
+                  {
+                    "node_id": "risk_check",
+                    "target_entity_ref": "risk_check",
+                    "property": "y",
+                    "kind": "y",
+                    "value": 0,
+                    "source_requirement_id": "r1",
+                    "derivation": "grounded_position_offset"
+                  }
+                ],
+                "entity_create": false,
+                "absent_entities": []
+              },
+              "unit_runs": [
+                {
+                  "unit_id": "u1",
+                  "requirements": [
+                    {
+                      "id": "r1",
+                      "text": "Move the selected nodes 120 pixels to the right.",
+                      "references": {
+                        "resolved_scope_node_ids": [
+                          "identity_check",
+                          "risk_check"
+                        ]
+                      },
+                      "grounded_desired_state": {
+                        "abstract_goals": [],
+                        "properties": [
+                          {
+                            "node_id": "identity_check",
+                            "target_entity_ref": "identity_check",
+                            "source_requirement_id": "r1",
+                            "derivations": {
+                              "x": "grounded_position_offset",
+                              "y": "grounded_position_offset"
+                            },
+                            "changes": {
+                              "x": 300,
+                              "y": 0
+                            }
+                          },
+                          {
+                            "node_id": "risk_check",
+                            "target_entity_ref": "risk_check",
+                            "source_requirement_id": "r1",
+                            "derivations": {
+                              "x": "grounded_position_offset",
+                              "y": "grounded_position_offset"
+                            },
+                            "changes": {
+                              "x": 480,
+                              "y": 0
+                            }
+                          }
+                        ],
+                        "explicit_relations": [],
+                        "absent_entities": [],
+                        "clarification": {
+                          "needed": false,
+                          "question": "",
+                          "reason": ""
+                        },
+                        "scope_policy": {
+                          "kind": "selected_only",
+                          "selected_only": true,
+                          "node_ids": [
+                            "identity_check",
+                            "risk_check"
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "references": [
+                    {
+                      "resolved_scope_node_ids": [
+                        "identity_check",
+                        "risk_check"
+                      ]
+                    }
+                  ],
+                  "graph_context": {
+                    "nodes": [
+                      {
+                        "id": "start",
+                        "type": "start",
+                        "label": "Start",
+                        "x": 0,
+                        "y": 0
+                      },
+                      {
+                        "id": "identity_check",
+                        "type": "task",
+                        "label": "Identity Check",
+                        "x": 180,
+                        "y": 0
+                      },
+                      {
+                        "id": "risk_check",
+                        "type": "task",
+                        "label": "Risk Check",
+                        "x": 360,
+                        "y": 0
+                      },
+                      {
+                        "id": "approval",
+                        "type": "task",
+                        "label": "Approval",
+                        "x": 540,
+                        "y": 0
+                      },
+                      {
+                        "id": "manual_review",
+                        "type": "human_review",
+                        "label": "Manual Review",
+                        "x": 540,
+                        "y": 150
+                      },
+                      {
+                        "id": "reject",
+                        "type": "end",
+                        "label": "Reject",
+                        "x": 720,
+                        "y": -130
+                      }
+                    ],
+                    "edges": [
+                      {
+                        "id": "e1",
+                        "source": "start",
+                        "target": "identity_check",
+                        "label": ""
+                      },
+                      {
+                        "id": "e2",
+                        "source": "identity_check",
+                        "target": "risk_check",
+                        "label": ""
+                      },
+                      {
+                        "id": "e3",
+                        "source": "risk_check",
+                        "target": "approval",
+                        "label": ""
+                      },
+                      {
+                        "id": "e4",
+                        "source": "approval",
+                        "target": "end",
+                        "label": ""
+                      },
+                      {
+                        "id": "e5",
+                        "source": "risk_check",
+                        "target": "reject",
+                        "label": "failure"
+                      },
+                      {
+                        "id": "e6",
+                        "source": "manual_review",
+                        "target": "risk_check",
+                        "label": "retry"
+                      }
+                    ]
+                  },
+                  "unit_contract": {
+                    "allowed_structural_relation_types": [],
+                    "allowed_auxiliary_relation_types": [],
+                    "allowed_auxiliary_relation_groups": [],
+                    "allowed_existing_node_ids": [
+                      "approval",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "allow_new_entities": false,
+                    "allowed_property_targets": [
+                      "identity_check",
+                      "risk_check"
+                    ],
+                    "allow_absent_entities": false
+                  },
+                  "obligations": {
+                    "auxiliary": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "target_entity_ref": "identity_check",
+                        "property": "x",
+                        "kind": "x",
+                        "value": 300,
+                        "source_requirement_id": "r1",
+                        "derivation": "grounded_position_offset"
+                      },
+                      {
+                        "node_id": "identity_check",
+                        "target_entity_ref": "identity_check",
+                        "property": "y",
+                        "kind": "y",
+                        "value": 0,
+                        "source_requirement_id": "r1",
+                        "derivation": "grounded_position_offset"
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "target_entity_ref": "risk_check",
+                        "property": "x",
+                        "kind": "x",
+                        "value": 480,
+                        "source_requirement_id": "r1",
+                        "derivation": "grounded_position_offset"
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "target_entity_ref": "risk_check",
+                        "property": "y",
+                        "kind": "y",
+                        "value": 0,
+                        "source_requirement_id": "r1",
+                        "derivation": "grounded_position_offset"
+                      }
+                    ],
+                    "entity_create": false,
+                    "absent_entities": [],
+                    "structural_participants": [],
+                    "abstract_goals": [],
+                    "entity_specs": []
+                  },
+                  "target_skeleton": {
+                    "entities": [],
+                    "absent_entities": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "x": 300
+                        }
+                      },
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "y": 0
+                        }
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "changes": {
+                          "x": 480
+                        }
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "changes": {
+                          "y": 0
+                        }
+                      }
+                    ],
+                    "structural_regions": [],
+                    "explicit_relations": []
+                  },
+                  "semantic_slots": {
+                    "structural_regions": []
+                  },
+                  "abstract_goal_validation": [],
+                  "obligation_realization": {
+                    "owner_unit_id": "u1",
+                    "realizations": {
+                      "property:{\"derivation\": \"grounded_position_offset\", \"kind\": \"x\", \"node_id\": \"identity_check\", \"property\": \"x\", \"source_requirement_id\": \"r1\", \"target_entity_ref\": \"identity_check\", \"value\": 300}": {
+                        "owner_unit_id": "u1",
+                        "realization_mode": "deterministic_fact"
+                      },
+                      "property:{\"derivation\": \"grounded_position_offset\", \"kind\": \"y\", \"node_id\": \"identity_check\", \"property\": \"y\", \"source_requirement_id\": \"r1\", \"target_entity_ref\": \"identity_check\", \"value\": 0}": {
+                        "owner_unit_id": "u1",
+                        "realization_mode": "deterministic_fact"
+                      },
+                      "property:{\"derivation\": \"grounded_position_offset\", \"kind\": \"x\", \"node_id\": \"risk_check\", \"property\": \"x\", \"source_requirement_id\": \"r1\", \"target_entity_ref\": \"risk_check\", \"value\": 480}": {
+                        "owner_unit_id": "u1",
+                        "realization_mode": "deterministic_fact"
+                      },
+                      "property:{\"derivation\": \"grounded_position_offset\", \"kind\": \"y\", \"node_id\": \"risk_check\", \"property\": \"y\", \"source_requirement_id\": \"r1\", \"target_entity_ref\": \"risk_check\", \"value\": 0}": {
+                        "owner_unit_id": "u1",
+                        "realization_mode": "deterministic_fact"
+                      }
+                    },
+                    "orphan_obligations": [],
+                    "duplicate_realizations": {},
+                    "obligation_realization_complete": true,
+                    "deterministic_facts_count": 4,
+                    "semantic_slots_count": 0
+                  },
+                  "llm_generation_required": false,
+                  "generation_view": {
+                    "allowed_structural_relation_types": [],
+                    "allowed_auxiliary_relation_types": [],
+                    "allowed_auxiliary_relation_groups": [],
+                    "allowed_existing_node_ids": [],
+                    "allow_new_entities": false,
+                    "allowed_property_targets": [],
+                    "allow_absent_entities": false
+                  },
+                  "generation_requirements": [],
+                  "generation_references": [],
+                  "raw_ir": null,
+                  "parse_error": null,
+                  "first_pass_ir_valid": true,
+                  "schema_retry_triggered": false,
+                  "schema_retry_recovered": false,
+                  "canonicalization_used": false,
+                  "projection_used": false,
+                  "projected_ir": {
+                    "control_flow_regions": [],
+                    "auxiliary_relations": [],
+                    "absent_entities": [],
+                    "properties": []
+                  },
+                  "structural_participant_coverage": true,
+                  "final_ir": {
+                    "control_flow_regions": [],
+                    "auxiliary_relations": [],
+                    "absent_entities": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "x": 300
+                        }
+                      },
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "y": 0
+                        }
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "changes": {
+                          "x": 480
+                        }
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "changes": {
+                          "y": 0
+                        }
+                      }
+                    ]
+                  },
+                  "obligation_coverage": true,
+                  "obligation_errors": [],
+                  "compiled": {
+                    "entities": [],
+                    "control_flow_regions": [],
+                    "auxiliary_relations": [],
+                    "absent_entities": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "x": 300,
+                          "y": 0
+                        }
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "changes": {
+                          "x": 480,
+                          "y": 0
+                        }
+                      }
+                    ]
+                  },
+                  "constraints": {
+                    "entities": [],
+                    "absent_entities": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "x": 300
+                        }
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "changes": {
+                          "x": 480
+                        }
+                      }
+                    ],
+                    "edge_properties": [],
+                    "required_relations": [],
+                    "forbidden_relations": [],
+                    "preserve": {
+                      "node_ids": [
+                        "approval",
+                        "end",
+                        "identity_check",
+                        "manual_review",
+                        "reject",
+                        "risk_check",
+                        "start"
+                      ],
+                      "edge_ids": [],
+                      "outside_specification": true
+                    }
+                  },
+                  "property_target_provenance_valid": true,
+                  "property_target_provenance_errors": []
+                }
+              ],
+              "merged_constraints": {
+                "entities": [],
+                "absent_entities": [],
+                "properties": [
+                  {
+                    "node_id": "identity_check",
+                    "changes": {
+                      "x": 300
+                    }
+                  },
+                  {
+                    "node_id": "risk_check",
+                    "changes": {
+                      "x": 480
+                    }
+                  }
+                ],
+                "edge_properties": [],
+                "required_relations": [],
+                "forbidden_relations": [],
+                "preserve": {
+                  "node_ids": [
+                    "approval",
+                    "end",
+                    "identity_check",
+                    "manual_review",
+                    "reject",
+                    "risk_check",
+                    "start"
+                  ],
+                  "edge_ids": [],
+                  "outside_specification": true
+                }
+              },
+              "planner": {
+                "supported": true,
+                "reason": null,
+                "steps": [
+                  {
+                    "op": "move_node",
+                    "node_id": "identity_check",
+                    "x": 300,
+                    "y": 0
+                  },
+                  {
+                    "op": "move_node",
+                    "node_id": "risk_check",
+                    "x": 480,
+                    "y": 0
+                  }
+                ],
+                "mutation_authorization": [
+                  {
+                    "step": {
+                      "op": "move_node",
+                      "node_id": "identity_check",
+                      "x": 300,
+                      "y": 0
+                    },
+                    "constraint_rule": "property_equals",
+                    "constraint": {
+                      "node_id": "identity_check",
+                      "changes": {
+                        "x": 300
+                      }
+                    }
+                  },
+                  {
+                    "step": {
+                      "op": "move_node",
+                      "node_id": "risk_check",
+                      "x": 480,
+                      "y": 0
+                    },
+                    "constraint_rule": "property_equals",
+                    "constraint": {
+                      "node_id": "risk_check",
+                      "changes": {
+                        "x": 480
+                      }
+                    }
+                  }
+                ],
+                "constraints": {
+                  "entities": [],
+                  "absent_entities": [],
+                  "properties": [
+                    {
+                      "node_id": "identity_check",
+                      "changes": {
+                        "x": 300
+                      }
+                    },
+                    {
+                      "node_id": "risk_check",
+                      "changes": {
+                        "x": 480
+                      }
+                    }
+                  ],
+                  "edge_properties": [],
+                  "required_relations": [],
+                  "forbidden_relations": [],
+                  "preserve": {
+                    "node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "edge_ids": [],
+                    "outside_specification": true
+                  }
+                },
+                "entity_ids": {}
+              },
+              "stop_layer": null,
+              "stop_reason": null,
+              "current_graph": {
+                "nodes": [
+                  {
+                    "id": "start",
+                    "type": "start",
+                    "label": "Start",
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "id": "identity_check",
+                    "type": "task",
+                    "label": "Identity Check",
+                    "x": 180,
+                    "y": 0
+                  },
+                  {
+                    "id": "risk_check",
+                    "type": "task",
+                    "label": "Risk Check",
+                    "x": 360,
+                    "y": 0
+                  },
+                  {
+                    "id": "approval",
+                    "type": "task",
+                    "label": "Approval",
+                    "x": 540,
+                    "y": 0
+                  },
+                  {
+                    "id": "manual_review",
+                    "type": "human_review",
+                    "label": "Manual Review",
+                    "x": 540,
+                    "y": 150
+                  },
+                  {
+                    "id": "reject",
+                    "type": "end",
+                    "label": "Reject",
+                    "x": 720,
+                    "y": -130
+                  },
+                  {
+                    "id": "end",
+                    "type": "end",
+                    "label": "End",
+                    "x": 720,
+                    "y": 0
+                  }
+                ],
+                "edges": [
+                  {
+                    "id": "e1",
+                    "source": "start",
+                    "target": "identity_check",
+                    "label": ""
+                  },
+                  {
+                    "id": "e2",
+                    "source": "identity_check",
+                    "target": "risk_check",
+                    "label": ""
+                  },
+                  {
+                    "id": "e3",
+                    "source": "risk_check",
+                    "target": "approval",
+                    "label": ""
+                  },
+                  {
+                    "id": "e4",
+                    "source": "approval",
+                    "target": "end",
+                    "label": ""
+                  },
+                  {
+                    "id": "e5",
+                    "source": "risk_check",
+                    "target": "reject",
+                    "label": "failure"
+                  },
+                  {
+                    "id": "e6",
+                    "source": "manual_review",
+                    "target": "risk_check",
+                    "label": "retry"
+                  }
+                ]
+              }
+            },
+            "plan": [
+              {
+                "op": "move_node",
+                "node_id": "identity_check",
+                "x": 300,
+                "y": 0
+              },
+              {
+                "op": "move_node",
+                "node_id": "risk_check",
+                "x": 480,
+                "y": 0
+              }
+            ],
+            "resulting_version_id": "v2",
+            "status": "success",
+            "error": null
+          },
+          {
+            "transaction_id": "tx2",
+            "parent_version_id": "v2",
+            "instruction": "Undo the identity_check move and keep risk_check as it is.",
+            "selection": {
+              "node_ids": [],
+              "edge_ids": []
+            },
+            "target": {
+              "selection": {
+                "node_ids": [],
+                "edge_ids": []
+              }
+            },
+            "specification": {
+              "instruction": "Undo the identity_check move and keep risk_check as it is.",
+              "selection": {
+                "node_ids": [],
+                "edge_ids": []
+              },
+              "request_context": {
+                "selected_node_ids": [],
+                "selected_edge_ids": [],
+                "visible_area": null,
+                "recent_transaction_diff": {
+                  "transaction_id": "tx1",
+                  "from_version_id": "v1",
+                  "to_version_id": "v2",
+                  "instruction": "Move the selected nodes 120 pixels to the right.",
+                  "mutations": [
+                    {
+                      "mutation_id": "tx1.m1",
+                      "kind": "property",
+                      "target_entity_id": "identity_check",
+                      "property": "x",
+                      "before": 180,
+                      "after": 300
+                    },
+                    {
+                      "mutation_id": "tx1.m2",
+                      "kind": "property",
+                      "target_entity_id": "risk_check",
+                      "property": "x",
+                      "before": 360,
+                      "after": 480
+                    }
+                  ]
+                }
+              },
+              "grounded_requirements": [
+                {
+                  "id": "r1",
+                  "text": "Undo the identity_check move and keep risk_check as it is.",
+                  "references": {
+                    "source_node_id": "identity_check",
+                    "target_node_id": "risk_check",
+                    "relation_type": "",
+                    "mentioned_node_ids": [
+                      "identity_check",
+                      "risk_check"
+                    ],
+                    "resolved_scope_node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "history_reference_used": true,
+                    "matched_transaction_id": "tx1",
+                    "matched_mutation_ids": [
+                      "tx1.m1"
+                    ],
+                    "matched_mutation_id": "tx1.m1"
+                  },
+                  "grounded_desired_state": {
+                    "abstract_goals": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "target_entity_ref": "identity_check",
+                        "source_requirement_id": "r1",
+                        "derivations": {
+                          "x": "historical_mutation_reference"
+                        },
+                        "changes": {
+                          "x": 180
+                        }
+                      }
+                    ],
+                    "explicit_relations": [],
+                    "absent_entities": [],
+                    "clarification": {
+                      "needed": false,
+                      "question": "",
+                      "reason": ""
+                    },
+                    "scope_policy": {
+                      "kind": "global",
+                      "node_ids": [
+                        "approval",
+                        "end",
+                        "identity_check",
+                        "manual_review",
+                        "reject",
+                        "risk_check",
+                        "start"
+                      ]
+                    }
+                  }
+                }
+              ],
+              "grounded_references": [
+                {
+                  "source_node_id": "identity_check",
+                  "target_node_id": "risk_check",
+                  "relation_type": "",
+                  "mentioned_node_ids": [
+                    "identity_check",
+                    "risk_check"
+                  ],
+                  "resolved_scope_node_ids": [
+                    "approval",
+                    "end",
+                    "identity_check",
+                    "manual_review",
+                    "reject",
+                    "risk_check",
+                    "start"
+                  ],
+                  "history_reference_used": true,
+                  "matched_transaction_id": "tx1",
+                  "matched_mutation_ids": [
+                    "tx1.m1"
+                  ],
+                  "matched_mutation_id": "tx1.m1"
+                }
+              ],
+              "spec_units": [
+                {
+                  "unit_id": "u1",
+                  "requirement_ids": [
+                    "r1"
+                  ],
+                  "requirements": [
+                    {
+                      "id": "r1",
+                      "text": "Undo the identity_check move and keep risk_check as it is.",
+                      "references": {
+                        "source_node_id": "identity_check",
+                        "target_node_id": "risk_check",
+                        "relation_type": "",
+                        "mentioned_node_ids": [
+                          "identity_check",
+                          "risk_check"
+                        ],
+                        "resolved_scope_node_ids": [
+                          "approval",
+                          "end",
+                          "identity_check",
+                          "manual_review",
+                          "reject",
+                          "risk_check",
+                          "start"
+                        ],
+                        "history_reference_used": true,
+                        "matched_transaction_id": "tx1",
+                        "matched_mutation_ids": [
+                          "tx1.m1"
+                        ],
+                        "matched_mutation_id": "tx1.m1"
+                      },
+                      "grounded_desired_state": {
+                        "abstract_goals": [],
+                        "properties": [
+                          {
+                            "node_id": "identity_check",
+                            "target_entity_ref": "identity_check",
+                            "source_requirement_id": "r1",
+                            "derivations": {
+                              "x": "historical_mutation_reference"
+                            },
+                            "changes": {
+                              "x": 180
+                            }
+                          }
+                        ],
+                        "explicit_relations": [],
+                        "absent_entities": [],
+                        "clarification": {
+                          "needed": false,
+                          "question": "",
+                          "reason": ""
+                        },
+                        "scope_policy": {
+                          "kind": "global",
+                          "node_ids": [
+                            "approval",
+                            "end",
+                            "identity_check",
+                            "manual_review",
+                            "reject",
+                            "risk_check",
+                            "start"
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "references": [
+                    {
+                      "source_node_id": "identity_check",
+                      "target_node_id": "risk_check",
+                      "relation_type": "",
+                      "mentioned_node_ids": [
+                        "identity_check",
+                        "risk_check"
+                      ],
+                      "resolved_scope_node_ids": [
+                        "approval",
+                        "end",
+                        "identity_check",
+                        "manual_review",
+                        "reject",
+                        "risk_check",
+                        "start"
+                      ],
+                      "history_reference_used": true,
+                      "matched_transaction_id": "tx1",
+                      "matched_mutation_ids": [
+                        "tx1.m1"
+                      ],
+                      "matched_mutation_id": "tx1.m1"
+                    }
+                  ],
+                  "local_graph_facts": {
+                    "node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "context_node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "edge_ids": [
+                      "e1",
+                      "e2",
+                      "e3",
+                      "e4",
+                      "e5",
+                      "e6"
+                    ],
+                    "relation_types": [
+                      ""
+                    ]
+                  },
+                  "signature": {
+                    "kind": "topology",
+                    "nodes": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "relation_types": [
+                      ""
+                    ]
+                  }
+                }
+              ],
+              "requirement_conservation": {
+                "grounded_requirement_ids": [
+                  "r1"
+                ],
+                "owner_mapping": {
+                  "r1": "u1"
+                },
+                "missing_owners": [],
+                "duplicate_owners": {},
+                "valid": true
+              },
+              "unit_contracts": [
+                {
+                  "allowed_structural_relation_types": [],
+                  "allowed_auxiliary_relation_types": [],
+                  "allowed_auxiliary_relation_groups": [],
+                  "allowed_existing_node_ids": [
+                    "approval",
+                    "end",
+                    "identity_check",
+                    "manual_review",
+                    "reject",
+                    "risk_check",
+                    "start"
+                  ],
+                  "allow_new_entities": false,
+                  "allowed_property_targets": [
+                    "identity_check"
+                  ],
+                  "allow_absent_entities": false
+                }
+              ],
+              "global_obligations": {
+                "auxiliary": [],
+                "properties": [
+                  {
+                    "node_id": "identity_check",
+                    "target_entity_ref": "identity_check",
+                    "property": "x",
+                    "kind": "x",
+                    "value": 180,
+                    "source_requirement_id": "r1",
+                    "derivation": "historical_mutation_reference"
+                  }
+                ],
+                "entity_create": false,
+                "absent_entities": []
+              },
+              "unit_runs": [
+                {
+                  "unit_id": "u1",
+                  "requirements": [
+                    {
+                      "id": "r1",
+                      "text": "Undo the identity_check move and keep risk_check as it is.",
+                      "references": {
+                        "source_node_id": "identity_check",
+                        "target_node_id": "risk_check",
+                        "relation_type": "",
+                        "mentioned_node_ids": [
+                          "identity_check",
+                          "risk_check"
+                        ],
+                        "resolved_scope_node_ids": [
+                          "approval",
+                          "end",
+                          "identity_check",
+                          "manual_review",
+                          "reject",
+                          "risk_check",
+                          "start"
+                        ],
+                        "history_reference_used": true,
+                        "matched_transaction_id": "tx1",
+                        "matched_mutation_ids": [
+                          "tx1.m1"
+                        ],
+                        "matched_mutation_id": "tx1.m1"
+                      },
+                      "grounded_desired_state": {
+                        "abstract_goals": [],
+                        "properties": [
+                          {
+                            "node_id": "identity_check",
+                            "target_entity_ref": "identity_check",
+                            "source_requirement_id": "r1",
+                            "derivations": {
+                              "x": "historical_mutation_reference"
+                            },
+                            "changes": {
+                              "x": 180
+                            }
+                          }
+                        ],
+                        "explicit_relations": [],
+                        "absent_entities": [],
+                        "clarification": {
+                          "needed": false,
+                          "question": "",
+                          "reason": ""
+                        },
+                        "scope_policy": {
+                          "kind": "global",
+                          "node_ids": [
+                            "approval",
+                            "end",
+                            "identity_check",
+                            "manual_review",
+                            "reject",
+                            "risk_check",
+                            "start"
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "references": [
+                    {
+                      "source_node_id": "identity_check",
+                      "target_node_id": "risk_check",
+                      "relation_type": "",
+                      "mentioned_node_ids": [
+                        "identity_check",
+                        "risk_check"
+                      ],
+                      "resolved_scope_node_ids": [
+                        "approval",
+                        "end",
+                        "identity_check",
+                        "manual_review",
+                        "reject",
+                        "risk_check",
+                        "start"
+                      ],
+                      "history_reference_used": true,
+                      "matched_transaction_id": "tx1",
+                      "matched_mutation_ids": [
+                        "tx1.m1"
+                      ],
+                      "matched_mutation_id": "tx1.m1"
+                    }
+                  ],
+                  "graph_context": {
+                    "nodes": [
+                      {
+                        "id": "start",
+                        "type": "start",
+                        "label": "Start",
+                        "x": 0,
+                        "y": 0
+                      },
+                      {
+                        "id": "identity_check",
+                        "type": "task",
+                        "label": "Identity Check",
+                        "x": 300,
+                        "y": 0
+                      },
+                      {
+                        "id": "risk_check",
+                        "type": "task",
+                        "label": "Risk Check",
+                        "x": 480,
+                        "y": 0
+                      },
+                      {
+                        "id": "approval",
+                        "type": "task",
+                        "label": "Approval",
+                        "x": 540,
+                        "y": 0
+                      },
+                      {
+                        "id": "manual_review",
+                        "type": "human_review",
+                        "label": "Manual Review",
+                        "x": 540,
+                        "y": 150
+                      },
+                      {
+                        "id": "reject",
+                        "type": "end",
+                        "label": "Reject",
+                        "x": 720,
+                        "y": -130
+                      },
+                      {
+                        "id": "end",
+                        "type": "end",
+                        "label": "End",
+                        "x": 720,
+                        "y": 0
+                      }
+                    ],
+                    "edges": [
+                      {
+                        "id": "e1",
+                        "source": "start",
+                        "target": "identity_check",
+                        "label": ""
+                      },
+                      {
+                        "id": "e2",
+                        "source": "identity_check",
+                        "target": "risk_check",
+                        "label": ""
+                      },
+                      {
+                        "id": "e3",
+                        "source": "risk_check",
+                        "target": "approval",
+                        "label": ""
+                      },
+                      {
+                        "id": "e4",
+                        "source": "approval",
+                        "target": "end",
+                        "label": ""
+                      },
+                      {
+                        "id": "e5",
+                        "source": "risk_check",
+                        "target": "reject",
+                        "label": "failure"
+                      },
+                      {
+                        "id": "e6",
+                        "source": "manual_review",
+                        "target": "risk_check",
+                        "label": "retry"
+                      }
+                    ]
+                  },
+                  "unit_contract": {
+                    "allowed_structural_relation_types": [],
+                    "allowed_auxiliary_relation_types": [],
+                    "allowed_auxiliary_relation_groups": [],
+                    "allowed_existing_node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "allow_new_entities": false,
+                    "allowed_property_targets": [
+                      "identity_check"
+                    ],
+                    "allow_absent_entities": false
+                  },
+                  "obligations": {
+                    "auxiliary": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "target_entity_ref": "identity_check",
+                        "property": "x",
+                        "kind": "x",
+                        "value": 180,
+                        "source_requirement_id": "r1",
+                        "derivation": "historical_mutation_reference"
+                      }
+                    ],
+                    "entity_create": false,
+                    "absent_entities": [],
+                    "structural_participants": [],
+                    "abstract_goals": [],
+                    "entity_specs": []
+                  },
+                  "target_skeleton": {
+                    "entities": [],
+                    "absent_entities": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "x": 180
+                        }
+                      }
+                    ],
+                    "structural_regions": [],
+                    "explicit_relations": []
+                  },
+                  "semantic_slots": {
+                    "structural_regions": []
+                  },
+                  "abstract_goal_validation": [],
+                  "obligation_realization": {
+                    "owner_unit_id": "u1",
+                    "realizations": {
+                      "property:{\"derivation\": \"historical_mutation_reference\", \"kind\": \"x\", \"node_id\": \"identity_check\", \"property\": \"x\", \"source_requirement_id\": \"r1\", \"target_entity_ref\": \"identity_check\", \"value\": 180}": {
+                        "owner_unit_id": "u1",
+                        "realization_mode": "deterministic_fact"
+                      }
+                    },
+                    "orphan_obligations": [],
+                    "duplicate_realizations": {},
+                    "obligation_realization_complete": true,
+                    "deterministic_facts_count": 1,
+                    "semantic_slots_count": 0
+                  },
+                  "llm_generation_required": false,
+                  "generation_view": {
+                    "allowed_structural_relation_types": [],
+                    "allowed_auxiliary_relation_types": [],
+                    "allowed_auxiliary_relation_groups": [],
+                    "allowed_existing_node_ids": [],
+                    "allow_new_entities": false,
+                    "allowed_property_targets": [],
+                    "allow_absent_entities": false
+                  },
+                  "generation_requirements": [],
+                  "generation_references": [],
+                  "raw_ir": null,
+                  "parse_error": null,
+                  "first_pass_ir_valid": true,
+                  "schema_retry_triggered": false,
+                  "schema_retry_recovered": false,
+                  "canonicalization_used": false,
+                  "projection_used": false,
+                  "projected_ir": {
+                    "control_flow_regions": [],
+                    "auxiliary_relations": [],
+                    "absent_entities": [],
+                    "properties": []
+                  },
+                  "structural_participant_coverage": true,
+                  "final_ir": {
+                    "control_flow_regions": [],
+                    "auxiliary_relations": [],
+                    "absent_entities": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "x": 180
+                        }
+                      }
+                    ]
+                  },
+                  "obligation_coverage": true,
+                  "obligation_errors": [],
+                  "compiled": {
+                    "entities": [],
+                    "control_flow_regions": [],
+                    "auxiliary_relations": [],
+                    "absent_entities": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "x": 180
+                        }
+                      }
+                    ]
+                  },
+                  "constraints": {
+                    "entities": [],
+                    "absent_entities": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "x": 180
+                        }
+                      }
+                    ],
+                    "edge_properties": [],
+                    "required_relations": [],
+                    "forbidden_relations": [],
+                    "preserve": {
+                      "node_ids": [
+                        "approval",
+                        "end",
+                        "identity_check",
+                        "manual_review",
+                        "reject",
+                        "risk_check",
+                        "start"
+                      ],
+                      "edge_ids": [],
+                      "outside_specification": true
+                    }
+                  },
+                  "property_target_provenance_valid": true,
+                  "property_target_provenance_errors": []
+                }
+              ],
+              "merged_constraints": {
+                "entities": [],
+                "absent_entities": [],
+                "properties": [
+                  {
+                    "node_id": "identity_check",
+                    "changes": {
+                      "x": 180
+                    }
+                  }
+                ],
+                "edge_properties": [],
+                "required_relations": [],
+                "forbidden_relations": [],
+                "preserve": {
+                  "node_ids": [
+                    "approval",
+                    "end",
+                    "identity_check",
+                    "manual_review",
+                    "reject",
+                    "risk_check",
+                    "start"
+                  ],
+                  "edge_ids": [],
+                  "outside_specification": true
+                }
+              },
+              "planner": {
+                "supported": true,
+                "reason": null,
+                "steps": [
+                  {
+                    "op": "move_node",
+                    "node_id": "identity_check",
+                    "x": 180,
+                    "y": 0
+                  }
+                ],
+                "mutation_authorization": [
+                  {
+                    "step": {
+                      "op": "move_node",
+                      "node_id": "identity_check",
+                      "x": 180,
+                      "y": 0
+                    },
+                    "constraint_rule": "property_equals",
+                    "constraint": {
+                      "node_id": "identity_check",
+                      "changes": {
+                        "x": 180
+                      }
+                    }
+                  }
+                ],
+                "constraints": {
+                  "entities": [],
+                  "absent_entities": [],
+                  "properties": [
+                    {
+                      "node_id": "identity_check",
+                      "changes": {
+                        "x": 180
+                      }
+                    }
+                  ],
+                  "edge_properties": [],
+                  "required_relations": [],
+                  "forbidden_relations": [],
+                  "preserve": {
+                    "node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "edge_ids": [],
+                    "outside_specification": true
+                  }
+                },
+                "entity_ids": {}
+              },
+              "stop_layer": null,
+              "stop_reason": null,
+              "current_graph": {
+                "nodes": [
+                  {
+                    "id": "start",
+                    "type": "start",
+                    "label": "Start",
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "id": "identity_check",
+                    "type": "task",
+                    "label": "Identity Check",
+                    "x": 300,
+                    "y": 0
+                  },
+                  {
+                    "id": "risk_check",
+                    "type": "task",
+                    "label": "Risk Check",
+                    "x": 480,
+                    "y": 0
+                  },
+                  {
+                    "id": "approval",
+                    "type": "task",
+                    "label": "Approval",
+                    "x": 540,
+                    "y": 0
+                  },
+                  {
+                    "id": "manual_review",
+                    "type": "human_review",
+                    "label": "Manual Review",
+                    "x": 540,
+                    "y": 150
+                  },
+                  {
+                    "id": "reject",
+                    "type": "end",
+                    "label": "Reject",
+                    "x": 720,
+                    "y": -130
+                  },
+                  {
+                    "id": "end",
+                    "type": "end",
+                    "label": "End",
+                    "x": 720,
+                    "y": 0
+                  }
+                ],
+                "edges": [
+                  {
+                    "id": "e1",
+                    "source": "start",
+                    "target": "identity_check",
+                    "label": ""
+                  },
+                  {
+                    "id": "e2",
+                    "source": "identity_check",
+                    "target": "risk_check",
+                    "label": ""
+                  },
+                  {
+                    "id": "e3",
+                    "source": "risk_check",
+                    "target": "approval",
+                    "label": ""
+                  },
+                  {
+                    "id": "e4",
+                    "source": "approval",
+                    "target": "end",
+                    "label": ""
+                  },
+                  {
+                    "id": "e5",
+                    "source": "risk_check",
+                    "target": "reject",
+                    "label": "failure"
+                  },
+                  {
+                    "id": "e6",
+                    "source": "manual_review",
+                    "target": "risk_check",
+                    "label": "retry"
+                  }
+                ]
+              }
+            },
+            "plan": [
+              {
+                "op": "move_node",
+                "node_id": "identity_check",
+                "x": 180,
+                "y": 0
+              }
+            ],
+            "resulting_version_id": "v3",
+            "status": "success",
+            "error": null
+          }
+        ]
+      }
+    },
+    {
+      "case": "MT3",
+      "description": "version rollback and redo snapshot consistency",
+      "passed": true,
+      "rounds": [
+        {
+          "round_id": "round_1",
+          "instruction": "Insert a task named Audit on the selected edge.",
+          "status": "success",
+          "version_before": "v1",
+          "version_after": "v2",
+          "correct_execution": true,
+          "correct_clarification": false,
+          "false_success": false,
+          "invalid_graph": false,
+          "unintended_change": false,
+          "first_failure_layer": null,
+          "details": {
+            "changed_nodes": [
+              "new_1"
+            ],
+            "steps": [
+              {
+                "op": "add_node",
+                "node": {
+                  "id": "new_1",
+                  "type": "task",
+                  "label": "Audit",
+                  "x": 0,
+                  "y": 0
+                }
+              },
+              {
+                "op": "remove_edge",
+                "edge_id": "e3"
+              },
+              {
+                "op": "add_edge",
+                "source": "new_1",
+                "target": "approval",
+                "label": ""
+              },
+              {
+                "op": "add_edge",
+                "source": "risk_check",
+                "target": "new_1",
+                "label": ""
+              }
+            ],
+            "error": null,
+            "history_reference_used": false
+          }
+        },
+        {
+          "round_id": "round_2",
+          "instruction": "rollback",
+          "status": "rollback_success",
+          "version_before": "v2",
+          "version_after": "v1",
+          "correct_execution": true,
+          "correct_clarification": false,
+          "false_success": false,
+          "invalid_graph": false,
+          "unintended_change": false,
+          "first_failure_layer": null,
+          "details": {
+            "snapshot_matches_initial": true,
+            "changed_nodes_before_rollback": [
+              "new_1"
+            ]
+          }
+        },
+        {
+          "round_id": "round_3",
+          "instruction": "redo",
+          "status": "redo_success",
+          "version_before": "v1",
+          "version_after": "v2",
+          "correct_execution": true,
+          "correct_clarification": false,
+          "false_success": false,
+          "invalid_graph": false,
+          "unintended_change": false,
+          "first_failure_layer": null,
+          "details": {
+            "snapshot_matches_inserted": true
+          }
+        }
+      ],
+      "version_state": {
+        "versions": {
+          "v1": {
+            "version_id": "v1",
+            "parent_version_id": null,
+            "graph_snapshot": {
+              "nodes": [
+                {
+                  "id": "start",
+                  "type": "start",
+                  "label": "Start",
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "id": "identity_check",
+                  "type": "task",
+                  "label": "Identity Check",
+                  "x": 180,
+                  "y": 0
+                },
+                {
+                  "id": "risk_check",
+                  "type": "task",
+                  "label": "Risk Check",
+                  "x": 360,
+                  "y": 0
+                },
+                {
+                  "id": "approval",
+                  "type": "task",
+                  "label": "Approval",
+                  "x": 540,
+                  "y": 0
+                },
+                {
+                  "id": "manual_review",
+                  "type": "human_review",
+                  "label": "Manual Review",
+                  "x": 540,
+                  "y": 150
+                },
+                {
+                  "id": "reject",
+                  "type": "end",
+                  "label": "Reject",
+                  "x": 720,
+                  "y": -130
+                },
+                {
+                  "id": "end",
+                  "type": "end",
+                  "label": "End",
+                  "x": 720,
+                  "y": 0
+                }
+              ],
+              "edges": [
+                {
+                  "id": "e1",
+                  "source": "start",
+                  "target": "identity_check",
+                  "label": ""
+                },
+                {
+                  "id": "e2",
+                  "source": "identity_check",
+                  "target": "risk_check",
+                  "label": ""
+                },
+                {
+                  "id": "e3",
+                  "source": "risk_check",
+                  "target": "approval",
+                  "label": ""
+                },
+                {
+                  "id": "e4",
+                  "source": "approval",
+                  "target": "end",
+                  "label": ""
+                },
+                {
+                  "id": "e5",
+                  "source": "risk_check",
+                  "target": "reject",
+                  "label": "failure"
+                },
+                {
+                  "id": "e6",
+                  "source": "manual_review",
+                  "target": "risk_check",
+                  "label": "retry"
+                }
+              ]
+            },
+            "created_at": "2026-09-01T00:00:00+00:00"
+          },
+          "v2": {
+            "version_id": "v2",
+            "parent_version_id": "v1",
+            "graph_snapshot": {
+              "nodes": [
+                {
+                  "id": "start",
+                  "type": "start",
+                  "label": "Start",
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "id": "identity_check",
+                  "type": "task",
+                  "label": "Identity Check",
+                  "x": 180,
+                  "y": 0
+                },
+                {
+                  "id": "risk_check",
+                  "type": "task",
+                  "label": "Risk Check",
+                  "x": 360,
+                  "y": 0
+                },
+                {
+                  "id": "approval",
+                  "type": "task",
+                  "label": "Approval",
+                  "x": 540,
+                  "y": 0
+                },
+                {
+                  "id": "manual_review",
+                  "type": "human_review",
+                  "label": "Manual Review",
+                  "x": 540,
+                  "y": 150
+                },
+                {
+                  "id": "reject",
+                  "type": "end",
+                  "label": "Reject",
+                  "x": 720,
+                  "y": -130
+                },
+                {
+                  "id": "end",
+                  "type": "end",
+                  "label": "End",
+                  "x": 720,
+                  "y": 0
+                },
+                {
+                  "id": "new_1",
+                  "type": "task",
+                  "label": "Audit",
+                  "x": 0,
+                  "y": 0
+                }
+              ],
+              "edges": [
+                {
+                  "id": "e1",
+                  "source": "start",
+                  "target": "identity_check",
+                  "label": ""
+                },
+                {
+                  "id": "e2",
+                  "source": "identity_check",
+                  "target": "risk_check",
+                  "label": ""
+                },
+                {
+                  "id": "e4",
+                  "source": "approval",
+                  "target": "end",
+                  "label": ""
+                },
+                {
+                  "id": "e5",
+                  "source": "risk_check",
+                  "target": "reject",
+                  "label": "failure"
+                },
+                {
+                  "id": "e6",
+                  "source": "manual_review",
+                  "target": "risk_check",
+                  "label": "retry"
+                },
+                {
+                  "id": "e_new_1",
+                  "source": "new_1",
+                  "target": "approval",
+                  "label": ""
+                },
+                {
+                  "id": "e_new_2",
+                  "source": "risk_check",
+                  "target": "new_1",
+                  "label": ""
+                }
+              ]
+            },
+            "created_at": "2026-09-02T05:52:22+00:00"
+          }
+        },
+        "version_order": [
+          "v1",
+          "v2"
+        ],
+        "current_version_id": "v2",
+        "transactions": [
+          {
+            "transaction_id": "tx1",
+            "parent_version_id": "v1",
+            "instruction": "Insert a task named Audit on the selected edge.",
+            "selection": {
+              "node_ids": [],
+              "edge_ids": [
+                "e3"
+              ]
+            },
+            "target": {
+              "selection": {
+                "node_ids": [],
+                "edge_ids": [
+                  "e3"
+                ]
+              }
+            },
+            "specification": {
+              "instruction": "Insert a task named Audit on the selected edge.",
+              "selection": {
+                "node_ids": [],
+                "edge_ids": [
+                  "e3"
+                ]
+              },
+              "request_context": {
+                "selected_node_ids": [],
+                "selected_edge_ids": [
+                  "e3"
+                ],
+                "visible_area": null,
+                "recent_transaction_diff": null
+              },
+              "grounded_requirements": [
+                {
+                  "id": "r1",
+                  "text": "Insert a task named Audit on the selected edge.",
+                  "references": {
+                    "source_node_id": "risk_check",
+                    "target_node_id": "approval",
+                    "relation_type": "",
+                    "selected_edge_id": "e3",
+                    "resolved_scope_node_ids": []
+                  },
+                  "grounded_desired_state": {
+                    "abstract_goals": [],
+                    "properties": [],
+                    "explicit_relations": [],
+                    "absent_entities": [],
+                    "clarification": {
+                      "needed": false,
+                      "question": "",
+                      "reason": ""
+                    },
+                    "scope_policy": {
+                      "kind": "selected_only",
+                      "selected_only": true,
+                      "node_ids": []
+                    }
+                  }
+                }
+              ],
+              "grounded_references": [
+                {
+                  "source_node_id": "risk_check",
+                  "target_node_id": "approval",
+                  "relation_type": "",
+                  "selected_edge_id": "e3",
+                  "resolved_scope_node_ids": []
+                }
+              ],
+              "spec_units": [
+                {
+                  "unit_id": "u1",
+                  "requirement_ids": [
+                    "r1"
+                  ],
+                  "requirements": [
+                    {
+                      "id": "r1",
+                      "text": "Insert a task named Audit on the selected edge.",
+                      "references": {
+                        "source_node_id": "risk_check",
+                        "target_node_id": "approval",
+                        "relation_type": "",
+                        "selected_edge_id": "e3",
+                        "resolved_scope_node_ids": []
+                      },
+                      "grounded_desired_state": {
+                        "abstract_goals": [],
+                        "properties": [],
+                        "explicit_relations": [],
+                        "absent_entities": [],
+                        "clarification": {
+                          "needed": false,
+                          "question": "",
+                          "reason": ""
+                        },
+                        "scope_policy": {
+                          "kind": "selected_only",
+                          "selected_only": true,
+                          "node_ids": []
+                        }
+                      }
+                    }
+                  ],
+                  "references": [
+                    {
+                      "source_node_id": "risk_check",
+                      "target_node_id": "approval",
+                      "relation_type": "",
+                      "selected_edge_id": "e3",
+                      "resolved_scope_node_ids": []
+                    }
+                  ],
+                  "local_graph_facts": {
+                    "node_ids": [
+                      "approval",
+                      "risk_check"
+                    ],
+                    "context_node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check"
+                    ],
+                    "edge_ids": [
+                      "e2",
+                      "e3",
+                      "e4"
+                    ],
+                    "relation_types": [
+                      ""
+                    ]
+                  },
+                  "signature": {
+                    "kind": "topology",
+                    "nodes": [
+                      "approval",
+                      "risk_check"
+                    ],
+                    "relation_types": [
+                      ""
+                    ]
+                  }
+                }
+              ],
+              "requirement_conservation": {
+                "grounded_requirement_ids": [
+                  "r1"
+                ],
+                "owner_mapping": {
+                  "r1": "u1"
+                },
+                "missing_owners": [],
+                "duplicate_owners": {},
+                "valid": true
+              },
+              "unit_contracts": [
+                {
+                  "allowed_structural_relation_types": [
+                    ""
+                  ],
+                  "allowed_auxiliary_relation_types": [],
+                  "allowed_auxiliary_relation_groups": [],
+                  "allowed_existing_node_ids": [
+                    "approval",
+                    "end",
+                    "identity_check",
+                    "manual_review",
+                    "reject",
+                    "risk_check"
+                  ],
+                  "allow_new_entities": true,
+                  "allowed_property_targets": [],
+                  "allow_absent_entities": false
+                }
+              ],
+              "global_obligations": {
+                "auxiliary": [],
+                "properties": [],
+                "entity_create": true,
+                "absent_entities": []
+              },
+              "unit_runs": [
+                {
+                  "unit_id": "u1",
+                  "requirements": [
+                    {
+                      "id": "r1",
+                      "text": "Insert a task named Audit on the selected edge.",
+                      "references": {
+                        "source_node_id": "risk_check",
+                        "target_node_id": "approval",
+                        "relation_type": "",
+                        "selected_edge_id": "e3",
+                        "resolved_scope_node_ids": []
+                      },
+                      "grounded_desired_state": {
+                        "abstract_goals": [],
+                        "properties": [],
+                        "explicit_relations": [],
+                        "absent_entities": [],
+                        "clarification": {
+                          "needed": false,
+                          "question": "",
+                          "reason": ""
+                        },
+                        "scope_policy": {
+                          "kind": "selected_only",
+                          "selected_only": true,
+                          "node_ids": []
+                        }
+                      }
+                    }
+                  ],
+                  "references": [
+                    {
+                      "source_node_id": "risk_check",
+                      "target_node_id": "approval",
+                      "relation_type": "",
+                      "selected_edge_id": "e3",
+                      "resolved_scope_node_ids": []
+                    }
+                  ],
+                  "graph_context": {
+                    "nodes": [
+                      {
+                        "id": "identity_check",
+                        "type": "task",
+                        "label": "Identity Check",
+                        "x": 180,
+                        "y": 0
+                      },
+                      {
+                        "id": "risk_check",
+                        "type": "task",
+                        "label": "Risk Check",
+                        "x": 360,
+                        "y": 0
+                      },
+                      {
+                        "id": "approval",
+                        "type": "task",
+                        "label": "Approval",
+                        "x": 540,
+                        "y": 0
+                      },
+                      {
+                        "id": "manual_review",
+                        "type": "human_review",
+                        "label": "Manual Review",
+                        "x": 540,
+                        "y": 150
+                      },
+                      {
+                        "id": "reject",
+                        "type": "end",
+                        "label": "Reject",
+                        "x": 720,
+                        "y": -130
+                      },
+                      {
+                        "id": "end",
+                        "type": "end",
+                        "label": "End",
+                        "x": 720,
+                        "y": 0
+                      }
+                    ],
+                    "edges": [
+                      {
+                        "id": "e1",
+                        "source": "start",
+                        "target": "identity_check",
+                        "label": ""
+                      },
+                      {
+                        "id": "e2",
+                        "source": "identity_check",
+                        "target": "risk_check",
+                        "label": ""
+                      },
+                      {
+                        "id": "e3",
+                        "source": "risk_check",
+                        "target": "approval",
+                        "label": ""
+                      },
+                      {
+                        "id": "e4",
+                        "source": "approval",
+                        "target": "end",
+                        "label": ""
+                      },
+                      {
+                        "id": "e5",
+                        "source": "risk_check",
+                        "target": "reject",
+                        "label": "failure"
+                      },
+                      {
+                        "id": "e6",
+                        "source": "manual_review",
+                        "target": "risk_check",
+                        "label": "retry"
+                      }
+                    ]
+                  },
+                  "unit_contract": {
+                    "allowed_structural_relation_types": [
+                      ""
+                    ],
+                    "allowed_auxiliary_relation_types": [],
+                    "allowed_auxiliary_relation_groups": [],
+                    "allowed_existing_node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check"
+                    ],
+                    "allow_new_entities": true,
+                    "allowed_property_targets": [],
+                    "allow_absent_entities": false
+                  },
+                  "obligations": {
+                    "auxiliary": [],
+                    "properties": [],
+                    "entity_create": true,
+                    "absent_entities": [],
+                    "structural_participants": [
+                      {
+                        "relation_type": "",
+                        "node_ids": [
+                          "approval",
+                          "risk_check"
+                        ]
+                      }
+                    ],
+                    "abstract_goals": [],
+                    "entity_specs": [
+                      {
+                        "ref": "audit",
+                        "node_type": "task",
+                        "label": "Audit"
+                      }
+                    ]
+                  },
+                  "target_skeleton": {
+                    "entities": [
+                      {
+                        "ref": "audit",
+                        "node_type": "task",
+                        "label": "Audit"
+                      }
+                    ],
+                    "absent_entities": [],
+                    "properties": [],
+                    "structural_regions": [],
+                    "explicit_relations": []
+                  },
+                  "semantic_slots": {
+                    "structural_regions": [
+                      {
+                        "relation_type": "",
+                        "required_existing_node_ids": [
+                          "approval",
+                          "risk_check"
+                        ],
+                        "allowed_new_refs": [
+                          "audit"
+                        ]
+                      }
+                    ]
+                  },
+                  "abstract_goal_validation": [],
+                  "obligation_realization": {
+                    "owner_unit_id": "u1",
+                    "realizations": {
+                      "entity_new:{\"label\": \"Audit\", \"node_type\": \"task\", \"ref\": \"audit\"}": {
+                        "owner_unit_id": "u1",
+                        "realization_mode": "deterministic_fact"
+                      },
+                      "structural_participants:{\"node_ids\": [\"approval\", \"risk_check\"], \"relation_type\": \"\"}": {
+                        "owner_unit_id": "u1",
+                        "realization_mode": "semantic_slot"
+                      }
+                    },
+                    "orphan_obligations": [],
+                    "duplicate_realizations": {},
+                    "obligation_realization_complete": true,
+                    "deterministic_facts_count": 1,
+                    "semantic_slots_count": 1
+                  },
+                  "llm_generation_required": true,
+                  "generation_view": {
+                    "allowed_structural_relation_types": [
+                      ""
+                    ],
+                    "allowed_auxiliary_relation_types": [],
+                    "allowed_auxiliary_relation_groups": [],
+                    "allowed_existing_node_ids": [
+                      "approval",
+                      "risk_check"
+                    ],
+                    "allow_new_entities": true,
+                    "allowed_property_targets": [],
+                    "allow_absent_entities": false,
+                    "locked_new_entities": [
+                      {
+                        "ref": "audit",
+                        "node_type": "task",
+                        "label": "Audit"
+                      }
+                    ],
+                    "locked_structural_slots": [
+                      {
+                        "relation_type": "",
+                        "required_existing_node_ids": [
+                          "approval",
+                          "risk_check"
+                        ],
+                        "allowed_new_refs": [
+                          "audit"
+                        ]
+                      }
+                    ],
+                    "locked_abstract_slots": []
+                  },
+                  "generation_requirements": [
+                    {
+                      "id": "r1",
+                      "text": "Insert a task named Audit on the selected edge."
+                    }
+                  ],
+                  "generation_references": [
+                    {
+                      "source_node_id": "risk_check",
+                      "target_node_id": "approval",
+                      "relation_type": "",
+                      "selected_edge_id": "e3",
+                      "resolved_scope_node_ids": []
+                    }
+                  ],
+                  "raw_ir": "{\n  \"control_flow_regions\": [\n    {\n      \"relation_type\": \"\",\n      \"structure\": {\n        \"type\": \"sequence\",\n        \"items\": [\n          {\n            \"type\": \"node\",\n            \"id\": \"risk_check\"\n          },\n          {\n            \"type\": \"node\",\n            \"ref\": \"audit\",\n            \"node_type\": \"task\",\n            \"label\": \"Audit\"\n          },\n          {\n            \"type\": \"node\",\n            \"id\": \"approval\"\n          }\n        ]\n      }\n    }\n  ],\n  \"auxiliary_relations\": [],\n  \"absent_entities\": [],\n  \"properties\": []\n}",
+                  "parse_error": null,
+                  "first_pass_ir_valid": true,
+                  "schema_retry_triggered": false,
+                  "schema_retry_recovered": false,
+                  "canonicalization_used": false,
+                  "projection_used": false,
+                  "projected_ir": {
+                    "control_flow_regions": [
+                      {
+                        "relation_type": "",
+                        "structure": {
+                          "type": "sequence",
+                          "items": [
+                            {
+                              "type": "node",
+                              "id": "risk_check"
+                            },
+                            {
+                              "type": "node",
+                              "ref": "audit",
+                              "node_type": "task",
+                              "label": "Audit"
+                            },
+                            {
+                              "type": "node",
+                              "id": "approval"
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "auxiliary_relations": [],
+                    "absent_entities": [],
+                    "properties": []
+                  },
+                  "structural_participant_coverage": true,
+                  "final_ir": {
+                    "control_flow_regions": [
+                      {
+                        "relation_type": "",
+                        "structure": {
+                          "type": "sequence",
+                          "items": [
+                            {
+                              "type": "node",
+                              "id": "risk_check"
+                            },
+                            {
+                              "type": "node",
+                              "ref": "audit",
+                              "node_type": "task",
+                              "label": "Audit"
+                            },
+                            {
+                              "type": "node",
+                              "id": "approval"
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "auxiliary_relations": [],
+                    "absent_entities": [],
+                    "properties": []
+                  },
+                  "obligation_coverage": true,
+                  "obligation_errors": [],
+                  "compiled": {
+                    "entities": [
+                      {
+                        "ref": "audit",
+                        "type": "task",
+                        "label": "Audit"
+                      }
+                    ],
+                    "control_flow_regions": [
+                      {
+                        "relation_type": "",
+                        "edges": [
+                          [
+                            "audit",
+                            "approval",
+                            ""
+                          ],
+                          [
+                            "risk_check",
+                            "audit",
+                            ""
+                          ]
+                        ],
+                        "node_ids": [
+                          "approval",
+                          "risk_check"
+                        ],
+                        "entries": [
+                          "risk_check"
+                        ],
+                        "exits": [
+                          "approval"
+                        ]
+                      }
+                    ],
+                    "auxiliary_relations": [],
+                    "absent_entities": [],
+                    "properties": []
+                  },
+                  "constraints": {
+                    "entities": [
+                      {
+                        "ref": "audit",
+                        "type": "task",
+                        "label": "Audit"
+                      }
+                    ],
+                    "absent_entities": [],
+                    "properties": [],
+                    "edge_properties": [],
+                    "required_relations": [
+                      {
+                        "source": "audit",
+                        "target": "approval",
+                        "label": ""
+                      },
+                      {
+                        "source": "risk_check",
+                        "target": "audit",
+                        "label": ""
+                      }
+                    ],
+                    "forbidden_relations": [
+                      {
+                        "source": "risk_check",
+                        "target": "approval",
+                        "label": ""
+                      }
+                    ],
+                    "preserve": {
+                      "node_ids": [
+                        "approval",
+                        "end",
+                        "identity_check",
+                        "manual_review",
+                        "reject",
+                        "risk_check",
+                        "start"
+                      ],
+                      "edge_ids": [],
+                      "outside_specification": true
+                    }
+                  },
+                  "property_target_provenance_valid": true,
+                  "property_target_provenance_errors": []
+                }
+              ],
+              "merged_constraints": {
+                "entities": [
+                  {
+                    "ref": "audit",
+                    "type": "task",
+                    "label": "Audit"
+                  }
+                ],
+                "absent_entities": [],
+                "properties": [],
+                "edge_properties": [],
+                "required_relations": [
+                  {
+                    "source": "audit",
+                    "target": "approval",
+                    "label": ""
+                  },
+                  {
+                    "source": "risk_check",
+                    "target": "audit",
+                    "label": ""
+                  }
+                ],
+                "forbidden_relations": [
+                  {
+                    "source": "risk_check",
+                    "target": "approval",
+                    "label": ""
+                  }
+                ],
+                "preserve": {
+                  "node_ids": [
+                    "approval",
+                    "end",
+                    "identity_check",
+                    "manual_review",
+                    "reject",
+                    "risk_check",
+                    "start"
+                  ],
+                  "edge_ids": [],
+                  "outside_specification": true
+                }
+              },
+              "planner": {
+                "supported": true,
+                "reason": null,
+                "steps": [
+                  {
+                    "op": "add_node",
+                    "node": {
+                      "id": "new_1",
+                      "type": "task",
+                      "label": "Audit",
+                      "x": 0,
+                      "y": 0
+                    }
+                  },
+                  {
+                    "op": "remove_edge",
+                    "edge_id": "e3"
+                  },
+                  {
+                    "op": "add_edge",
+                    "source": "new_1",
+                    "target": "approval",
+                    "label": ""
+                  },
+                  {
+                    "op": "add_edge",
+                    "source": "risk_check",
+                    "target": "new_1",
+                    "label": ""
+                  }
+                ],
+                "mutation_authorization": [
+                  {
+                    "step": {
+                      "op": "add_node",
+                      "node": {
+                        "id": "new_1",
+                        "type": "task",
+                        "label": "Audit",
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    "constraint_rule": "entity_exists",
+                    "constraint": {
+                      "ref": "audit",
+                      "type": "task",
+                      "label": "Audit"
+                    }
+                  },
+                  {
+                    "step": {
+                      "op": "remove_edge",
+                      "edge_id": "e3"
+                    },
+                    "constraint_rule": "relation_forbidden",
+                    "constraint": [
+                      "risk_check",
+                      "approval",
+                      ""
+                    ]
+                  },
+                  {
+                    "step": {
+                      "op": "add_edge",
+                      "source": "new_1",
+                      "target": "approval",
+                      "label": ""
+                    },
+                    "constraint_rule": "relation_required",
+                    "constraint": [
+                      "new_1",
+                      "approval",
+                      ""
+                    ]
+                  },
+                  {
+                    "step": {
+                      "op": "add_edge",
+                      "source": "risk_check",
+                      "target": "new_1",
+                      "label": ""
+                    },
+                    "constraint_rule": "relation_required",
+                    "constraint": [
+                      "risk_check",
+                      "new_1",
+                      ""
+                    ]
+                  }
+                ],
+                "constraints": {
+                  "entities": [
+                    {
+                      "ref": "audit",
+                      "type": "task",
+                      "label": "Audit"
+                    }
+                  ],
+                  "absent_entities": [],
+                  "properties": [],
+                  "edge_properties": [],
+                  "required_relations": [
+                    {
+                      "source": "audit",
+                      "target": "approval",
+                      "label": ""
+                    },
+                    {
+                      "source": "risk_check",
+                      "target": "audit",
+                      "label": ""
+                    }
+                  ],
+                  "forbidden_relations": [
+                    {
+                      "source": "risk_check",
+                      "target": "approval",
+                      "label": ""
+                    }
+                  ],
+                  "preserve": {
+                    "node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "edge_ids": [],
+                    "outside_specification": true
+                  }
+                },
+                "entity_ids": {
+                  "audit": "new_1"
+                }
+              },
+              "stop_layer": null,
+              "stop_reason": null,
+              "current_graph": {
+                "nodes": [
+                  {
+                    "id": "start",
+                    "type": "start",
+                    "label": "Start",
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "id": "identity_check",
+                    "type": "task",
+                    "label": "Identity Check",
+                    "x": 180,
+                    "y": 0
+                  },
+                  {
+                    "id": "risk_check",
+                    "type": "task",
+                    "label": "Risk Check",
+                    "x": 360,
+                    "y": 0
+                  },
+                  {
+                    "id": "approval",
+                    "type": "task",
+                    "label": "Approval",
+                    "x": 540,
+                    "y": 0
+                  },
+                  {
+                    "id": "manual_review",
+                    "type": "human_review",
+                    "label": "Manual Review",
+                    "x": 540,
+                    "y": 150
+                  },
+                  {
+                    "id": "reject",
+                    "type": "end",
+                    "label": "Reject",
+                    "x": 720,
+                    "y": -130
+                  },
+                  {
+                    "id": "end",
+                    "type": "end",
+                    "label": "End",
+                    "x": 720,
+                    "y": 0
+                  }
+                ],
+                "edges": [
+                  {
+                    "id": "e1",
+                    "source": "start",
+                    "target": "identity_check",
+                    "label": ""
+                  },
+                  {
+                    "id": "e2",
+                    "source": "identity_check",
+                    "target": "risk_check",
+                    "label": ""
+                  },
+                  {
+                    "id": "e3",
+                    "source": "risk_check",
+                    "target": "approval",
+                    "label": ""
+                  },
+                  {
+                    "id": "e4",
+                    "source": "approval",
+                    "target": "end",
+                    "label": ""
+                  },
+                  {
+                    "id": "e5",
+                    "source": "risk_check",
+                    "target": "reject",
+                    "label": "failure"
+                  },
+                  {
+                    "id": "e6",
+                    "source": "manual_review",
+                    "target": "risk_check",
+                    "label": "retry"
+                  }
+                ]
+              }
+            },
+            "plan": [
+              {
+                "op": "add_node",
+                "node": {
+                  "id": "new_1",
+                  "type": "task",
+                  "label": "Audit",
+                  "x": 0,
+                  "y": 0
+                }
+              },
+              {
+                "op": "remove_edge",
+                "edge_id": "e3"
+              },
+              {
+                "op": "add_edge",
+                "source": "new_1",
+                "target": "approval",
+                "label": ""
+              },
+              {
+                "op": "add_edge",
+                "source": "risk_check",
+                "target": "new_1",
+                "label": ""
+              }
+            ],
+            "resulting_version_id": "v2",
+            "status": "success",
+            "error": null
+          }
+        ]
+      }
+    },
+    {
+      "case": "MT4",
+      "description": "ambiguous history mutation reference should clarify without committing a new version",
+      "passed": true,
+      "rounds": [
+        {
+          "round_id": "round_1",
+          "instruction": "Move identity_check and risk_check 80 pixels to the right.",
+          "status": "success",
+          "version_before": "v1",
+          "version_after": "v2",
+          "correct_execution": true,
+          "correct_clarification": false,
+          "false_success": false,
+          "invalid_graph": false,
+          "unintended_change": false,
+          "first_failure_layer": null,
+          "details": {
+            "changed_nodes": [
+              "identity_check",
+              "risk_check"
+            ],
+            "steps": [
+              {
+                "op": "move_node",
+                "node_id": "identity_check",
+                "x": 260,
+                "y": 0
+              },
+              {
+                "op": "move_node",
+                "node_id": "risk_check",
+                "x": 440,
+                "y": 0
+              }
+            ],
+            "error": null,
+            "history_reference_used": false
+          }
+        },
+        {
+          "round_id": "round_2",
+          "instruction": "Undo the second one.",
+          "status": "needs_clarification",
+          "version_before": "v2",
+          "version_after": "v2",
+          "correct_execution": false,
+          "correct_clarification": true,
+          "false_success": false,
+          "invalid_graph": false,
+          "unintended_change": false,
+          "first_failure_layer": null,
+          "details": {
+            "changed_nodes": [],
+            "steps": [],
+            "error": "The instruction 'Undo the second one' is ambiguous without a clear list of recent actions.",
+            "history_reference_used": false
+          }
+        }
+      ],
+      "version_state": {
+        "versions": {
+          "v1": {
+            "version_id": "v1",
+            "parent_version_id": null,
+            "graph_snapshot": {
+              "nodes": [
+                {
+                  "id": "start",
+                  "type": "start",
+                  "label": "Start",
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "id": "identity_check",
+                  "type": "task",
+                  "label": "Identity Check",
+                  "x": 180,
+                  "y": 0
+                },
+                {
+                  "id": "risk_check",
+                  "type": "task",
+                  "label": "Risk Check",
+                  "x": 360,
+                  "y": 0
+                },
+                {
+                  "id": "approval",
+                  "type": "task",
+                  "label": "Approval",
+                  "x": 540,
+                  "y": 0
+                },
+                {
+                  "id": "manual_review",
+                  "type": "human_review",
+                  "label": "Manual Review",
+                  "x": 540,
+                  "y": 150
+                },
+                {
+                  "id": "reject",
+                  "type": "end",
+                  "label": "Reject",
+                  "x": 720,
+                  "y": -130
+                },
+                {
+                  "id": "end",
+                  "type": "end",
+                  "label": "End",
+                  "x": 720,
+                  "y": 0
+                }
+              ],
+              "edges": [
+                {
+                  "id": "e1",
+                  "source": "start",
+                  "target": "identity_check",
+                  "label": ""
+                },
+                {
+                  "id": "e2",
+                  "source": "identity_check",
+                  "target": "risk_check",
+                  "label": ""
+                },
+                {
+                  "id": "e3",
+                  "source": "risk_check",
+                  "target": "approval",
+                  "label": ""
+                },
+                {
+                  "id": "e4",
+                  "source": "approval",
+                  "target": "end",
+                  "label": ""
+                },
+                {
+                  "id": "e5",
+                  "source": "risk_check",
+                  "target": "reject",
+                  "label": "failure"
+                },
+                {
+                  "id": "e6",
+                  "source": "manual_review",
+                  "target": "risk_check",
+                  "label": "retry"
+                }
+              ]
+            },
+            "created_at": "2026-09-01T00:00:00+00:00"
+          },
+          "v2": {
+            "version_id": "v2",
+            "parent_version_id": "v1",
+            "graph_snapshot": {
+              "nodes": [
+                {
+                  "id": "start",
+                  "type": "start",
+                  "label": "Start",
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "id": "identity_check",
+                  "type": "task",
+                  "label": "Identity Check",
+                  "x": 260,
+                  "y": 0
+                },
+                {
+                  "id": "risk_check",
+                  "type": "task",
+                  "label": "Risk Check",
+                  "x": 440,
+                  "y": 0
+                },
+                {
+                  "id": "approval",
+                  "type": "task",
+                  "label": "Approval",
+                  "x": 540,
+                  "y": 0
+                },
+                {
+                  "id": "manual_review",
+                  "type": "human_review",
+                  "label": "Manual Review",
+                  "x": 540,
+                  "y": 150
+                },
+                {
+                  "id": "reject",
+                  "type": "end",
+                  "label": "Reject",
+                  "x": 720,
+                  "y": -130
+                },
+                {
+                  "id": "end",
+                  "type": "end",
+                  "label": "End",
+                  "x": 720,
+                  "y": 0
+                }
+              ],
+              "edges": [
+                {
+                  "id": "e1",
+                  "source": "start",
+                  "target": "identity_check",
+                  "label": ""
+                },
+                {
+                  "id": "e2",
+                  "source": "identity_check",
+                  "target": "risk_check",
+                  "label": ""
+                },
+                {
+                  "id": "e3",
+                  "source": "risk_check",
+                  "target": "approval",
+                  "label": ""
+                },
+                {
+                  "id": "e4",
+                  "source": "approval",
+                  "target": "end",
+                  "label": ""
+                },
+                {
+                  "id": "e5",
+                  "source": "risk_check",
+                  "target": "reject",
+                  "label": "failure"
+                },
+                {
+                  "id": "e6",
+                  "source": "manual_review",
+                  "target": "risk_check",
+                  "label": "retry"
+                }
+              ]
+            },
+            "created_at": "2026-09-02T05:52:23+00:00"
+          }
+        },
+        "version_order": [
+          "v1",
+          "v2"
+        ],
+        "current_version_id": "v2",
+        "transactions": [
+          {
+            "transaction_id": "tx1",
+            "parent_version_id": "v1",
+            "instruction": "Move identity_check and risk_check 80 pixels to the right.",
+            "selection": {
+              "node_ids": [],
+              "edge_ids": []
+            },
+            "target": {
+              "selection": {
+                "node_ids": [],
+                "edge_ids": []
+              }
+            },
+            "specification": {
+              "instruction": "Move identity_check and risk_check 80 pixels to the right.",
+              "selection": {
+                "node_ids": [],
+                "edge_ids": []
+              },
+              "request_context": {
+                "selected_node_ids": [],
+                "selected_edge_ids": [],
+                "visible_area": null,
+                "recent_transaction_diff": null
+              },
+              "grounded_requirements": [
+                {
+                  "id": "r1",
+                  "text": "Move identity_check and risk_check 80 pixels to the right.",
+                  "references": {
+                    "source_node_id": "identity_check",
+                    "target_node_id": "risk_check",
+                    "relation_type": "",
+                    "mentioned_node_ids": [
+                      "identity_check",
+                      "risk_check"
+                    ],
+                    "resolved_scope_node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ]
+                  },
+                  "grounded_desired_state": {
+                    "abstract_goals": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "target_entity_ref": "identity_check",
+                        "source_requirement_id": "r1",
+                        "derivations": {
+                          "x": "grounded_position_offset",
+                          "y": "grounded_position_offset"
+                        },
+                        "changes": {
+                          "x": 260,
+                          "y": 0
+                        }
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "target_entity_ref": "risk_check",
+                        "source_requirement_id": "r1",
+                        "derivations": {
+                          "x": "grounded_position_offset",
+                          "y": "grounded_position_offset"
+                        },
+                        "changes": {
+                          "x": 440,
+                          "y": 0
+                        }
+                      }
+                    ],
+                    "explicit_relations": [],
+                    "absent_entities": [],
+                    "clarification": {
+                      "needed": false,
+                      "question": "",
+                      "reason": ""
+                    },
+                    "scope_policy": {
+                      "kind": "global",
+                      "node_ids": [
+                        "approval",
+                        "end",
+                        "identity_check",
+                        "manual_review",
+                        "reject",
+                        "risk_check",
+                        "start"
+                      ]
+                    }
+                  }
+                }
+              ],
+              "grounded_references": [
+                {
+                  "source_node_id": "identity_check",
+                  "target_node_id": "risk_check",
+                  "relation_type": "",
+                  "mentioned_node_ids": [
+                    "identity_check",
+                    "risk_check"
+                  ],
+                  "resolved_scope_node_ids": [
+                    "approval",
+                    "end",
+                    "identity_check",
+                    "manual_review",
+                    "reject",
+                    "risk_check",
+                    "start"
+                  ]
+                }
+              ],
+              "spec_units": [
+                {
+                  "unit_id": "u1",
+                  "requirement_ids": [
+                    "r1"
+                  ],
+                  "requirements": [
+                    {
+                      "id": "r1",
+                      "text": "Move identity_check and risk_check 80 pixels to the right.",
+                      "references": {
+                        "source_node_id": "identity_check",
+                        "target_node_id": "risk_check",
+                        "relation_type": "",
+                        "mentioned_node_ids": [
+                          "identity_check",
+                          "risk_check"
+                        ],
+                        "resolved_scope_node_ids": [
+                          "approval",
+                          "end",
+                          "identity_check",
+                          "manual_review",
+                          "reject",
+                          "risk_check",
+                          "start"
+                        ]
+                      },
+                      "grounded_desired_state": {
+                        "abstract_goals": [],
+                        "properties": [
+                          {
+                            "node_id": "identity_check",
+                            "target_entity_ref": "identity_check",
+                            "source_requirement_id": "r1",
+                            "derivations": {
+                              "x": "grounded_position_offset",
+                              "y": "grounded_position_offset"
+                            },
+                            "changes": {
+                              "x": 260,
+                              "y": 0
+                            }
+                          },
+                          {
+                            "node_id": "risk_check",
+                            "target_entity_ref": "risk_check",
+                            "source_requirement_id": "r1",
+                            "derivations": {
+                              "x": "grounded_position_offset",
+                              "y": "grounded_position_offset"
+                            },
+                            "changes": {
+                              "x": 440,
+                              "y": 0
+                            }
+                          }
+                        ],
+                        "explicit_relations": [],
+                        "absent_entities": [],
+                        "clarification": {
+                          "needed": false,
+                          "question": "",
+                          "reason": ""
+                        },
+                        "scope_policy": {
+                          "kind": "global",
+                          "node_ids": [
+                            "approval",
+                            "end",
+                            "identity_check",
+                            "manual_review",
+                            "reject",
+                            "risk_check",
+                            "start"
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "references": [
+                    {
+                      "source_node_id": "identity_check",
+                      "target_node_id": "risk_check",
+                      "relation_type": "",
+                      "mentioned_node_ids": [
+                        "identity_check",
+                        "risk_check"
+                      ],
+                      "resolved_scope_node_ids": [
+                        "approval",
+                        "end",
+                        "identity_check",
+                        "manual_review",
+                        "reject",
+                        "risk_check",
+                        "start"
+                      ]
+                    }
+                  ],
+                  "local_graph_facts": {
+                    "node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "context_node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "edge_ids": [
+                      "e1",
+                      "e2",
+                      "e3",
+                      "e4",
+                      "e5",
+                      "e6"
+                    ],
+                    "relation_types": [
+                      ""
+                    ]
+                  },
+                  "signature": {
+                    "kind": "topology",
+                    "nodes": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "relation_types": [
+                      ""
+                    ]
+                  }
+                }
+              ],
+              "requirement_conservation": {
+                "grounded_requirement_ids": [
+                  "r1"
+                ],
+                "owner_mapping": {
+                  "r1": "u1"
+                },
+                "missing_owners": [],
+                "duplicate_owners": {},
+                "valid": true
+              },
+              "unit_contracts": [
+                {
+                  "allowed_structural_relation_types": [],
+                  "allowed_auxiliary_relation_types": [],
+                  "allowed_auxiliary_relation_groups": [],
+                  "allowed_existing_node_ids": [
+                    "approval",
+                    "end",
+                    "identity_check",
+                    "manual_review",
+                    "reject",
+                    "risk_check",
+                    "start"
+                  ],
+                  "allow_new_entities": false,
+                  "allowed_property_targets": [
+                    "identity_check",
+                    "risk_check"
+                  ],
+                  "allow_absent_entities": false
+                }
+              ],
+              "global_obligations": {
+                "auxiliary": [],
+                "properties": [
+                  {
+                    "node_id": "identity_check",
+                    "target_entity_ref": "identity_check",
+                    "property": "x",
+                    "kind": "x",
+                    "value": 260,
+                    "source_requirement_id": "r1",
+                    "derivation": "grounded_position_offset"
+                  },
+                  {
+                    "node_id": "identity_check",
+                    "target_entity_ref": "identity_check",
+                    "property": "y",
+                    "kind": "y",
+                    "value": 0,
+                    "source_requirement_id": "r1",
+                    "derivation": "grounded_position_offset"
+                  },
+                  {
+                    "node_id": "risk_check",
+                    "target_entity_ref": "risk_check",
+                    "property": "x",
+                    "kind": "x",
+                    "value": 440,
+                    "source_requirement_id": "r1",
+                    "derivation": "grounded_position_offset"
+                  },
+                  {
+                    "node_id": "risk_check",
+                    "target_entity_ref": "risk_check",
+                    "property": "y",
+                    "kind": "y",
+                    "value": 0,
+                    "source_requirement_id": "r1",
+                    "derivation": "grounded_position_offset"
+                  }
+                ],
+                "entity_create": false,
+                "absent_entities": []
+              },
+              "unit_runs": [
+                {
+                  "unit_id": "u1",
+                  "requirements": [
+                    {
+                      "id": "r1",
+                      "text": "Move identity_check and risk_check 80 pixels to the right.",
+                      "references": {
+                        "source_node_id": "identity_check",
+                        "target_node_id": "risk_check",
+                        "relation_type": "",
+                        "mentioned_node_ids": [
+                          "identity_check",
+                          "risk_check"
+                        ],
+                        "resolved_scope_node_ids": [
+                          "approval",
+                          "end",
+                          "identity_check",
+                          "manual_review",
+                          "reject",
+                          "risk_check",
+                          "start"
+                        ]
+                      },
+                      "grounded_desired_state": {
+                        "abstract_goals": [],
+                        "properties": [
+                          {
+                            "node_id": "identity_check",
+                            "target_entity_ref": "identity_check",
+                            "source_requirement_id": "r1",
+                            "derivations": {
+                              "x": "grounded_position_offset",
+                              "y": "grounded_position_offset"
+                            },
+                            "changes": {
+                              "x": 260,
+                              "y": 0
+                            }
+                          },
+                          {
+                            "node_id": "risk_check",
+                            "target_entity_ref": "risk_check",
+                            "source_requirement_id": "r1",
+                            "derivations": {
+                              "x": "grounded_position_offset",
+                              "y": "grounded_position_offset"
+                            },
+                            "changes": {
+                              "x": 440,
+                              "y": 0
+                            }
+                          }
+                        ],
+                        "explicit_relations": [],
+                        "absent_entities": [],
+                        "clarification": {
+                          "needed": false,
+                          "question": "",
+                          "reason": ""
+                        },
+                        "scope_policy": {
+                          "kind": "global",
+                          "node_ids": [
+                            "approval",
+                            "end",
+                            "identity_check",
+                            "manual_review",
+                            "reject",
+                            "risk_check",
+                            "start"
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "references": [
+                    {
+                      "source_node_id": "identity_check",
+                      "target_node_id": "risk_check",
+                      "relation_type": "",
+                      "mentioned_node_ids": [
+                        "identity_check",
+                        "risk_check"
+                      ],
+                      "resolved_scope_node_ids": [
+                        "approval",
+                        "end",
+                        "identity_check",
+                        "manual_review",
+                        "reject",
+                        "risk_check",
+                        "start"
+                      ]
+                    }
+                  ],
+                  "graph_context": {
+                    "nodes": [
+                      {
+                        "id": "start",
+                        "type": "start",
+                        "label": "Start",
+                        "x": 0,
+                        "y": 0
+                      },
+                      {
+                        "id": "identity_check",
+                        "type": "task",
+                        "label": "Identity Check",
+                        "x": 180,
+                        "y": 0
+                      },
+                      {
+                        "id": "risk_check",
+                        "type": "task",
+                        "label": "Risk Check",
+                        "x": 360,
+                        "y": 0
+                      },
+                      {
+                        "id": "approval",
+                        "type": "task",
+                        "label": "Approval",
+                        "x": 540,
+                        "y": 0
+                      },
+                      {
+                        "id": "manual_review",
+                        "type": "human_review",
+                        "label": "Manual Review",
+                        "x": 540,
+                        "y": 150
+                      },
+                      {
+                        "id": "reject",
+                        "type": "end",
+                        "label": "Reject",
+                        "x": 720,
+                        "y": -130
+                      },
+                      {
+                        "id": "end",
+                        "type": "end",
+                        "label": "End",
+                        "x": 720,
+                        "y": 0
+                      }
+                    ],
+                    "edges": [
+                      {
+                        "id": "e1",
+                        "source": "start",
+                        "target": "identity_check",
+                        "label": ""
+                      },
+                      {
+                        "id": "e2",
+                        "source": "identity_check",
+                        "target": "risk_check",
+                        "label": ""
+                      },
+                      {
+                        "id": "e3",
+                        "source": "risk_check",
+                        "target": "approval",
+                        "label": ""
+                      },
+                      {
+                        "id": "e4",
+                        "source": "approval",
+                        "target": "end",
+                        "label": ""
+                      },
+                      {
+                        "id": "e5",
+                        "source": "risk_check",
+                        "target": "reject",
+                        "label": "failure"
+                      },
+                      {
+                        "id": "e6",
+                        "source": "manual_review",
+                        "target": "risk_check",
+                        "label": "retry"
+                      }
+                    ]
+                  },
+                  "unit_contract": {
+                    "allowed_structural_relation_types": [],
+                    "allowed_auxiliary_relation_types": [],
+                    "allowed_auxiliary_relation_groups": [],
+                    "allowed_existing_node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "allow_new_entities": false,
+                    "allowed_property_targets": [
+                      "identity_check",
+                      "risk_check"
+                    ],
+                    "allow_absent_entities": false
+                  },
+                  "obligations": {
+                    "auxiliary": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "target_entity_ref": "identity_check",
+                        "property": "x",
+                        "kind": "x",
+                        "value": 260,
+                        "source_requirement_id": "r1",
+                        "derivation": "grounded_position_offset"
+                      },
+                      {
+                        "node_id": "identity_check",
+                        "target_entity_ref": "identity_check",
+                        "property": "y",
+                        "kind": "y",
+                        "value": 0,
+                        "source_requirement_id": "r1",
+                        "derivation": "grounded_position_offset"
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "target_entity_ref": "risk_check",
+                        "property": "x",
+                        "kind": "x",
+                        "value": 440,
+                        "source_requirement_id": "r1",
+                        "derivation": "grounded_position_offset"
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "target_entity_ref": "risk_check",
+                        "property": "y",
+                        "kind": "y",
+                        "value": 0,
+                        "source_requirement_id": "r1",
+                        "derivation": "grounded_position_offset"
+                      }
+                    ],
+                    "entity_create": false,
+                    "absent_entities": [],
+                    "structural_participants": [],
+                    "abstract_goals": [],
+                    "entity_specs": []
+                  },
+                  "target_skeleton": {
+                    "entities": [],
+                    "absent_entities": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "x": 260
+                        }
+                      },
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "y": 0
+                        }
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "changes": {
+                          "x": 440
+                        }
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "changes": {
+                          "y": 0
+                        }
+                      }
+                    ],
+                    "structural_regions": [],
+                    "explicit_relations": []
+                  },
+                  "semantic_slots": {
+                    "structural_regions": []
+                  },
+                  "abstract_goal_validation": [],
+                  "obligation_realization": {
+                    "owner_unit_id": "u1",
+                    "realizations": {
+                      "property:{\"derivation\": \"grounded_position_offset\", \"kind\": \"x\", \"node_id\": \"identity_check\", \"property\": \"x\", \"source_requirement_id\": \"r1\", \"target_entity_ref\": \"identity_check\", \"value\": 260}": {
+                        "owner_unit_id": "u1",
+                        "realization_mode": "deterministic_fact"
+                      },
+                      "property:{\"derivation\": \"grounded_position_offset\", \"kind\": \"y\", \"node_id\": \"identity_check\", \"property\": \"y\", \"source_requirement_id\": \"r1\", \"target_entity_ref\": \"identity_check\", \"value\": 0}": {
+                        "owner_unit_id": "u1",
+                        "realization_mode": "deterministic_fact"
+                      },
+                      "property:{\"derivation\": \"grounded_position_offset\", \"kind\": \"x\", \"node_id\": \"risk_check\", \"property\": \"x\", \"source_requirement_id\": \"r1\", \"target_entity_ref\": \"risk_check\", \"value\": 440}": {
+                        "owner_unit_id": "u1",
+                        "realization_mode": "deterministic_fact"
+                      },
+                      "property:{\"derivation\": \"grounded_position_offset\", \"kind\": \"y\", \"node_id\": \"risk_check\", \"property\": \"y\", \"source_requirement_id\": \"r1\", \"target_entity_ref\": \"risk_check\", \"value\": 0}": {
+                        "owner_unit_id": "u1",
+                        "realization_mode": "deterministic_fact"
+                      }
+                    },
+                    "orphan_obligations": [],
+                    "duplicate_realizations": {},
+                    "obligation_realization_complete": true,
+                    "deterministic_facts_count": 4,
+                    "semantic_slots_count": 0
+                  },
+                  "llm_generation_required": false,
+                  "generation_view": {
+                    "allowed_structural_relation_types": [],
+                    "allowed_auxiliary_relation_types": [],
+                    "allowed_auxiliary_relation_groups": [],
+                    "allowed_existing_node_ids": [],
+                    "allow_new_entities": false,
+                    "allowed_property_targets": [],
+                    "allow_absent_entities": false
+                  },
+                  "generation_requirements": [],
+                  "generation_references": [],
+                  "raw_ir": null,
+                  "parse_error": null,
+                  "first_pass_ir_valid": true,
+                  "schema_retry_triggered": false,
+                  "schema_retry_recovered": false,
+                  "canonicalization_used": false,
+                  "projection_used": false,
+                  "projected_ir": {
+                    "control_flow_regions": [],
+                    "auxiliary_relations": [],
+                    "absent_entities": [],
+                    "properties": []
+                  },
+                  "structural_participant_coverage": true,
+                  "final_ir": {
+                    "control_flow_regions": [],
+                    "auxiliary_relations": [],
+                    "absent_entities": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "x": 260
+                        }
+                      },
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "y": 0
+                        }
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "changes": {
+                          "x": 440
+                        }
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "changes": {
+                          "y": 0
+                        }
+                      }
+                    ]
+                  },
+                  "obligation_coverage": true,
+                  "obligation_errors": [],
+                  "compiled": {
+                    "entities": [],
+                    "control_flow_regions": [],
+                    "auxiliary_relations": [],
+                    "absent_entities": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "x": 260,
+                          "y": 0
+                        }
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "changes": {
+                          "x": 440,
+                          "y": 0
+                        }
+                      }
+                    ]
+                  },
+                  "constraints": {
+                    "entities": [],
+                    "absent_entities": [],
+                    "properties": [
+                      {
+                        "node_id": "identity_check",
+                        "changes": {
+                          "x": 260
+                        }
+                      },
+                      {
+                        "node_id": "risk_check",
+                        "changes": {
+                          "x": 440
+                        }
+                      }
+                    ],
+                    "edge_properties": [],
+                    "required_relations": [],
+                    "forbidden_relations": [],
+                    "preserve": {
+                      "node_ids": [
+                        "approval",
+                        "end",
+                        "identity_check",
+                        "manual_review",
+                        "reject",
+                        "risk_check",
+                        "start"
+                      ],
+                      "edge_ids": [],
+                      "outside_specification": true
+                    }
+                  },
+                  "property_target_provenance_valid": true,
+                  "property_target_provenance_errors": []
+                }
+              ],
+              "merged_constraints": {
+                "entities": [],
+                "absent_entities": [],
+                "properties": [
+                  {
+                    "node_id": "identity_check",
+                    "changes": {
+                      "x": 260
+                    }
+                  },
+                  {
+                    "node_id": "risk_check",
+                    "changes": {
+                      "x": 440
+                    }
+                  }
+                ],
+                "edge_properties": [],
+                "required_relations": [],
+                "forbidden_relations": [],
+                "preserve": {
+                  "node_ids": [
+                    "approval",
+                    "end",
+                    "identity_check",
+                    "manual_review",
+                    "reject",
+                    "risk_check",
+                    "start"
+                  ],
+                  "edge_ids": [],
+                  "outside_specification": true
+                }
+              },
+              "planner": {
+                "supported": true,
+                "reason": null,
+                "steps": [
+                  {
+                    "op": "move_node",
+                    "node_id": "identity_check",
+                    "x": 260,
+                    "y": 0
+                  },
+                  {
+                    "op": "move_node",
+                    "node_id": "risk_check",
+                    "x": 440,
+                    "y": 0
+                  }
+                ],
+                "mutation_authorization": [
+                  {
+                    "step": {
+                      "op": "move_node",
+                      "node_id": "identity_check",
+                      "x": 260,
+                      "y": 0
+                    },
+                    "constraint_rule": "property_equals",
+                    "constraint": {
+                      "node_id": "identity_check",
+                      "changes": {
+                        "x": 260
+                      }
+                    }
+                  },
+                  {
+                    "step": {
+                      "op": "move_node",
+                      "node_id": "risk_check",
+                      "x": 440,
+                      "y": 0
+                    },
+                    "constraint_rule": "property_equals",
+                    "constraint": {
+                      "node_id": "risk_check",
+                      "changes": {
+                        "x": 440
+                      }
+                    }
+                  }
+                ],
+                "constraints": {
+                  "entities": [],
+                  "absent_entities": [],
+                  "properties": [
+                    {
+                      "node_id": "identity_check",
+                      "changes": {
+                        "x": 260
+                      }
+                    },
+                    {
+                      "node_id": "risk_check",
+                      "changes": {
+                        "x": 440
+                      }
+                    }
+                  ],
+                  "edge_properties": [],
+                  "required_relations": [],
+                  "forbidden_relations": [],
+                  "preserve": {
+                    "node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "edge_ids": [],
+                    "outside_specification": true
+                  }
+                },
+                "entity_ids": {}
+              },
+              "stop_layer": null,
+              "stop_reason": null,
+              "current_graph": {
+                "nodes": [
+                  {
+                    "id": "start",
+                    "type": "start",
+                    "label": "Start",
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "id": "identity_check",
+                    "type": "task",
+                    "label": "Identity Check",
+                    "x": 180,
+                    "y": 0
+                  },
+                  {
+                    "id": "risk_check",
+                    "type": "task",
+                    "label": "Risk Check",
+                    "x": 360,
+                    "y": 0
+                  },
+                  {
+                    "id": "approval",
+                    "type": "task",
+                    "label": "Approval",
+                    "x": 540,
+                    "y": 0
+                  },
+                  {
+                    "id": "manual_review",
+                    "type": "human_review",
+                    "label": "Manual Review",
+                    "x": 540,
+                    "y": 150
+                  },
+                  {
+                    "id": "reject",
+                    "type": "end",
+                    "label": "Reject",
+                    "x": 720,
+                    "y": -130
+                  },
+                  {
+                    "id": "end",
+                    "type": "end",
+                    "label": "End",
+                    "x": 720,
+                    "y": 0
+                  }
+                ],
+                "edges": [
+                  {
+                    "id": "e1",
+                    "source": "start",
+                    "target": "identity_check",
+                    "label": ""
+                  },
+                  {
+                    "id": "e2",
+                    "source": "identity_check",
+                    "target": "risk_check",
+                    "label": ""
+                  },
+                  {
+                    "id": "e3",
+                    "source": "risk_check",
+                    "target": "approval",
+                    "label": ""
+                  },
+                  {
+                    "id": "e4",
+                    "source": "approval",
+                    "target": "end",
+                    "label": ""
+                  },
+                  {
+                    "id": "e5",
+                    "source": "risk_check",
+                    "target": "reject",
+                    "label": "failure"
+                  },
+                  {
+                    "id": "e6",
+                    "source": "manual_review",
+                    "target": "risk_check",
+                    "label": "retry"
+                  }
+                ]
+              }
+            },
+            "plan": [
+              {
+                "op": "move_node",
+                "node_id": "identity_check",
+                "x": 260,
+                "y": 0
+              },
+              {
+                "op": "move_node",
+                "node_id": "risk_check",
+                "x": 440,
+                "y": 0
+              }
+            ],
+            "resulting_version_id": "v2",
+            "status": "success",
+            "error": null
+          },
+          {
+            "transaction_id": "tx2",
+            "parent_version_id": "v2",
+            "instruction": "Undo the second one.",
+            "selection": {
+              "node_ids": [],
+              "edge_ids": []
+            },
+            "target": {
+              "selection": {
+                "node_ids": [],
+                "edge_ids": []
+              }
+            },
+            "specification": {
+              "instruction": "Undo the second one.",
+              "selection": {
+                "node_ids": [],
+                "edge_ids": []
+              },
+              "request_context": {
+                "selected_node_ids": [],
+                "selected_edge_ids": [],
+                "visible_area": null,
+                "recent_transaction_diff": {
+                  "transaction_id": "tx1",
+                  "from_version_id": "v1",
+                  "to_version_id": "v2",
+                  "instruction": "Move identity_check and risk_check 80 pixels to the right.",
+                  "mutations": [
+                    {
+                      "mutation_id": "tx1.m1",
+                      "kind": "property",
+                      "target_entity_id": "identity_check",
+                      "property": "x",
+                      "before": 180,
+                      "after": 260
+                    },
+                    {
+                      "mutation_id": "tx1.m2",
+                      "kind": "property",
+                      "target_entity_id": "risk_check",
+                      "property": "x",
+                      "before": 360,
+                      "after": 440
+                    }
+                  ]
+                }
+              },
+              "grounded_requirements": [
+                {
+                  "id": "r1",
+                  "text": "Undo the second one.",
+                  "references": {
+                    "resolved_scope_node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ]
+                  },
+                  "grounded_desired_state": {
+                    "abstract_goals": [],
+                    "properties": [],
+                    "explicit_relations": [],
+                    "absent_entities": [],
+                    "clarification": {
+                      "needed": true,
+                      "question": "Which action is 'the second one'? Please specify the exact edit to undo.",
+                      "reason": "The instruction 'Undo the second one' is ambiguous without a clear list of recent actions."
+                    },
+                    "scope_policy": {
+                      "kind": "global",
+                      "node_ids": [
+                        "approval",
+                        "end",
+                        "identity_check",
+                        "manual_review",
+                        "reject",
+                        "risk_check",
+                        "start"
+                      ]
+                    }
+                  }
+                }
+              ],
+              "grounded_references": [
+                {
+                  "resolved_scope_node_ids": [
+                    "approval",
+                    "end",
+                    "identity_check",
+                    "manual_review",
+                    "reject",
+                    "risk_check",
+                    "start"
+                  ]
+                }
+              ],
+              "spec_units": [
+                {
+                  "unit_id": "u1",
+                  "requirement_ids": [
+                    "r1"
+                  ],
+                  "requirements": [
+                    {
+                      "id": "r1",
+                      "text": "Undo the second one.",
+                      "references": {
+                        "resolved_scope_node_ids": [
+                          "approval",
+                          "end",
+                          "identity_check",
+                          "manual_review",
+                          "reject",
+                          "risk_check",
+                          "start"
+                        ]
+                      },
+                      "grounded_desired_state": {
+                        "abstract_goals": [],
+                        "properties": [],
+                        "explicit_relations": [],
+                        "absent_entities": [],
+                        "clarification": {
+                          "needed": true,
+                          "question": "Which action is 'the second one'? Please specify the exact edit to undo.",
+                          "reason": "The instruction 'Undo the second one' is ambiguous without a clear list of recent actions."
+                        },
+                        "scope_policy": {
+                          "kind": "global",
+                          "node_ids": [
+                            "approval",
+                            "end",
+                            "identity_check",
+                            "manual_review",
+                            "reject",
+                            "risk_check",
+                            "start"
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "references": [
+                    {
+                      "resolved_scope_node_ids": [
+                        "approval",
+                        "end",
+                        "identity_check",
+                        "manual_review",
+                        "reject",
+                        "risk_check",
+                        "start"
+                      ]
+                    }
+                  ],
+                  "local_graph_facts": {
+                    "node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "context_node_ids": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "edge_ids": [
+                      "e1",
+                      "e2",
+                      "e3",
+                      "e4",
+                      "e5",
+                      "e6"
+                    ],
+                    "relation_types": [
+                      "",
+                      "failure",
+                      "retry"
+                    ]
+                  },
+                  "signature": {
+                    "kind": "topology",
+                    "nodes": [
+                      "approval",
+                      "end",
+                      "identity_check",
+                      "manual_review",
+                      "reject",
+                      "risk_check",
+                      "start"
+                    ],
+                    "relation_types": [
+                      "",
+                      "failure",
+                      "retry"
+                    ]
+                  }
+                }
+              ],
+              "requirement_conservation": {
+                "grounded_requirement_ids": [
+                  "r1"
+                ],
+                "owner_mapping": {
+                  "r1": "u1"
+                },
+                "missing_owners": [],
+                "duplicate_owners": {},
+                "valid": true
+              },
+              "unit_contracts": [
+                {
+                  "allowed_structural_relation_types": [],
+                  "allowed_auxiliary_relation_types": [],
+                  "allowed_auxiliary_relation_groups": [],
+                  "allowed_existing_node_ids": [
+                    "approval",
+                    "end",
+                    "identity_check",
+                    "manual_review",
+                    "reject",
+                    "risk_check",
+                    "start"
+                  ],
+                  "allow_new_entities": false,
+                  "allowed_property_targets": [],
+                  "allow_absent_entities": false
+                }
+              ],
+              "global_obligations": {
+                "auxiliary": [],
+                "properties": [],
+                "entity_create": false,
+                "absent_entities": []
+              },
+              "unit_runs": [],
+              "merged_constraints": null,
+              "planner": null,
+              "stop_layer": "Ground",
+              "stop_reason": "The instruction 'Undo the second one' is ambiguous without a clear list of recent actions.",
+              "current_graph": {
+                "nodes": [
+                  {
+                    "id": "start",
+                    "type": "start",
+                    "label": "Start",
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "id": "identity_check",
+                    "type": "task",
+                    "label": "Identity Check",
+                    "x": 260,
+                    "y": 0
+                  },
+                  {
+                    "id": "risk_check",
+                    "type": "task",
+                    "label": "Risk Check",
+                    "x": 440,
+                    "y": 0
+                  },
+                  {
+                    "id": "approval",
+                    "type": "task",
+                    "label": "Approval",
+                    "x": 540,
+                    "y": 0
+                  },
+                  {
+                    "id": "manual_review",
+                    "type": "human_review",
+                    "label": "Manual Review",
+                    "x": 540,
+                    "y": 150
+                  },
+                  {
+                    "id": "reject",
+                    "type": "end",
+                    "label": "Reject",
+                    "x": 720,
+                    "y": -130
+                  },
+                  {
+                    "id": "end",
+                    "type": "end",
+                    "label": "End",
+                    "x": 720,
+                    "y": 0
+                  }
+                ],
+                "edges": [
+                  {
+                    "id": "e1",
+                    "source": "start",
+                    "target": "identity_check",
+                    "label": ""
+                  },
+                  {
+                    "id": "e2",
+                    "source": "identity_check",
+                    "target": "risk_check",
+                    "label": ""
+                  },
+                  {
+                    "id": "e3",
+                    "source": "risk_check",
+                    "target": "approval",
+                    "label": ""
+                  },
+                  {
+                    "id": "e4",
+                    "source": "approval",
+                    "target": "end",
+                    "label": ""
+                  },
+                  {
+                    "id": "e5",
+                    "source": "risk_check",
+                    "target": "reject",
+                    "label": "failure"
+                  },
+                  {
+                    "id": "e6",
+                    "source": "manual_review",
+                    "target": "risk_check",
+                    "label": "retry"
+                  }
+                ]
+              },
+              "clarification": {
+                "needed": true,
+                "question": "Which action is 'the second one'? Please specify the exact edit to undo.",
+                "reason": "The instruction 'Undo the second one' is ambiguous without a clear list of recent actions."
+              }
+            },
+            "plan": [],
+            "resulting_version_id": null,
+            "status": "needs_clarification",
+            "error": "The instruction 'Undo the second one' is ambiguous without a clear list of recent actions."
+          }
+        ]
+      },
+      "archived_parallel_fixture": {
+        "instruction": "Make identity_check and risk_check parallel before approval, and approval waits for all incoming.",
+        "archived_reason": "Projection: required structural participants not fully realized",
+        "counted_in_multiturn_acceptance": false
+      }
+    }
+  ]
+}

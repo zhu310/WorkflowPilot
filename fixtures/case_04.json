@@ -1,0 +1,34 @@
+{
+  "case_id": "case_04",
+  "title": "修改 decision 分支目标",
+  "instruction": "把“材料齐全？”的“否”分支改为流向“人工补件”，不要改动“是”分支和其他节点。",
+  "graph": {
+    "nodes": [
+      {"id": "start", "type": "start", "label": "开始", "x": 0, "y": 0},
+      {"id": "check", "type": "decision", "label": "材料齐全？", "x": 240, "y": 0},
+      {"id": "approve", "type": "task", "label": "自动审批", "x": 480, "y": -120},
+      {"id": "manual", "type": "human_review", "label": "人工补件", "x": 480, "y": 120},
+      {"id": "reject", "type": "task", "label": "驳回申请", "x": 480, "y": 280},
+      {"id": "end", "type": "end", "label": "结束", "x": 720, "y": 0}
+    ],
+    "edges": [
+      {"id": "e1", "source": "start", "target": "check", "label": ""},
+      {"id": "e2", "source": "check", "target": "approve", "label": "是"},
+      {"id": "e3", "source": "check", "target": "reject", "label": "否"},
+      {"id": "e4", "source": "approve", "target": "end", "label": ""},
+      {"id": "e5", "source": "manual", "target": "end", "label": ""},
+      {"id": "e6", "source": "reject", "target": "end", "label": ""}
+    ]
+  },
+  "acceptance": {
+    "node_delta": 0,
+    "edge_delta": 0,
+    "unchanged_node_ids": ["start", "check", "approve", "manual", "reject", "end"],
+    "expected_edges": [
+      {"source": "check", "target": "approve", "label": "是"},
+      {"source": "check", "target": "manual", "label": "否"}
+    ],
+    "forbidden_edges": [{"source": "check", "target": "reject", "label": "否"}]
+  },
+  "human_review_points": ["仅“否”分支目标从 reject 改成 manual", "manual 原有到 end 的连线保持存在"]
+}

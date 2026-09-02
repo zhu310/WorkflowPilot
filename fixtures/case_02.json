@@ -1,0 +1,33 @@
+{
+  "case_id": "case_02",
+  "title": "在线性流程中插入节点",
+  "instruction": "在“提交申请”和“经理审批”之间新增一个 task 节点，文案为“预算校验”，并让流程依次经过它。不要修改开始、结束和其他已有节点的文案。",
+  "graph": {
+    "nodes": [
+      {"id": "start", "type": "start", "label": "开始", "x": 0, "y": 0},
+      {"id": "submit", "type": "task", "label": "提交申请", "x": 220, "y": 0},
+      {"id": "approve", "type": "task", "label": "经理审批", "x": 440, "y": 0},
+      {"id": "end", "type": "end", "label": "结束", "x": 660, "y": 0}
+    ],
+    "edges": [
+      {"id": "e1", "source": "start", "target": "submit", "label": ""},
+      {"id": "e2", "source": "submit", "target": "approve", "label": ""},
+      {"id": "e3", "source": "approve", "target": "end", "label": ""}
+    ]
+  },
+  "acceptance": {
+    "node_delta": 1,
+    "edge_delta": 1,
+    "unchanged_node_ids": ["start", "submit", "approve", "end"],
+    "expected_nodes": [{"type": "task", "label": "预算校验"}],
+    "expected_edges": [
+      {"source": "start", "target": "submit"},
+      {"source": "approve", "target": "end"}
+    ],
+    "forbidden_edges": [{"source": "submit", "target": "approve"}],
+    "required_paths": [
+      ["submit", {"type": "task", "label": "预算校验"}, "approve"]
+    ]
+  },
+  "human_review_points": ["新增节点位于提交申请和经理审批之间", "新增节点同时接收 submit 入边并指向 approve 出边", "布局没有与现有节点严重重叠"]
+}

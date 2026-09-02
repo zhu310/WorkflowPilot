@@ -1,0 +1,75 @@
+{
+  "total_cases": 5100,
+  "context": {
+    "total_cases": 1500,
+    "category_counts": {
+      "single_node": 150,
+      "edge_target": 150,
+      "multi_target": 150,
+      "fan_out": 150,
+      "fan_in": 150,
+      "retry_cycle": 150,
+      "labeled_failure": 150,
+      "hub": 150,
+      "disconnected": 150,
+      "large_graph": 150
+    },
+    "context_correctness": 1.0,
+    "target_centered_locality": 1.0,
+    "context_object_mutation_authority": 0,
+    "failures": []
+  },
+  "planner": {
+    "total_cases": 1600,
+    "category_counts": {
+      "entity_create": 100,
+      "entity_delete": 100,
+      "property_update": 100,
+      "move": 100,
+      "required_relation": 100,
+      "forbidden_relation": 100,
+      "edge_property": 100,
+      "insert": 100,
+      "redirect": 100,
+      "parallel": 100,
+      "retry": 100,
+      "failure_route": 100,
+      "move_after": 100,
+      "mixed": 100,
+      "conflict": 100,
+      "preserve": 100
+    },
+    "planning_correctness": 1.0,
+    "minimal_diff_correctness": 1.0,
+    "duplicate_relation_rate": 0.0,
+    "failures": []
+  },
+  "executor": {
+    "total_cases": 1000,
+    "category_counts": {
+      "extra_step": 125,
+      "change_target": 125,
+      "change_value": 125,
+      "replace_edge_id": 125,
+      "drop_provenance": 125,
+      "duplicate_execution": 125,
+      "invalid_reference": 125,
+      "step_reorder": 125
+    },
+    "unauthorized_mutation_rate": 0.0,
+    "invalid_graph_rate": 0.0,
+    "failures": []
+  },
+  "version": {
+    "total_cases": 1000,
+    "category_counts": {
+      "sequence": 1000
+    },
+    "graph_snapshot_exact_match": 1.0,
+    "current_version_pointer_correct": 1.0,
+    "redo_invalidation_correct": 1.0,
+    "failed_transaction_no_commit": 1.0,
+    "rollback_mismatch_rate": 0.0,
+    "failures": []
+  }
+}

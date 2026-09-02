@@ -1,0 +1,8 @@
+{
+  "case_id":"case_08", "title":"新增判断及补救分支", "instruction":"在“提交申请”之前新增一个 decision 节点“格式正确？”。“是”进入提交申请；“否”进入新增的 human_review 节点“人工修正”，人工修正后返回格式正确？。",
+  "graph":{"nodes":[
+    {"id":"start","type":"start","label":"开始","x":0,"y":0}, {"id":"submit","type":"task","label":"提交申请","x":300,"y":0}, {"id":"end","type":"end","label":"结束","x":600,"y":0}
+  ],"edges":[{"id":"e1","source":"start","target":"submit","label":""},{"id":"e2","source":"submit","target":"end","label":""}]},
+  "acceptance":{"node_delta":2,"edge_delta":3,"unchanged_node_ids":["start","submit","end"],"expected_nodes":[{"type":"decision","label":"格式正确？"},{"type":"human_review","label":"人工修正"}],"forbidden_edges":[{"source":"start","target":"submit"}],"expected_edges":[{"source":"submit","target":"end"}]},
+  "human_review_points":["开始先进入判断", "是分支到提交，否分支到人工修正", "人工修正回到判断"]
+}

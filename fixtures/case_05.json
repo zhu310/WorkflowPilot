@@ -1,0 +1,12 @@
+{
+  "case_id": "case_05",
+  "title": "汇聚失败分支",
+  "instruction": "将“材料齐全？”和“预算充足？”两个判断的“否”分支都汇聚到一个新增的 human_review 节点“人工处理”，然后再结束。不要改变两个“是”分支。",
+  "graph": {"nodes": [
+    {"id":"start","type":"start","label":"开始","x":0,"y":0}, {"id":"doc","type":"decision","label":"材料齐全？","x":200,"y":0}, {"id":"budget","type":"decision","label":"预算充足？","x":400,"y":0}, {"id":"approve","type":"task","label":"自动批准","x":600,"y":-100}, {"id":"end","type":"end","label":"结束","x":800,"y":0}
+  ], "edges": [
+    {"id":"e1","source":"start","target":"doc","label":""}, {"id":"e2","source":"doc","target":"budget","label":"是"}, {"id":"e3","source":"doc","target":"end","label":"否"}, {"id":"e4","source":"budget","target":"approve","label":"是"}, {"id":"e5","source":"budget","target":"end","label":"否"}, {"id":"e6","source":"approve","target":"end","label":""}
+  ]},
+  "acceptance": {"node_delta":1,"edge_delta":1,"unchanged_node_ids":["start","doc","budget","approve","end"],"expected_nodes":[{"type":"human_review","label":"人工处理"}],"expected_edges":[{"source":"doc","target":"budget","label":"是"},{"source":"budget","target":"approve","label":"是"}],"forbidden_edges":[{"source":"doc","target":"end","label":"否"},{"source":"budget","target":"end","label":"否"}]},
+  "human_review_points": ["两个否分支指向同一新增节点", "人工处理再指向结束", "成功路径未受影响"]
+}

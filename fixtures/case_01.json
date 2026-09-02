@@ -1,0 +1,28 @@
+{
+  "case_id": "case_01",
+  "title": "修改单节点文案",
+  "instruction": "把“填写申请”改为“填写采购申请”，不要修改其他节点或连线。",
+  "graph": {
+    "nodes": [
+      {"id": "start", "type": "start", "label": "开始", "x": 0, "y": 0},
+      {"id": "apply", "type": "task", "label": "填写申请", "x": 240, "y": 0},
+      {"id": "end", "type": "end", "label": "结束", "x": 480, "y": 0}
+    ],
+    "edges": [
+      {"id": "e1", "source": "start", "target": "apply", "label": ""},
+      {"id": "e2", "source": "apply", "target": "end", "label": ""}
+    ]
+  },
+  "context": {"selected_node_ids": ["apply"]},
+  "acceptance": {
+    "node_delta": 0,
+    "edge_delta": 0,
+    "unchanged_node_ids": ["start", "end"],
+    "expected_nodes": [{"id": "apply", "type": "task", "label": "填写采购申请"}],
+    "expected_edges": [
+      {"source": "start", "target": "apply"},
+      {"source": "apply", "target": "end"}
+    ]
+  },
+  "human_review_points": ["仅申请节点的 label 被改写", "节点位置没有出现无意义的大幅移动"]
+}

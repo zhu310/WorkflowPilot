@@ -1,0 +1,10 @@
+{
+  "case_id":"case_07", "title":"局部语义编辑", "instruction":"加强付款前校验：在“付款”之前新增一个 task 节点“账户状态校验”。付款后的“安排发货”和“结束”不要改变。",
+  "graph":{"nodes":[
+    {"id":"start","type":"start","label":"开始","x":0,"y":0}, {"id":"order","type":"task","label":"创建订单","x":200,"y":0}, {"id":"pay","type":"task","label":"付款","x":400,"y":0}, {"id":"ship","type":"task","label":"安排发货","x":600,"y":0}, {"id":"end","type":"end","label":"结束","x":800,"y":0}
+  ],"edges":[
+    {"id":"e1","source":"start","target":"order","label":""}, {"id":"e2","source":"order","target":"pay","label":""}, {"id":"e3","source":"pay","target":"ship","label":""}, {"id":"e4","source":"ship","target":"end","label":""}
+  ]},
+  "acceptance":{"node_delta":1,"edge_delta":1,"unchanged_node_ids":["start","order","pay","ship","end"],"expected_nodes":[{"type":"task","label":"账户状态校验"}],"required_paths":[["order",{"type":"task","label":"账户状态校验"},"pay"]],"expected_edges":[{"source":"pay","target":"ship"},{"source":"ship","target":"end"}]},
+  "human_review_points":["新增节点只影响付款前区域", "付款后节点及路径无误改"]
+}

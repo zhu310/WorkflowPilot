@@ -1,0 +1,11 @@
+{
+  "case_id":"case_06", "title":"选区局部布局", "instruction":"将当前选中的三个节点垂直对齐到 x=300，保持它们的 y 坐标不变，其他节点不要移动。",
+  "graph":{"nodes":[
+    {"id":"start","type":"start","label":"开始","x":0,"y":0}, {"id":"a","type":"task","label":"录入","x":260,"y":0}, {"id":"b","type":"task","label":"校验","x":340,"y":120}, {"id":"c","type":"human_review","label":"复核","x":280,"y":240}, {"id":"end","type":"end","label":"结束","x":600,"y":120}
+  ],"edges":[
+    {"id":"e1","source":"start","target":"a","label":""}, {"id":"e2","source":"a","target":"b","label":""}, {"id":"e3","source":"b","target":"c","label":""}, {"id":"e4","source":"c","target":"end","label":""}
+  ]},
+  "context":{"selected_node_ids":["a","b","c"],"viewport":{"x":0,"y":0,"width":900,"height":600}},
+  "acceptance":{"node_delta":0,"edge_delta":0,"unchanged_node_ids":["start","end"],"expected_nodes":[{"id":"a","x":300,"y":0},{"id":"b","x":300,"y":120},{"id":"c","x":300,"y":240}]},
+  "human_review_points":["选区以外节点的位置与内容不变", "连线拓扑不变"]
+}

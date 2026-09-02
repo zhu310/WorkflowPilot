@@ -1,0 +1,158 @@
+{
+  "formal_run": "experiments\\runs\\workflow-ir-formal-mainline-20260901-154051",
+  "abstract_run": "experiments\\runs\\stage3-abstract-intent-20260901-153944",
+  "output_dir": "docs\\demo\\visualization_diff_demo",
+  "summary": {
+    "cases_rendered": 12,
+    "missing_artifacts": [],
+    "cases_with_before_graph": 12,
+    "cases_with_after_graph": 11,
+    "cases_with_trace": 12
+  },
+  "cases": [
+    {
+      "title": "Single Node Rename",
+      "source": "experiments\\runs\\workflow-ir-formal-mainline-20260901-154051\\rename\\attempt_01\\transaction_result.json",
+      "status": "success",
+      "changed_nodes": 1,
+      "changed_edges": 0,
+      "preserved_nodes": 2,
+      "preserved_edges": 2,
+      "has_before_graph": true,
+      "has_after_graph": true,
+      "has_trace": true
+    },
+    {
+      "title": "Insert Node With Edges",
+      "source": "experiments\\runs\\workflow-ir-formal-mainline-20260901-154051\\insert\\attempt_01\\transaction_result.json",
+      "status": "success",
+      "changed_nodes": 1,
+      "changed_edges": 3,
+      "preserved_nodes": 2,
+      "preserved_edges": 0,
+      "has_before_graph": true,
+      "has_after_graph": true,
+      "has_trace": true
+    },
+    {
+      "title": "Redirect Edge",
+      "source": "experiments\\runs\\workflow-ir-formal-mainline-20260901-154051\\redirect\\attempt_01\\transaction_result.json",
+      "status": "success",
+      "changed_nodes": 0,
+      "changed_edges": 2,
+      "preserved_nodes": 4,
+      "preserved_edges": 1,
+      "has_before_graph": true,
+      "has_after_graph": true,
+      "has_trace": true
+    },
+    {
+      "title": "Delete Node",
+      "source": "experiments\\runs\\workflow-ir-formal-mainline-20260901-154051\\delete\\attempt_01\\transaction_result.json",
+      "status": "success",
+      "changed_nodes": 1,
+      "changed_edges": 2,
+      "preserved_nodes": 2,
+      "preserved_edges": 0,
+      "has_before_graph": true,
+      "has_after_graph": true,
+      "has_trace": true
+    },
+    {
+      "title": "Move After",
+      "source": "experiments\\runs\\workflow-ir-formal-mainline-20260901-154051\\move_after\\attempt_01\\transaction_result.json",
+      "status": "success",
+      "changed_nodes": 0,
+      "changed_edges": 6,
+      "preserved_nodes": 5,
+      "preserved_edges": 1,
+      "has_before_graph": true,
+      "has_after_graph": true,
+      "has_trace": true
+    },
+    {
+      "title": "Serial To Parallel",
+      "source": "experiments\\runs\\workflow-ir-formal-mainline-20260901-154051\\simple_parallel\\attempt_01\\transaction_result.json",
+      "status": "success",
+      "changed_nodes": 1,
+      "changed_edges": 3,
+      "preserved_nodes": 4,
+      "preserved_edges": 3,
+      "has_before_graph": true,
+      "has_after_graph": true,
+      "has_trace": true
+    },
+    {
+      "title": "Parallel With Retry/Exception",
+      "source": "experiments\\runs\\workflow-ir-formal-mainline-20260901-154051\\parallel_retry_exception\\attempt_01\\transaction_result.json",
+      "status": "success",
+      "changed_nodes": 1,
+      "changed_edges": 5,
+      "preserved_nodes": 5,
+      "preserved_edges": 5,
+      "has_before_graph": true,
+      "has_after_graph": true,
+      "has_trace": true
+    },
+    {
+      "title": "Mixed Edit",
+      "source": "experiments\\runs\\workflow-ir-formal-mainline-20260901-154051\\mixed_edit\\attempt_01\\transaction_result.json",
+      "status": "success",
+      "changed_nodes": 2,
+      "changed_edges": 5,
+      "preserved_nodes": 4,
+      "preserved_edges": 1,
+      "has_before_graph": true,
+      "has_after_graph": true,
+      "has_trace": true
+    },
+    {
+      "title": "Labeled Move After",
+      "source": "experiments\\runs\\workflow-ir-formal-mainline-20260901-154051\\move_after_labeled\\attempt_01\\transaction_result.json",
+      "status": "success",
+      "changed_nodes": 0,
+      "changed_edges": 6,
+      "preserved_nodes": 5,
+      "preserved_edges": 1,
+      "has_before_graph": true,
+      "has_after_graph": true,
+      "has_trace": true
+    },
+    {
+      "title": "Failure / Success / Retry Combo",
+      "source": "experiments\\runs\\workflow-ir-formal-mainline-20260901-154051\\failure_success_retry_combo\\attempt_01\\transaction_result.json",
+      "status": "success",
+      "changed_nodes": 1,
+      "changed_edges": 5,
+      "preserved_nodes": 5,
+      "preserved_edges": 2,
+      "has_before_graph": true,
+      "has_after_graph": true,
+      "has_trace": true
+    },
+    {
+      "title": "Abstract + Explicit",
+      "source": "experiments\\runs\\stage3-abstract-intent-20260901-153944\\simplify_without_removing_checks\\attempt_01.json",
+      "status": "success",
+      "changed_nodes": 1,
+      "changed_edges": 0,
+      "preserved_nodes": 5,
+      "preserved_edges": 6,
+      "has_before_graph": true,
+      "has_after_graph": true,
+      "has_trace": true
+    },
+    {
+      "title": "Abstract Clarification",
+      "source": "experiments\\runs\\stage3-abstract-intent-20260901-153944\\maintainability_clarification\\attempt_01.json",
+      "status": "needs_clarification",
+      "changed_nodes": 0,
+      "changed_edges": 0,
+      "preserved_nodes": 4,
+      "preserved_edges": 3,
+      "has_before_graph": true,
+      "has_after_graph": false,
+      "has_trace": true
+    }
+  ]
+}

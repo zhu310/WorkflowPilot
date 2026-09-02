@@ -1,0 +1,1959 @@
+<!doctype html><html><head><meta charset='utf-8'/>
+<title>WorkflowPilot Visualization Diff Demo</title>
+<style>
+body { margin: 0; font-family: Georgia, 'Times New Roman', serif; color: #20242b; background: #f6f1e8; }
+header { padding: 34px 44px; background: linear-gradient(135deg, #263238, #465a64); color: #fff8e6; }
+h1 { margin: 0 0 8px; font-size: 34px; }
+h2 { margin-top: 0; color: #263238; }
+h3 { margin-bottom: 8px; color: #42515a; }
+.summary { padding: 18px 44px; background: #fff8e6; border-bottom: 1px solid #decfb8; }
+.case-card { margin: 26px auto; max-width: 1180px; padding: 24px; background: #fffdf8; border: 1px solid #dfd1bd; border-radius: 18px; box-shadow: 0 16px 36px rgba(74, 60, 40, 0.12); }
+.note, .source { color: #6f6354; }
+.graph-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 18px; }
+.columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-top: 18px; }
+pre { overflow: auto; max-height: 360px; padding: 14px; border-radius: 12px; background: #1f272d; color: #f6f1e8; font-size: 12px; line-height: 1.45; }
+.graph { width: 100%; min-height: 260px; border-radius: 14px; background: #fbf7ef; border: 1px solid #e4d7c4; }
+.svg-title { font: 700 18px Georgia, serif; fill: #263238; }
+.edge { stroke: #39404d; stroke-width: 2.2; opacity: .75; }
+.edge.changed { stroke: #c45a24; stroke-width: 3.4; opacity: 1; }
+.edge-label { font: 12px Georgia, serif; fill: #8a4b1d; paint-order: stroke; stroke: #fbf7ef; stroke-width: 4px; }
+.node rect { fill: #f5ead7; stroke: #53616a; stroke-width: 1.5; }
+.node.changed rect { fill: #ffd7b8; stroke: #c45a24; stroke-width: 3; }
+.node-label { text-anchor: middle; font: 700 13px Georgia, serif; fill: #20242b; }
+.node-meta { text-anchor: middle; font: 10px Georgia, serif; fill: #6b7780; }
+</style></head><body>
+<header><h1>WorkflowPilot Visualization / Diff Demo</h1><p>Generated from frozen transaction artifacts. Product source code is not executed or modified by this report.</p></header>
+<div class='summary'><h2>Artifact Coverage</h2><pre>{
+  &quot;cases_rendered&quot;: 12,
+  &quot;missing_artifacts&quot;: [],
+  &quot;cases_with_before_graph&quot;: 12,
+  &quot;cases_with_after_graph&quot;: 11,
+  &quot;cases_with_trace&quot;: 12
+}</pre></div>
+<section class='case-card'>
+<h2>Single Node Rename</h2>
+<p class='note'>Explicit node property edit.</p>
+<p><strong>Instruction:</strong> Rename review to Budget reconciliation.</p>
+<div class='graph-pair'>
+<svg class="graph" viewBox="0 0 760 260" role="img" aria-label="Before Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>Before Graph</text>
+<line class='edge' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='302.0' y1='94.0' x2='390.0' y2='94.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node changed'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>Review</text>
+<text class='node-meta' x='302.0' y='111.0'>review · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>End</text>
+<text class='node-meta' x='462.0' y='111.0'>end · end</text>
+</g>
+</svg>
+<svg class="graph" viewBox="0 0 760 260" role="img" aria-label="After Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>After Graph</text>
+<line class='edge' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='302.0' y1='94.0' x2='390.0' y2='94.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node changed'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>Budget reconciliation</text>
+<text class='node-meta' x='302.0' y='111.0'>review · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>End</text>
+<text class='node-meta' x='462.0' y='111.0'>end · end</text>
+</g>
+</svg>
+</div>
+<div class='columns'>
+<div><h3>Changed Nodes / Edges</h3><pre>{
+  &quot;added_nodes&quot;: [],
+  &quot;removed_nodes&quot;: [],
+  &quot;changed_nodes&quot;: [
+    {
+      &quot;id&quot;: &quot;review&quot;,
+      &quot;changes&quot;: {
+        &quot;label&quot;: {
+          &quot;before&quot;: &quot;Review&quot;,
+          &quot;after&quot;: &quot;Budget reconciliation&quot;
+        }
+      }
+    }
+  ],
+  &quot;added_edges&quot;: [],
+  &quot;removed_edges&quot;: []
+}</pre></div>
+<div><h3>Preserved Objects</h3><pre>{
+  &quot;nodes&quot;: [
+    &quot;end&quot;,
+    &quot;start&quot;
+  ],
+  &quot;edges&quot;: [
+    [
+      &quot;review&quot;,
+      &quot;end&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;start&quot;,
+      &quot;review&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+</div>
+<div class='columns'>
+<div><h3>Transaction Steps</h3><pre>[
+  {
+    &quot;op&quot;: &quot;update_node&quot;,
+    &quot;node_id&quot;: &quot;review&quot;,
+    &quot;changes&quot;: {
+      &quot;label&quot;: &quot;Budget reconciliation&quot;
+    }
+  }
+]</pre></div>
+<div><h3>Trace Summary</h3><pre>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;planning_path&quot;: &quot;workflow_ir&quot;,
+  &quot;instruction&quot;: &quot;Rename review to Budget reconciliation.&quot;,
+  &quot;requirements&quot;: [
+    &quot;Rename review to Budget reconciliation.&quot;
+  ],
+  &quot;unit_count&quot;: 1,
+  &quot;llm_units&quot;: 0,
+  &quot;stop_layer&quot;: null,
+  &quot;stop_reason&quot;: null,
+  &quot;clarification&quot;: null
+}</pre></div>
+</div>
+<p class='source'>Artifact: experiments\runs\workflow-ir-formal-mainline-20260901-154051\rename\attempt_01\transaction_result.json</p>
+</section>
+<section class='case-card'>
+<h2>Insert Node With Edges</h2>
+<p class='note'>New node creation plus local topology rewrite.</p>
+<p><strong>Instruction:</strong> Add a human_review node named Manual review between start and end.</p>
+<div class='graph-pair'>
+<svg class="graph" viewBox="0 0 760 260" role="img" aria-label="Before Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>Before Graph</text>
+<line class='edge changed' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>End</text>
+<text class='node-meta' x='302.0' y='111.0'>end · end</text>
+</g>
+</svg>
+<svg class="graph" viewBox="0 0 760 260" role="img" aria-label="After Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>After Graph</text>
+<line class='edge changed' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='142.0' y1='94.0' x2='70.0' y2='94.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>End</text>
+<text class='node-meta' x='302.0' y='111.0'>end · end</text>
+</g>
+<g class='node changed'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Manual review</text>
+<text class='node-meta' x='142.0' y='111.0'>new_1 · task</text>
+</g>
+</svg>
+</div>
+<div class='columns'>
+<div><h3>Changed Nodes / Edges</h3><pre>{
+  &quot;added_nodes&quot;: [
+    &quot;new_1&quot;
+  ],
+  &quot;removed_nodes&quot;: [],
+  &quot;changed_nodes&quot;: [],
+  &quot;added_edges&quot;: [
+    [
+      &quot;new_1&quot;,
+      &quot;end&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;start&quot;,
+      &quot;new_1&quot;,
+      &quot;&quot;
+    ]
+  ],
+  &quot;removed_edges&quot;: [
+    [
+      &quot;start&quot;,
+      &quot;end&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+<div><h3>Preserved Objects</h3><pre>{
+  &quot;nodes&quot;: [
+    &quot;end&quot;,
+    &quot;start&quot;
+  ],
+  &quot;edges&quot;: []
+}</pre></div>
+</div>
+<div class='columns'>
+<div><h3>Transaction Steps</h3><pre>[
+  {
+    &quot;op&quot;: &quot;add_node&quot;,
+    &quot;node&quot;: {
+      &quot;id&quot;: &quot;new_1&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;label&quot;: &quot;Manual review&quot;,
+      &quot;x&quot;: 0,
+      &quot;y&quot;: 0
+    }
+  },
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e1&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;new_1&quot;,
+    &quot;target&quot;: &quot;end&quot;,
+    &quot;label&quot;: &quot;&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;start&quot;,
+    &quot;target&quot;: &quot;new_1&quot;,
+    &quot;label&quot;: &quot;&quot;
+  }
+]</pre></div>
+<div><h3>Trace Summary</h3><pre>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;planning_path&quot;: &quot;workflow_ir&quot;,
+  &quot;instruction&quot;: &quot;Add a human_review node named Manual review between start and end.&quot;,
+  &quot;requirements&quot;: [
+    &quot;Add a human_review node named Manual review between start and end.&quot;
+  ],
+  &quot;unit_count&quot;: 1,
+  &quot;llm_units&quot;: 1,
+  &quot;stop_layer&quot;: null,
+  &quot;stop_reason&quot;: null,
+  &quot;clarification&quot;: null
+}</pre></div>
+</div>
+<p class='source'>Artifact: experiments\runs\workflow-ir-formal-mainline-20260901-154051\insert\attempt_01\transaction_result.json</p>
+</section>
+<section class='case-card'>
+<h2>Redirect Edge</h2>
+<p class='note'>Explicit relation target change.</p>
+<p><strong>Instruction:</strong> Send the failure relation from check to manual instead of reject.</p>
+<div class='graph-pair'>
+<svg class="graph" viewBox="0 0 800 260" role="img" aria-label="Before Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>Before Graph</text>
+<line class='edge' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='302.0' y1='94.0' x2='390.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='346.0' y='86.0'>failure</text>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>Check</text>
+<text class='node-meta' x='302.0' y='111.0'>check · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>Reject</text>
+<text class='node-meta' x='462.0' y='111.0'>reject · end</text>
+</g>
+<g class='node'>
+<rect x='550.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='622.0' y='94.0'>Manual</text>
+<text class='node-meta' x='622.0' y='111.0'>manual · human_review</text>
+</g>
+</svg>
+<svg class="graph" viewBox="0 0 800 260" role="img" aria-label="After Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>After Graph</text>
+<line class='edge' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='302.0' y1='94.0' x2='550.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='426.0' y='86.0'>failure</text>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>Check</text>
+<text class='node-meta' x='302.0' y='111.0'>check · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>Reject</text>
+<text class='node-meta' x='462.0' y='111.0'>reject · end</text>
+</g>
+<g class='node'>
+<rect x='550.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='622.0' y='94.0'>Manual</text>
+<text class='node-meta' x='622.0' y='111.0'>manual · human_review</text>
+</g>
+</svg>
+</div>
+<div class='columns'>
+<div><h3>Changed Nodes / Edges</h3><pre>{
+  &quot;added_nodes&quot;: [],
+  &quot;removed_nodes&quot;: [],
+  &quot;changed_nodes&quot;: [],
+  &quot;added_edges&quot;: [
+    [
+      &quot;check&quot;,
+      &quot;manual&quot;,
+      &quot;failure&quot;
+    ]
+  ],
+  &quot;removed_edges&quot;: [
+    [
+      &quot;check&quot;,
+      &quot;reject&quot;,
+      &quot;failure&quot;
+    ]
+  ]
+}</pre></div>
+<div><h3>Preserved Objects</h3><pre>{
+  &quot;nodes&quot;: [
+    &quot;check&quot;,
+    &quot;manual&quot;,
+    &quot;reject&quot;,
+    &quot;start&quot;
+  ],
+  &quot;edges&quot;: [
+    [
+      &quot;start&quot;,
+      &quot;check&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+</div>
+<div class='columns'>
+<div><h3>Transaction Steps</h3><pre>[
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e2&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;check&quot;,
+    &quot;target&quot;: &quot;manual&quot;,
+    &quot;label&quot;: &quot;failure&quot;
+  }
+]</pre></div>
+<div><h3>Trace Summary</h3><pre>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;planning_path&quot;: &quot;workflow_ir&quot;,
+  &quot;instruction&quot;: &quot;Send the failure relation from check to manual instead of reject.&quot;,
+  &quot;requirements&quot;: [
+    &quot;Send the failure relation from check to manual instead of reject.&quot;
+  ],
+  &quot;unit_count&quot;: 1,
+  &quot;llm_units&quot;: 0,
+  &quot;stop_layer&quot;: null,
+  &quot;stop_reason&quot;: null,
+  &quot;clarification&quot;: null
+}</pre></div>
+</div>
+<p class='source'>Artifact: experiments\runs\workflow-ir-formal-mainline-20260901-154051\redirect\attempt_01\transaction_result.json</p>
+</section>
+<section class='case-card'>
+<h2>Delete Node</h2>
+<p class='note'>Entity absent target state.</p>
+<p><strong>Instruction:</strong> Delete obsolete and its connections.</p>
+<div class='graph-pair'>
+<svg class="graph" viewBox="0 0 760 260" role="img" aria-label="Before Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>Before Graph</text>
+<line class='edge changed' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='302.0' y1='94.0' x2='390.0' y2='94.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node changed'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>Obsolete</text>
+<text class='node-meta' x='302.0' y='111.0'>obsolete · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>End</text>
+<text class='node-meta' x='462.0' y='111.0'>end · end</text>
+</g>
+</svg>
+<svg class="graph" viewBox="0 0 760 260" role="img" aria-label="After Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>After Graph</text>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>End</text>
+<text class='node-meta' x='462.0' y='111.0'>end · end</text>
+</g>
+</svg>
+</div>
+<div class='columns'>
+<div><h3>Changed Nodes / Edges</h3><pre>{
+  &quot;added_nodes&quot;: [],
+  &quot;removed_nodes&quot;: [
+    &quot;obsolete&quot;
+  ],
+  &quot;changed_nodes&quot;: [],
+  &quot;added_edges&quot;: [],
+  &quot;removed_edges&quot;: [
+    [
+      &quot;obsolete&quot;,
+      &quot;end&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;start&quot;,
+      &quot;obsolete&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+<div><h3>Preserved Objects</h3><pre>{
+  &quot;nodes&quot;: [
+    &quot;end&quot;,
+    &quot;start&quot;
+  ],
+  &quot;edges&quot;: []
+}</pre></div>
+</div>
+<div class='columns'>
+<div><h3>Transaction Steps</h3><pre>[
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e2&quot;
+  },
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e1&quot;
+  },
+  {
+    &quot;op&quot;: &quot;remove_node&quot;,
+    &quot;node_id&quot;: &quot;obsolete&quot;
+  }
+]</pre></div>
+<div><h3>Trace Summary</h3><pre>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;planning_path&quot;: &quot;workflow_ir&quot;,
+  &quot;instruction&quot;: &quot;Delete obsolete and its connections.&quot;,
+  &quot;requirements&quot;: [
+    &quot;Delete obsolete and its connections.&quot;
+  ],
+  &quot;unit_count&quot;: 1,
+  &quot;llm_units&quot;: 0,
+  &quot;stop_layer&quot;: null,
+  &quot;stop_reason&quot;: null,
+  &quot;clarification&quot;: null
+}</pre></div>
+</div>
+<p class='source'>Artifact: experiments\runs\workflow-ir-formal-mainline-20260901-154051\delete\attempt_01\transaction_result.json</p>
+</section>
+<section class='case-card'>
+<h2>Move After</h2>
+<p class='note'>Topology rewrite with predecessor reconnect.</p>
+<p><strong>Instruction:</strong> Place X immediately after A; reconnect the former predecessor of X to A, and put X before B.</p>
+<div class='graph-pair'>
+<svg class="graph" viewBox="0 0 960 260" role="img" aria-label="Before Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>Before Graph</text>
+<line class='edge changed' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='302.0' y1='94.0' x2='390.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='462.0' y1='94.0' x2='550.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='622.0' y1='94.0' x2='710.0' y2='94.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>X</text>
+<text class='node-meta' x='302.0' y='111.0'>X · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>A</text>
+<text class='node-meta' x='462.0' y='111.0'>A · task</text>
+</g>
+<g class='node'>
+<rect x='550.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='622.0' y='94.0'>B</text>
+<text class='node-meta' x='622.0' y='111.0'>B · task</text>
+</g>
+<g class='node'>
+<rect x='710.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='782.0' y='94.0'>End</text>
+<text class='node-meta' x='782.0' y='111.0'>end · end</text>
+</g>
+</svg>
+<svg class="graph" viewBox="0 0 960 260" role="img" aria-label="After Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>After Graph</text>
+<line class='edge' x1='622.0' y1='94.0' x2='710.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='462.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='302.0' y1='94.0' x2='550.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='142.0' y1='94.0' x2='390.0' y2='94.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>X</text>
+<text class='node-meta' x='302.0' y='111.0'>X · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>A</text>
+<text class='node-meta' x='462.0' y='111.0'>A · task</text>
+</g>
+<g class='node'>
+<rect x='550.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='622.0' y='94.0'>B</text>
+<text class='node-meta' x='622.0' y='111.0'>B · task</text>
+</g>
+<g class='node'>
+<rect x='710.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='782.0' y='94.0'>End</text>
+<text class='node-meta' x='782.0' y='111.0'>end · end</text>
+</g>
+</svg>
+</div>
+<div class='columns'>
+<div><h3>Changed Nodes / Edges</h3><pre>{
+  &quot;added_nodes&quot;: [],
+  &quot;removed_nodes&quot;: [],
+  &quot;changed_nodes&quot;: [],
+  &quot;added_edges&quot;: [
+    [
+      &quot;A&quot;,
+      &quot;X&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;X&quot;,
+      &quot;B&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;start&quot;,
+      &quot;A&quot;,
+      &quot;&quot;
+    ]
+  ],
+  &quot;removed_edges&quot;: [
+    [
+      &quot;A&quot;,
+      &quot;B&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;X&quot;,
+      &quot;A&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;start&quot;,
+      &quot;X&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+<div><h3>Preserved Objects</h3><pre>{
+  &quot;nodes&quot;: [
+    &quot;A&quot;,
+    &quot;B&quot;,
+    &quot;X&quot;,
+    &quot;end&quot;,
+    &quot;start&quot;
+  ],
+  &quot;edges&quot;: [
+    [
+      &quot;B&quot;,
+      &quot;end&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+</div>
+<div class='columns'>
+<div><h3>Transaction Steps</h3><pre>[
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e3&quot;
+  },
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e2&quot;
+  },
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e1&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;A&quot;,
+    &quot;target&quot;: &quot;X&quot;,
+    &quot;label&quot;: &quot;&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;X&quot;,
+    &quot;target&quot;: &quot;B&quot;,
+    &quot;label&quot;: &quot;&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;start&quot;,
+    &quot;target&quot;: &quot;A&quot;,
+    &quot;label&quot;: &quot;&quot;
+  }
+]</pre></div>
+<div><h3>Trace Summary</h3><pre>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;planning_path&quot;: &quot;workflow_ir&quot;,
+  &quot;instruction&quot;: &quot;Place X immediately after A; reconnect the former predecessor of X to A, and put X before B.&quot;,
+  &quot;requirements&quot;: [
+    &quot;Place X immediately after A; reconnect the former predecessor of X to A, and put X before B.&quot;
+  ],
+  &quot;unit_count&quot;: 1,
+  &quot;llm_units&quot;: 1,
+  &quot;stop_layer&quot;: null,
+  &quot;stop_reason&quot;: null,
+  &quot;clarification&quot;: null
+}</pre></div>
+</div>
+<p class='source'>Artifact: experiments\runs\workflow-ir-formal-mainline-20260901-154051\move_after\attempt_01\transaction_result.json</p>
+</section>
+<section class='case-card'>
+<h2>Serial To Parallel</h2>
+<p class='note'>Parallel structure and join property.</p>
+<p><strong>Instruction:</strong> Identity and risk must both be completed after start before approval; set approval to wait for all incoming work.</p>
+<div class='graph-pair'>
+<svg class="graph" viewBox="0 0 960 260" role="img" aria-label="Before Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>Before Graph</text>
+<line class='edge' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='302.0' y1='94.0' x2='390.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='462.0' y1='94.0' x2='550.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='622.0' y1='94.0' x2='710.0' y2='94.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>Identity</text>
+<text class='node-meta' x='302.0' y='111.0'>identity · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>Risk</text>
+<text class='node-meta' x='462.0' y='111.0'>risk · task</text>
+</g>
+<g class='node changed'>
+<rect x='550.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='622.0' y='94.0'>Approval</text>
+<text class='node-meta' x='622.0' y='111.0'>approval · task</text>
+</g>
+<g class='node'>
+<rect x='710.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='782.0' y='94.0'>End</text>
+<text class='node-meta' x='782.0' y='111.0'>end · end</text>
+</g>
+</svg>
+<svg class="graph" viewBox="0 0 960 260" role="img" aria-label="After Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>After Graph</text>
+<line class='edge' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='462.0' y1='94.0' x2='550.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='622.0' y1='94.0' x2='710.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='302.0' y1='94.0' x2='550.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='142.0' y1='94.0' x2='390.0' y2='94.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>Identity</text>
+<text class='node-meta' x='302.0' y='111.0'>identity · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>Risk</text>
+<text class='node-meta' x='462.0' y='111.0'>risk · task</text>
+</g>
+<g class='node changed'>
+<rect x='550.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='622.0' y='94.0'>Approval</text>
+<text class='node-meta' x='622.0' y='111.0'>approval · task</text>
+</g>
+<g class='node'>
+<rect x='710.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='782.0' y='94.0'>End</text>
+<text class='node-meta' x='782.0' y='111.0'>end · end</text>
+</g>
+</svg>
+</div>
+<div class='columns'>
+<div><h3>Changed Nodes / Edges</h3><pre>{
+  &quot;added_nodes&quot;: [],
+  &quot;removed_nodes&quot;: [],
+  &quot;changed_nodes&quot;: [
+    {
+      &quot;id&quot;: &quot;approval&quot;,
+      &quot;changes&quot;: {
+        &quot;join&quot;: {
+          &quot;before&quot;: null,
+          &quot;after&quot;: {
+            &quot;mode&quot;: &quot;all&quot;
+          }
+        }
+      }
+    }
+  ],
+  &quot;added_edges&quot;: [
+    [
+      &quot;identity&quot;,
+      &quot;approval&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;start&quot;,
+      &quot;risk&quot;,
+      &quot;&quot;
+    ]
+  ],
+  &quot;removed_edges&quot;: [
+    [
+      &quot;identity&quot;,
+      &quot;risk&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+<div><h3>Preserved Objects</h3><pre>{
+  &quot;nodes&quot;: [
+    &quot;end&quot;,
+    &quot;identity&quot;,
+    &quot;risk&quot;,
+    &quot;start&quot;
+  ],
+  &quot;edges&quot;: [
+    [
+      &quot;approval&quot;,
+      &quot;end&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;risk&quot;,
+      &quot;approval&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;start&quot;,
+      &quot;identity&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+</div>
+<div class='columns'>
+<div><h3>Transaction Steps</h3><pre>[
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e2&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;identity&quot;,
+    &quot;target&quot;: &quot;approval&quot;,
+    &quot;label&quot;: &quot;&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;start&quot;,
+    &quot;target&quot;: &quot;risk&quot;,
+    &quot;label&quot;: &quot;&quot;
+  },
+  {
+    &quot;op&quot;: &quot;set_join&quot;,
+    &quot;node_id&quot;: &quot;approval&quot;,
+    &quot;join&quot;: {
+      &quot;mode&quot;: &quot;all&quot;
+    }
+  }
+]</pre></div>
+<div><h3>Trace Summary</h3><pre>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;planning_path&quot;: &quot;workflow_ir&quot;,
+  &quot;instruction&quot;: &quot;Identity and risk must both be completed after start before approval; set approval to wait for all incoming work.&quot;,
+  &quot;requirements&quot;: [
+    &quot;Identity and risk must both be completed after start before approval; set approval to wait for all incoming work.&quot;
+  ],
+  &quot;unit_count&quot;: 1,
+  &quot;llm_units&quot;: 1,
+  &quot;stop_layer&quot;: null,
+  &quot;stop_reason&quot;: null,
+  &quot;clarification&quot;: null
+}</pre></div>
+</div>
+<p class='source'>Artifact: experiments\runs\workflow-ir-formal-mainline-20260901-154051\simple_parallel\attempt_01\transaction_result.json</p>
+</section>
+<section class='case-card'>
+<h2>Parallel With Retry/Exception</h2>
+<p class='note'>Main control-flow rewrite while preserving side relations.</p>
+<p><strong>Instruction:</strong> Material and permission must both run after start and both complete before approval. Either exception goes to manual; after manual, restart at start. Approval waits for all incoming work.</p>
+<div class='graph-pair'>
+<svg class="graph" viewBox="0 0 1120 260" role="img" aria-label="Before Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>Before Graph</text>
+<line class='edge' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='302.0' y1='94.0' x2='390.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='462.0' y1='94.0' x2='710.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='302.0' y1='94.0' x2='550.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='426.0' y='86.0'>exception</text>
+<line class='edge' x1='462.0' y1='94.0' x2='550.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='506.0' y='86.0'>exception</text>
+<line class='edge changed' x1='622.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='782.0' y1='94.0' x2='870.0' y2='94.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>Material</text>
+<text class='node-meta' x='302.0' y='111.0'>material · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>Permission</text>
+<text class='node-meta' x='462.0' y='111.0'>permission · task</text>
+</g>
+<g class='node'>
+<rect x='550.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='622.0' y='94.0'>Manual</text>
+<text class='node-meta' x='622.0' y='111.0'>manual · human_review</text>
+</g>
+<g class='node changed'>
+<rect x='710.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='782.0' y='94.0'>Approval</text>
+<text class='node-meta' x='782.0' y='111.0'>approval · task</text>
+</g>
+<g class='node'>
+<rect x='870.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='942.0' y='94.0'>End</text>
+<text class='node-meta' x='942.0' y='111.0'>end · end</text>
+</g>
+</svg>
+<svg class="graph" viewBox="0 0 1120 260" role="img" aria-label="After Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>After Graph</text>
+<line class='edge' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='462.0' y1='94.0' x2='710.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='302.0' y1='94.0' x2='550.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='426.0' y='86.0'>exception</text>
+<line class='edge' x1='462.0' y1='94.0' x2='550.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='506.0' y='86.0'>exception</text>
+<line class='edge' x1='782.0' y1='94.0' x2='870.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='622.0' y1='94.0' x2='70.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='302.0' y1='94.0' x2='710.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='142.0' y1='94.0' x2='390.0' y2='94.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>Material</text>
+<text class='node-meta' x='302.0' y='111.0'>material · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>Permission</text>
+<text class='node-meta' x='462.0' y='111.0'>permission · task</text>
+</g>
+<g class='node'>
+<rect x='550.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='622.0' y='94.0'>Manual</text>
+<text class='node-meta' x='622.0' y='111.0'>manual · human_review</text>
+</g>
+<g class='node changed'>
+<rect x='710.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='782.0' y='94.0'>Approval</text>
+<text class='node-meta' x='782.0' y='111.0'>approval · task</text>
+</g>
+<g class='node'>
+<rect x='870.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='942.0' y='94.0'>End</text>
+<text class='node-meta' x='942.0' y='111.0'>end · end</text>
+</g>
+</svg>
+</div>
+<div class='columns'>
+<div><h3>Changed Nodes / Edges</h3><pre>{
+  &quot;added_nodes&quot;: [],
+  &quot;removed_nodes&quot;: [],
+  &quot;changed_nodes&quot;: [
+    {
+      &quot;id&quot;: &quot;approval&quot;,
+      &quot;changes&quot;: {
+        &quot;join&quot;: {
+          &quot;before&quot;: null,
+          &quot;after&quot;: {
+            &quot;mode&quot;: &quot;all&quot;
+          }
+        }
+      }
+    }
+  ],
+  &quot;added_edges&quot;: [
+    [
+      &quot;manual&quot;,
+      &quot;start&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;material&quot;,
+      &quot;approval&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;start&quot;,
+      &quot;permission&quot;,
+      &quot;&quot;
+    ]
+  ],
+  &quot;removed_edges&quot;: [
+    [
+      &quot;manual&quot;,
+      &quot;material&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;material&quot;,
+      &quot;permission&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+<div><h3>Preserved Objects</h3><pre>{
+  &quot;nodes&quot;: [
+    &quot;end&quot;,
+    &quot;manual&quot;,
+    &quot;material&quot;,
+    &quot;permission&quot;,
+    &quot;start&quot;
+  ],
+  &quot;edges&quot;: [
+    [
+      &quot;approval&quot;,
+      &quot;end&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;material&quot;,
+      &quot;manual&quot;,
+      &quot;exception&quot;
+    ],
+    [
+      &quot;permission&quot;,
+      &quot;approval&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;permission&quot;,
+      &quot;manual&quot;,
+      &quot;exception&quot;
+    ],
+    [
+      &quot;start&quot;,
+      &quot;material&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+</div>
+<div class='columns'>
+<div><h3>Transaction Steps</h3><pre>[
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e6&quot;
+  },
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e2&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;manual&quot;,
+    &quot;target&quot;: &quot;start&quot;,
+    &quot;label&quot;: &quot;&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;material&quot;,
+    &quot;target&quot;: &quot;approval&quot;,
+    &quot;label&quot;: &quot;&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;start&quot;,
+    &quot;target&quot;: &quot;permission&quot;,
+    &quot;label&quot;: &quot;&quot;
+  },
+  {
+    &quot;op&quot;: &quot;set_join&quot;,
+    &quot;node_id&quot;: &quot;approval&quot;,
+    &quot;join&quot;: {
+      &quot;mode&quot;: &quot;all&quot;
+    }
+  }
+]</pre></div>
+<div><h3>Trace Summary</h3><pre>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;planning_path&quot;: &quot;workflow_ir&quot;,
+  &quot;instruction&quot;: &quot;Material and permission must both run after start and both complete before approval. Either exception goes to manual; after manual, restart at start. Approval waits for all incoming work.&quot;,
+  &quot;requirements&quot;: [
+    &quot;Material and permission must both run after start and both complete before approval.&quot;,
+    &quot;Either exception goes to manual; after manual, restart at start.&quot;,
+    &quot;Approval waits for all incoming work.&quot;
+  ],
+  &quot;unit_count&quot;: 1,
+  &quot;llm_units&quot;: 1,
+  &quot;stop_layer&quot;: null,
+  &quot;stop_reason&quot;: null,
+  &quot;clarification&quot;: null
+}</pre></div>
+</div>
+<p class='source'>Artifact: experiments\runs\workflow-ir-formal-mainline-20260901-154051\parallel_retry_exception\attempt_01\transaction_result.json</p>
+</section>
+<section class='case-card'>
+<h2>Mixed Edit</h2>
+<p class='note'>Combined structural/property/relation target state.</p>
+<p><strong>Instruction:</strong> Rename check to Eligibility check. Add an audit task named Audit between check and end on the success route. Send the failure relation from check to manual instead of reject.</p>
+<div class='graph-pair'>
+<svg class="graph" viewBox="0 0 960 260" role="img" aria-label="Before Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>Before Graph</text>
+<line class='edge' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='302.0' y1='94.0' x2='390.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='346.0' y='86.0'>failure</text>
+<line class='edge changed' x1='302.0' y1='94.0' x2='710.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='506.0' y='86.0'>success</text>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node changed'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>Check</text>
+<text class='node-meta' x='302.0' y='111.0'>check · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>Reject</text>
+<text class='node-meta' x='462.0' y='111.0'>reject · end</text>
+</g>
+<g class='node'>
+<rect x='550.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='622.0' y='94.0'>Manual</text>
+<text class='node-meta' x='622.0' y='111.0'>manual · human_review</text>
+</g>
+<g class='node'>
+<rect x='710.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='782.0' y='94.0'>End</text>
+<text class='node-meta' x='782.0' y='111.0'>end · end</text>
+</g>
+</svg>
+<svg class="graph" viewBox="0 0 960 260" role="img" aria-label="After Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>After Graph</text>
+<line class='edge' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='302.0' y1='94.0' x2='550.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='426.0' y='86.0'>failure</text>
+<line class='edge changed' x1='302.0' y1='94.0' x2='70.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='186.0' y='86.0'>success</text>
+<line class='edge changed' x1='142.0' y1='94.0' x2='710.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='426.0' y='86.0'>success</text>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node changed'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>Eligibility check</text>
+<text class='node-meta' x='302.0' y='111.0'>check · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>Reject</text>
+<text class='node-meta' x='462.0' y='111.0'>reject · end</text>
+</g>
+<g class='node'>
+<rect x='550.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='622.0' y='94.0'>Manual</text>
+<text class='node-meta' x='622.0' y='111.0'>manual · human_review</text>
+</g>
+<g class='node'>
+<rect x='710.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='782.0' y='94.0'>End</text>
+<text class='node-meta' x='782.0' y='111.0'>end · end</text>
+</g>
+<g class='node changed'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Audit</text>
+<text class='node-meta' x='142.0' y='111.0'>new_1 · task</text>
+</g>
+</svg>
+</div>
+<div class='columns'>
+<div><h3>Changed Nodes / Edges</h3><pre>{
+  &quot;added_nodes&quot;: [
+    &quot;new_1&quot;
+  ],
+  &quot;removed_nodes&quot;: [],
+  &quot;changed_nodes&quot;: [
+    {
+      &quot;id&quot;: &quot;check&quot;,
+      &quot;changes&quot;: {
+        &quot;label&quot;: {
+          &quot;before&quot;: &quot;Check&quot;,
+          &quot;after&quot;: &quot;Eligibility check&quot;
+        }
+      }
+    }
+  ],
+  &quot;added_edges&quot;: [
+    [
+      &quot;check&quot;,
+      &quot;manual&quot;,
+      &quot;failure&quot;
+    ],
+    [
+      &quot;check&quot;,
+      &quot;new_1&quot;,
+      &quot;success&quot;
+    ],
+    [
+      &quot;new_1&quot;,
+      &quot;end&quot;,
+      &quot;success&quot;
+    ]
+  ],
+  &quot;removed_edges&quot;: [
+    [
+      &quot;check&quot;,
+      &quot;end&quot;,
+      &quot;success&quot;
+    ],
+    [
+      &quot;check&quot;,
+      &quot;reject&quot;,
+      &quot;failure&quot;
+    ]
+  ]
+}</pre></div>
+<div><h3>Preserved Objects</h3><pre>{
+  &quot;nodes&quot;: [
+    &quot;end&quot;,
+    &quot;manual&quot;,
+    &quot;reject&quot;,
+    &quot;start&quot;
+  ],
+  &quot;edges&quot;: [
+    [
+      &quot;start&quot;,
+      &quot;check&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+</div>
+<div class='columns'>
+<div><h3>Transaction Steps</h3><pre>[
+  {
+    &quot;op&quot;: &quot;add_node&quot;,
+    &quot;node&quot;: {
+      &quot;id&quot;: &quot;new_1&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;label&quot;: &quot;Audit&quot;,
+      &quot;x&quot;: 0,
+      &quot;y&quot;: 0
+    }
+  },
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e3&quot;
+  },
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e2&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;check&quot;,
+    &quot;target&quot;: &quot;manual&quot;,
+    &quot;label&quot;: &quot;failure&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;check&quot;,
+    &quot;target&quot;: &quot;new_1&quot;,
+    &quot;label&quot;: &quot;success&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;new_1&quot;,
+    &quot;target&quot;: &quot;end&quot;,
+    &quot;label&quot;: &quot;success&quot;
+  },
+  {
+    &quot;op&quot;: &quot;update_node&quot;,
+    &quot;node_id&quot;: &quot;check&quot;,
+    &quot;changes&quot;: {
+      &quot;label&quot;: &quot;Eligibility check&quot;
+    }
+  }
+]</pre></div>
+<div><h3>Trace Summary</h3><pre>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;planning_path&quot;: &quot;workflow_ir&quot;,
+  &quot;instruction&quot;: &quot;Rename check to Eligibility check. Add an audit task named Audit between check and end on the success route. Send the failure relation from check to manual instead of reject.&quot;,
+  &quot;requirements&quot;: [
+    &quot;Rename check to Eligibility check.&quot;,
+    &quot;Add an audit task named Audit between check and end on the success route.&quot;,
+    &quot;Send the failure relation from check to manual instead of reject.&quot;
+  ],
+  &quot;unit_count&quot;: 3,
+  &quot;llm_units&quot;: 1,
+  &quot;stop_layer&quot;: null,
+  &quot;stop_reason&quot;: null,
+  &quot;clarification&quot;: null
+}</pre></div>
+</div>
+<p class='source'>Artifact: experiments\runs\workflow-ir-formal-mainline-20260901-154051\mixed_edit\attempt_01\transaction_result.json</p>
+</section>
+<section class='case-card'>
+<h2>Labeled Move After</h2>
+<p class='note'>Labeled control-flow provenance.</p>
+<p><strong>Instruction:</strong> Place X immediately after A; reconnect the former predecessor of X to A, and put X before B.</p>
+<div class='graph-pair'>
+<svg class="graph" viewBox="0 0 960 260" role="img" aria-label="Before Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>Before Graph</text>
+<line class='edge changed' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='302.0' y1='94.0' x2='390.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='346.0' y='86.0'>success</text>
+<line class='edge changed' x1='462.0' y1='94.0' x2='550.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='506.0' y='86.0'>success</text>
+<line class='edge' x1='622.0' y1='94.0' x2='710.0' y2='94.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>X</text>
+<text class='node-meta' x='302.0' y='111.0'>X · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>A</text>
+<text class='node-meta' x='462.0' y='111.0'>A · task</text>
+</g>
+<g class='node'>
+<rect x='550.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='622.0' y='94.0'>B</text>
+<text class='node-meta' x='622.0' y='111.0'>B · task</text>
+</g>
+<g class='node'>
+<rect x='710.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='782.0' y='94.0'>End</text>
+<text class='node-meta' x='782.0' y='111.0'>end · end</text>
+</g>
+</svg>
+<svg class="graph" viewBox="0 0 960 260" role="img" aria-label="After Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>After Graph</text>
+<line class='edge' x1='622.0' y1='94.0' x2='710.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='462.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='346.0' y='86.0'>success</text>
+<line class='edge changed' x1='302.0' y1='94.0' x2='550.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='426.0' y='86.0'>success</text>
+<line class='edge changed' x1='142.0' y1='94.0' x2='390.0' y2='94.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>X</text>
+<text class='node-meta' x='302.0' y='111.0'>X · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>A</text>
+<text class='node-meta' x='462.0' y='111.0'>A · task</text>
+</g>
+<g class='node'>
+<rect x='550.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='622.0' y='94.0'>B</text>
+<text class='node-meta' x='622.0' y='111.0'>B · task</text>
+</g>
+<g class='node'>
+<rect x='710.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='782.0' y='94.0'>End</text>
+<text class='node-meta' x='782.0' y='111.0'>end · end</text>
+</g>
+</svg>
+</div>
+<div class='columns'>
+<div><h3>Changed Nodes / Edges</h3><pre>{
+  &quot;added_nodes&quot;: [],
+  &quot;removed_nodes&quot;: [],
+  &quot;changed_nodes&quot;: [],
+  &quot;added_edges&quot;: [
+    [
+      &quot;A&quot;,
+      &quot;X&quot;,
+      &quot;success&quot;
+    ],
+    [
+      &quot;X&quot;,
+      &quot;B&quot;,
+      &quot;success&quot;
+    ],
+    [
+      &quot;start&quot;,
+      &quot;A&quot;,
+      &quot;&quot;
+    ]
+  ],
+  &quot;removed_edges&quot;: [
+    [
+      &quot;A&quot;,
+      &quot;B&quot;,
+      &quot;success&quot;
+    ],
+    [
+      &quot;X&quot;,
+      &quot;A&quot;,
+      &quot;success&quot;
+    ],
+    [
+      &quot;start&quot;,
+      &quot;X&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+<div><h3>Preserved Objects</h3><pre>{
+  &quot;nodes&quot;: [
+    &quot;A&quot;,
+    &quot;B&quot;,
+    &quot;X&quot;,
+    &quot;end&quot;,
+    &quot;start&quot;
+  ],
+  &quot;edges&quot;: [
+    [
+      &quot;B&quot;,
+      &quot;end&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+</div>
+<div class='columns'>
+<div><h3>Transaction Steps</h3><pre>[
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e3&quot;
+  },
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e2&quot;
+  },
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e1&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;A&quot;,
+    &quot;target&quot;: &quot;X&quot;,
+    &quot;label&quot;: &quot;success&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;X&quot;,
+    &quot;target&quot;: &quot;B&quot;,
+    &quot;label&quot;: &quot;success&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;start&quot;,
+    &quot;target&quot;: &quot;A&quot;,
+    &quot;label&quot;: &quot;&quot;
+  }
+]</pre></div>
+<div><h3>Trace Summary</h3><pre>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;planning_path&quot;: &quot;workflow_ir&quot;,
+  &quot;instruction&quot;: &quot;Place X immediately after A; reconnect the former predecessor of X to A, and put X before B.&quot;,
+  &quot;requirements&quot;: [
+    &quot;Place X immediately after A; reconnect the former predecessor of X to A, and put X before B.&quot;
+  ],
+  &quot;unit_count&quot;: 1,
+  &quot;llm_units&quot;: 1,
+  &quot;stop_layer&quot;: null,
+  &quot;stop_reason&quot;: null,
+  &quot;clarification&quot;: null
+}</pre></div>
+</div>
+<p class='source'>Artifact: experiments\runs\workflow-ir-formal-mainline-20260901-154051\move_after_labeled\attempt_01\transaction_result.json</p>
+</section>
+<section class='case-card'>
+<h2>Failure / Success / Retry Combo</h2>
+<p class='note'>Separated labeled relation edits.</p>
+<p><strong>Instruction:</strong> Add an audit task named Audit between check and end on the success route. Send the failure relation from check to manual instead of reject. Keep retry from manual back to check.</p>
+<div class='graph-pair'>
+<svg class="graph" viewBox="0 0 960 260" role="img" aria-label="Before Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>Before Graph</text>
+<line class='edge' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge changed' x1='302.0' y1='94.0' x2='390.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='346.0' y='86.0'>failure</text>
+<line class='edge changed' x1='302.0' y1='94.0' x2='710.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='506.0' y='86.0'>success</text>
+<line class='edge' x1='622.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='426.0' y='86.0'>retry</text>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>Check</text>
+<text class='node-meta' x='302.0' y='111.0'>check · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>Reject</text>
+<text class='node-meta' x='462.0' y='111.0'>reject · end</text>
+</g>
+<g class='node'>
+<rect x='550.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='622.0' y='94.0'>Manual</text>
+<text class='node-meta' x='622.0' y='111.0'>manual · human_review</text>
+</g>
+<g class='node'>
+<rect x='710.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='782.0' y='94.0'>End</text>
+<text class='node-meta' x='782.0' y='111.0'>end · end</text>
+</g>
+</svg>
+<svg class="graph" viewBox="0 0 960 260" role="img" aria-label="After Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>After Graph</text>
+<line class='edge' x1='142.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='622.0' y1='94.0' x2='230.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='426.0' y='86.0'>retry</text>
+<line class='edge changed' x1='302.0' y1='94.0' x2='550.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='426.0' y='86.0'>failure</text>
+<line class='edge changed' x1='302.0' y1='94.0' x2='70.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='186.0' y='86.0'>success</text>
+<line class='edge changed' x1='142.0' y1='94.0' x2='710.0' y2='94.0' marker-end='url(#arrow)'/>
+<text class='edge-label' x='426.0' y='86.0'>success</text>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Start</text>
+<text class='node-meta' x='142.0' y='111.0'>start · start</text>
+</g>
+<g class='node'>
+<rect x='230.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='302.0' y='94.0'>Check</text>
+<text class='node-meta' x='302.0' y='111.0'>check · task</text>
+</g>
+<g class='node'>
+<rect x='390.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='462.0' y='94.0'>Reject</text>
+<text class='node-meta' x='462.0' y='111.0'>reject · end</text>
+</g>
+<g class='node'>
+<rect x='550.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='622.0' y='94.0'>Manual</text>
+<text class='node-meta' x='622.0' y='111.0'>manual · human_review</text>
+</g>
+<g class='node'>
+<rect x='710.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='782.0' y='94.0'>End</text>
+<text class='node-meta' x='782.0' y='111.0'>end · end</text>
+</g>
+<g class='node changed'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Audit</text>
+<text class='node-meta' x='142.0' y='111.0'>new_1 · task</text>
+</g>
+</svg>
+</div>
+<div class='columns'>
+<div><h3>Changed Nodes / Edges</h3><pre>{
+  &quot;added_nodes&quot;: [
+    &quot;new_1&quot;
+  ],
+  &quot;removed_nodes&quot;: [],
+  &quot;changed_nodes&quot;: [],
+  &quot;added_edges&quot;: [
+    [
+      &quot;check&quot;,
+      &quot;manual&quot;,
+      &quot;failure&quot;
+    ],
+    [
+      &quot;check&quot;,
+      &quot;new_1&quot;,
+      &quot;success&quot;
+    ],
+    [
+      &quot;new_1&quot;,
+      &quot;end&quot;,
+      &quot;success&quot;
+    ]
+  ],
+  &quot;removed_edges&quot;: [
+    [
+      &quot;check&quot;,
+      &quot;end&quot;,
+      &quot;success&quot;
+    ],
+    [
+      &quot;check&quot;,
+      &quot;reject&quot;,
+      &quot;failure&quot;
+    ]
+  ]
+}</pre></div>
+<div><h3>Preserved Objects</h3><pre>{
+  &quot;nodes&quot;: [
+    &quot;check&quot;,
+    &quot;end&quot;,
+    &quot;manual&quot;,
+    &quot;reject&quot;,
+    &quot;start&quot;
+  ],
+  &quot;edges&quot;: [
+    [
+      &quot;manual&quot;,
+      &quot;check&quot;,
+      &quot;retry&quot;
+    ],
+    [
+      &quot;start&quot;,
+      &quot;check&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+</div>
+<div class='columns'>
+<div><h3>Transaction Steps</h3><pre>[
+  {
+    &quot;op&quot;: &quot;add_node&quot;,
+    &quot;node&quot;: {
+      &quot;id&quot;: &quot;new_1&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;label&quot;: &quot;Audit&quot;,
+      &quot;x&quot;: 0,
+      &quot;y&quot;: 0
+    }
+  },
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e3&quot;
+  },
+  {
+    &quot;op&quot;: &quot;remove_edge&quot;,
+    &quot;edge_id&quot;: &quot;e2&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;check&quot;,
+    &quot;target&quot;: &quot;manual&quot;,
+    &quot;label&quot;: &quot;failure&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;check&quot;,
+    &quot;target&quot;: &quot;new_1&quot;,
+    &quot;label&quot;: &quot;success&quot;
+  },
+  {
+    &quot;op&quot;: &quot;add_edge&quot;,
+    &quot;source&quot;: &quot;new_1&quot;,
+    &quot;target&quot;: &quot;end&quot;,
+    &quot;label&quot;: &quot;success&quot;
+  }
+]</pre></div>
+<div><h3>Trace Summary</h3><pre>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;planning_path&quot;: &quot;workflow_ir&quot;,
+  &quot;instruction&quot;: &quot;Add an audit task named Audit between check and end on the success route. Send the failure relation from check to manual instead of reject. Keep retry from manual back to check.&quot;,
+  &quot;requirements&quot;: [
+    &quot;Add an audit task named Audit between check and end on the success route.&quot;,
+    &quot;Send the failure relation from check to manual instead of reject.&quot;,
+    &quot;Keep retry from manual back to check.&quot;
+  ],
+  &quot;unit_count&quot;: 3,
+  &quot;llm_units&quot;: 1,
+  &quot;stop_layer&quot;: null,
+  &quot;stop_reason&quot;: null,
+  &quot;clarification&quot;: null
+}</pre></div>
+</div>
+<p class='source'>Artifact: experiments\runs\workflow-ir-formal-mainline-20260901-154051\failure_success_retry_combo\attempt_01\transaction_result.json</p>
+</section>
+<section class='case-card'>
+<h2>Abstract + Explicit</h2>
+<p class='note'>Validation requirement plus explicit rename.</p>
+<p><strong>Instruction:</strong> This stage is too complex. Simplify it, but do not remove any check steps, and rename Merge Review to Unified Review.</p>
+<div class='graph-pair'>
+<svg class="graph" viewBox="0 0 1100 350" role="img" aria-label="Before Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>Before Graph</text>
+<line class='edge' x1='142.0' y1='134.0' x2='250.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='322.0' y1='94.0' x2='450.0' y2='154.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='142.0' y1='134.0' x2='250.0' y2='214.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='322.0' y1='214.0' x2='450.0' y2='154.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='522.0' y1='154.0' x2='650.0' y2='154.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='722.0' y1='154.0' x2='850.0' y2='154.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='110.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='134.0'>Entry</text>
+<text class='node-meta' x='142.0' y='151.0'>entry · task</text>
+</g>
+<g class='node'>
+<rect x='250.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='322.0' y='94.0'>Identity Check</text>
+<text class='node-meta' x='322.0' y='111.0'>check_a · task</text>
+</g>
+<g class='node'>
+<rect x='250.0' y='190.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='322.0' y='214.0'>Budget Check</text>
+<text class='node-meta' x='322.0' y='231.0'>check_b · task</text>
+</g>
+<g class='node changed'>
+<rect x='450.0' y='130.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='522.0' y='154.0'>Merge Review</text>
+<text class='node-meta' x='522.0' y='171.0'>merge · task</text>
+</g>
+<g class='node'>
+<rect x='650.0' y='130.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='722.0' y='154.0'>Audit Check</text>
+<text class='node-meta' x='722.0' y='171.0'>audit · task</text>
+</g>
+<g class='node'>
+<rect x='850.0' y='130.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='922.0' y='154.0'>Approve</text>
+<text class='node-meta' x='922.0' y='171.0'>approve · task</text>
+</g>
+</svg>
+<svg class="graph" viewBox="0 0 1100 350" role="img" aria-label="After Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>After Graph</text>
+<line class='edge' x1='142.0' y1='134.0' x2='250.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='322.0' y1='94.0' x2='450.0' y2='154.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='142.0' y1='134.0' x2='250.0' y2='214.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='322.0' y1='214.0' x2='450.0' y2='154.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='522.0' y1='154.0' x2='650.0' y2='154.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='722.0' y1='154.0' x2='850.0' y2='154.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='110.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='134.0'>Entry</text>
+<text class='node-meta' x='142.0' y='151.0'>entry · task</text>
+</g>
+<g class='node'>
+<rect x='250.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='322.0' y='94.0'>Identity Check</text>
+<text class='node-meta' x='322.0' y='111.0'>check_a · task</text>
+</g>
+<g class='node'>
+<rect x='250.0' y='190.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='322.0' y='214.0'>Budget Check</text>
+<text class='node-meta' x='322.0' y='231.0'>check_b · task</text>
+</g>
+<g class='node changed'>
+<rect x='450.0' y='130.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='522.0' y='154.0'>Unified Review</text>
+<text class='node-meta' x='522.0' y='171.0'>merge · task</text>
+</g>
+<g class='node'>
+<rect x='650.0' y='130.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='722.0' y='154.0'>Audit Check</text>
+<text class='node-meta' x='722.0' y='171.0'>audit · task</text>
+</g>
+<g class='node'>
+<rect x='850.0' y='130.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='922.0' y='154.0'>Approve</text>
+<text class='node-meta' x='922.0' y='171.0'>approve · task</text>
+</g>
+</svg>
+</div>
+<div class='columns'>
+<div><h3>Changed Nodes / Edges</h3><pre>{
+  &quot;added_nodes&quot;: [],
+  &quot;removed_nodes&quot;: [],
+  &quot;changed_nodes&quot;: [
+    {
+      &quot;id&quot;: &quot;merge&quot;,
+      &quot;changes&quot;: {
+        &quot;label&quot;: {
+          &quot;before&quot;: &quot;Merge Review&quot;,
+          &quot;after&quot;: &quot;Unified Review&quot;
+        }
+      }
+    }
+  ],
+  &quot;added_edges&quot;: [],
+  &quot;removed_edges&quot;: []
+}</pre></div>
+<div><h3>Preserved Objects</h3><pre>{
+  &quot;nodes&quot;: [
+    &quot;approve&quot;,
+    &quot;audit&quot;,
+    &quot;check_a&quot;,
+    &quot;check_b&quot;,
+    &quot;entry&quot;
+  ],
+  &quot;edges&quot;: [
+    [
+      &quot;audit&quot;,
+      &quot;approve&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;check_a&quot;,
+      &quot;merge&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;check_b&quot;,
+      &quot;merge&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;entry&quot;,
+      &quot;check_a&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;entry&quot;,
+      &quot;check_b&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;merge&quot;,
+      &quot;audit&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+</div>
+<div class='columns'>
+<div><h3>Transaction Steps</h3><pre>[
+  {
+    &quot;op&quot;: &quot;update_node&quot;,
+    &quot;node_id&quot;: &quot;merge&quot;,
+    &quot;changes&quot;: {
+      &quot;label&quot;: &quot;Unified Review&quot;
+    }
+  }
+]</pre></div>
+<div><h3>Trace Summary</h3><pre>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;planning_path&quot;: null,
+  &quot;instruction&quot;: &quot;This stage is too complex. Simplify it, but do not remove any check steps, and rename Merge Review to Unified Review.&quot;,
+  &quot;requirements&quot;: [
+    &quot;This stage is too complex. Simplify it, but do not remove any check steps.&quot;,
+    &quot;Rename Merge Review to Unified Review.&quot;
+  ],
+  &quot;unit_count&quot;: 1,
+  &quot;llm_units&quot;: 0,
+  &quot;stop_layer&quot;: null,
+  &quot;stop_reason&quot;: null,
+  &quot;clarification&quot;: null
+}</pre></div>
+</div>
+<p class='source'>Artifact: experiments\runs\stage3-abstract-intent-20260901-153944\simplify_without_removing_checks\attempt_01.json</p>
+</section>
+<section class='case-card'>
+<h2>Abstract Clarification</h2>
+<p class='note'>No graph mutation; clarification is the correct outcome.</p>
+<p><strong>Instruction:</strong> Keep all functionality, but make the whole workflow easier to maintain.</p>
+<div class='graph-pair'>
+<svg class="graph" viewBox="0 0 920 260" role="img" aria-label="Before Graph">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>Before Graph</text>
+<line class='edge' x1='142.0' y1='94.0' x2='270.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='342.0' y1='94.0' x2='470.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='542.0' y1='94.0' x2='670.0' y2='94.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Draft</text>
+<text class='node-meta' x='142.0' y='111.0'>draft · task</text>
+</g>
+<g class='node'>
+<rect x='270.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='342.0' y='94.0'>Review</text>
+<text class='node-meta' x='342.0' y='111.0'>review · task</text>
+</g>
+<g class='node'>
+<rect x='470.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='542.0' y='94.0'>Approve</text>
+<text class='node-meta' x='542.0' y='111.0'>approve · task</text>
+</g>
+<g class='node'>
+<rect x='670.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='742.0' y='94.0'>Pay</text>
+<text class='node-meta' x='742.0' y='111.0'>pay · task</text>
+</g>
+</svg>
+<svg class="graph" viewBox="0 0 920 260" role="img" aria-label="Graph Preserved">
+<defs><marker id='arrow' markerWidth='10' markerHeight='8' refX='9' refY='4' orient='auto'><path d='M0,0 L10,4 L0,8 z' fill='#39404d'/></marker></defs>
+<text x='18' y='28' class='svg-title'>Graph Preserved</text>
+<line class='edge' x1='142.0' y1='94.0' x2='270.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='342.0' y1='94.0' x2='470.0' y2='94.0' marker-end='url(#arrow)'/>
+<line class='edge' x1='542.0' y1='94.0' x2='670.0' y2='94.0' marker-end='url(#arrow)'/>
+<g class='node'>
+<rect x='70.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='142.0' y='94.0'>Draft</text>
+<text class='node-meta' x='142.0' y='111.0'>draft · task</text>
+</g>
+<g class='node'>
+<rect x='270.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='342.0' y='94.0'>Review</text>
+<text class='node-meta' x='342.0' y='111.0'>review · task</text>
+</g>
+<g class='node'>
+<rect x='470.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='542.0' y='94.0'>Approve</text>
+<text class='node-meta' x='542.0' y='111.0'>approve · task</text>
+</g>
+<g class='node'>
+<rect x='670.0' y='70.0' rx='12' ry='12' width='144' height='54'/>
+<text class='node-label' x='742.0' y='94.0'>Pay</text>
+<text class='node-meta' x='742.0' y='111.0'>pay · task</text>
+</g>
+</svg>
+</div>
+<div class='columns'>
+<div><h3>Changed Nodes / Edges</h3><pre>{
+  &quot;added_nodes&quot;: [],
+  &quot;removed_nodes&quot;: [],
+  &quot;changed_nodes&quot;: [],
+  &quot;added_edges&quot;: [],
+  &quot;removed_edges&quot;: []
+}</pre></div>
+<div><h3>Preserved Objects</h3><pre>{
+  &quot;nodes&quot;: [
+    &quot;approve&quot;,
+    &quot;draft&quot;,
+    &quot;pay&quot;,
+    &quot;review&quot;
+  ],
+  &quot;edges&quot;: [
+    [
+      &quot;approve&quot;,
+      &quot;pay&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;draft&quot;,
+      &quot;review&quot;,
+      &quot;&quot;
+    ],
+    [
+      &quot;review&quot;,
+      &quot;approve&quot;,
+      &quot;&quot;
+    ]
+  ]
+}</pre></div>
+</div>
+<div class='columns'>
+<div><h3>Transaction Steps</h3><pre>[]</pre></div>
+<div><h3>Trace Summary</h3><pre>{
+  &quot;status&quot;: &quot;needs_clarification&quot;,
+  &quot;planning_path&quot;: null,
+  &quot;instruction&quot;: &quot;Keep all functionality, but make the whole workflow easier to maintain.&quot;,
+  &quot;requirements&quot;: [
+    &quot;Keep all functionality, but make the whole workflow easier to maintain.&quot;
+  ],
+  &quot;unit_count&quot;: 1,
+  &quot;llm_units&quot;: 0,
+  &quot;stop_layer&quot;: &quot;Obligation Realization&quot;,
+  &quot;stop_reason&quot;: &quot;abstract goal has no concrete target change&quot;,
+  &quot;clarification&quot;: {
+    &quot;needed&quot;: true,
+    &quot;question&quot;: &quot;What concrete edit should I apply before validating this high-level goal?&quot;,
+    &quot;reason&quot;: &quot;abstract goal has no concrete target change&quot;
+  }
+}</pre></div>
+</div>
+<p class='source'>Artifact: experiments\runs\stage3-abstract-intent-20260901-153944\maintainability_clarification\attempt_01.json</p>
+</section>
+</body></html>

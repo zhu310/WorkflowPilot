@@ -1,0 +1,31 @@
+{
+  "case_id": "mvp1_case_07_scope",
+  "title": "MVP 1 显式编辑作用域",
+  "instruction": "把“资料校验”和“风险校验”整理紧凑：只将这两个检查节点横向压缩到 x=180 和 x=330，保持 y 不变。",
+  "graph": {
+    "nodes": [
+      {"id":"start","type":"start","label":"开始","x":0,"y":0},
+      {"id":"check_1","type":"task","label":"资料校验","x":180,"y":0},
+      {"id":"check_2","type":"task","label":"风险校验","x":430,"y":0},
+      {"id":"pay","type":"task","label":"付款","x":650,"y":0},
+      {"id":"ship","type":"task","label":"安排发货","x":870,"y":0},
+      {"id":"end","type":"end","label":"结束","x":1090,"y":0}
+    ],
+    "edges": [
+      {"id":"e1","source":"start","target":"check_1","label":""},
+      {"id":"e2","source":"check_1","target":"check_2","label":""},
+      {"id":"e3","source":"check_2","target":"pay","label":""},
+      {"id":"e4","source":"pay","target":"ship","label":""},
+      {"id":"e5","source":"ship","target":"end","label":""}
+    ]
+  },
+  "editable_scope": {"node_ids":["check_1","check_2"],"edge_ids":[]},
+  "acceptance": {
+    "node_delta":0,
+    "edge_delta":0,
+    "unchanged_node_ids":["start","pay","ship","end"],
+    "unchanged_edge_ids":["e1","e2","e3","e4","e5"],
+    "expected_nodes":[{"id":"check_1","x":180,"y":0},{"id":"check_2","x":330,"y":0}]
+  },
+  "human_review_points":["scope 外节点和所有边保持原样","仅两个被选择检查节点发生所请求的坐标修改"]
+}

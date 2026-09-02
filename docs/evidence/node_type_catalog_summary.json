@@ -1,0 +1,218 @@
+{
+  "root": "experiments\\runs\\stage3-node-type-catalog-acceptance-20260902-164743",
+  "catalog_types": [
+    "start",
+    "end",
+    "decision",
+    "parallel_split",
+    "parallel_join",
+    "subprocess",
+    "loop",
+    "wait",
+    "task",
+    "ai_agent",
+    "tool",
+    "human_review",
+    "notification",
+    "checkpoint",
+    "data_source",
+    "document",
+    "storage",
+    "variable",
+    "resource",
+    "note",
+    "group",
+    "milestone",
+    "error_handler"
+  ],
+  "fixture": {
+    "node_count": 23,
+    "edge_count": 22,
+    "unknown_type_case_node_count": 24
+  },
+  "totals": {
+    "total": 7,
+    "catalog_types_present": 7,
+    "catalog_types_preserved": 7,
+    "type_metadata_preserved": 7,
+    "structural_relations_preserved": 7,
+    "correct_execution": 7,
+    "false_success": 0,
+    "invalid_graph": 0,
+    "unauthorized_change": 0,
+    "unintended_change": 0
+  },
+  "first_deviation_stages": {},
+  "cases": [
+    {
+      "case": "N1_catalog_ingestion_preservation",
+      "instruction": "Rename notification to Applicant Notification.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": []
+      },
+      "status": "success",
+      "catalog_types_present": true,
+      "catalog_types_preserved": true,
+      "type_metadata_preserved": true,
+      "structural_relations_preserved": true,
+      "correct_execution": true,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "changed_nodes": [
+        "notification"
+      ],
+      "changed_edges": [],
+      "details": {}
+    },
+    {
+      "case": "N2_task_rename",
+      "instruction": "Rename task to Reviewed Task.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": []
+      },
+      "status": "success",
+      "catalog_types_present": true,
+      "catalog_types_preserved": true,
+      "type_metadata_preserved": true,
+      "structural_relations_preserved": true,
+      "correct_execution": true,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "changed_nodes": [
+        "task"
+      ],
+      "changed_edges": [],
+      "details": {}
+    },
+    {
+      "case": "N3_human_review_move",
+      "instruction": "Move human_review 80 pixels to the right.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": []
+      },
+      "status": "success",
+      "catalog_types_present": true,
+      "catalog_types_preserved": true,
+      "type_metadata_preserved": true,
+      "structural_relations_preserved": true,
+      "correct_execution": true,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "changed_nodes": [
+        "human_review"
+      ],
+      "changed_edges": [],
+      "details": {}
+    },
+    {
+      "case": "N4_tool_property_edit",
+      "instruction": "Rename tool to Registry Verification Tool.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": []
+      },
+      "status": "success",
+      "catalog_types_present": true,
+      "catalog_types_preserved": true,
+      "type_metadata_preserved": true,
+      "structural_relations_preserved": true,
+      "correct_execution": true,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "changed_nodes": [
+        "tool"
+      ],
+      "changed_edges": [],
+      "details": {}
+    },
+    {
+      "case": "N5_note_rename",
+      "instruction": "Rename note to Reviewer Guidance Note.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": []
+      },
+      "status": "success",
+      "catalog_types_present": true,
+      "catalog_types_preserved": true,
+      "type_metadata_preserved": true,
+      "structural_relations_preserved": true,
+      "correct_execution": true,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "changed_nodes": [
+        "note"
+      ],
+      "changed_edges": [],
+      "details": {}
+    },
+    {
+      "case": "N6_structural_types_preservation",
+      "instruction": "Rename resource to Reviewer Capacity Pool.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": []
+      },
+      "status": "success",
+      "catalog_types_present": true,
+      "catalog_types_preserved": true,
+      "type_metadata_preserved": true,
+      "structural_relations_preserved": true,
+      "correct_execution": true,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "changed_nodes": [
+        "resource"
+      ],
+      "changed_edges": [],
+      "details": {}
+    },
+    {
+      "case": "N7_unknown_type_preservation",
+      "instruction": "Rename task to Reviewed Task.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": []
+      },
+      "status": "success",
+      "catalog_types_present": true,
+      "catalog_types_preserved": true,
+      "type_metadata_preserved": true,
+      "structural_relations_preserved": true,
+      "correct_execution": true,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "changed_nodes": [
+        "task"
+      ],
+      "changed_edges": [],
+      "details": {
+        "unknown_type_contract": "unknown node types are accepted and preserved"
+      }
+    }
+  ]
+}

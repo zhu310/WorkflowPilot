@@ -1,0 +1,279 @@
+{
+  "root": "experiments\\runs\\stage3-condition-branch-acceptance-20260902-173620",
+  "fixture": {
+    "node_count": 10,
+    "edge_count": 12,
+    "conditional_branch_edge_ids": [
+      "e_decision_audit",
+      "e_decision_auto",
+      "e_decision_compliance",
+      "e_decision_manual"
+    ]
+  },
+  "totals": {
+    "total": 5,
+    "condition_preserved": 5,
+    "branch_label_preserved": 5,
+    "correct_execution": 4,
+    "correct_clarification": 1,
+    "false_success": 0,
+    "invalid_graph": 0,
+    "unauthorized_change": 0,
+    "unintended_change": 0
+  },
+  "first_deviation_stages": {},
+  "cases": [
+    {
+      "case": "C1_condition_preservation_unrelated_rename",
+      "instruction": "Rename archive to Completed Archive.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": []
+      },
+      "status": "success",
+      "condition_preserved": true,
+      "branch_label_preserved": true,
+      "correct_execution": true,
+      "correct_clarification": false,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "changed_nodes": [
+        "archive"
+      ],
+      "changed_edges": {
+        "added_relation_keys": [],
+        "removed_relation_keys": [],
+        "changed_existing_edge_ids": []
+      },
+      "details": {
+        "changed_nodes": [
+          "archive"
+        ],
+        "changed_edges": {
+          "added_relation_keys": [],
+          "removed_relation_keys": [],
+          "changed_existing_edge_ids": []
+        }
+      }
+    },
+    {
+      "case": "C2_labeled_condition_branch_redirect",
+      "instruction": "Redirect the selected success branch to Audit Review.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": [
+          "e_decision_auto"
+        ]
+      },
+      "status": "success",
+      "condition_preserved": true,
+      "branch_label_preserved": true,
+      "correct_execution": true,
+      "correct_clarification": false,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "changed_nodes": [],
+      "changed_edges": {
+        "added_relation_keys": [
+          [
+            "decision",
+            "audit_review",
+            "success"
+          ]
+        ],
+        "removed_relation_keys": [
+          [
+            "decision",
+            "auto_approve",
+            "success"
+          ]
+        ],
+        "changed_existing_edge_ids": [
+          "e_decision_auto"
+        ]
+      },
+      "details": {
+        "redirected_edge": {
+          "id": "e_decision_auto",
+          "condition": {
+            "expression": "amount <= 1000",
+            "language": "cel"
+          },
+          "branch_label": "low_amount",
+          "source": "decision",
+          "target": "audit_review",
+          "label": "success"
+        },
+        "expected_preserved_condition": {
+          "expression": "amount <= 1000",
+          "language": "cel"
+        },
+        "expected_preserved_branch_label": "low_amount",
+        "redirect_condition_preserved": true,
+        "sibling_branches_unchanged": true,
+        "changed_edges": {
+          "added_relation_keys": [
+            [
+              "decision",
+              "audit_review",
+              "success"
+            ]
+          ],
+          "removed_relation_keys": [
+            [
+              "decision",
+              "auto_approve",
+              "success"
+            ]
+          ],
+          "changed_existing_edge_ids": [
+            "e_decision_auto"
+          ]
+        }
+      }
+    },
+    {
+      "case": "C3_ambiguous_branch_reference",
+      "instruction": "Redirect this branch to Audit Review.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": []
+      },
+      "status": "needs_clarification",
+      "condition_preserved": true,
+      "branch_label_preserved": true,
+      "correct_execution": false,
+      "correct_clarification": true,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "changed_nodes": [],
+      "changed_edges": {
+        "added_relation_keys": [],
+        "removed_relation_keys": [],
+        "changed_existing_edge_ids": []
+      },
+      "details": {
+        "graph_unchanged": true
+      }
+    },
+    {
+      "case": "C4_unrelated_topology_move",
+      "instruction": "Move collect 120 pixels to the right.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": []
+      },
+      "status": "success",
+      "condition_preserved": true,
+      "branch_label_preserved": true,
+      "correct_execution": true,
+      "correct_clarification": false,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "changed_nodes": [
+        "collect"
+      ],
+      "changed_edges": {
+        "added_relation_keys": [],
+        "removed_relation_keys": [],
+        "changed_existing_edge_ids": []
+      },
+      "details": {
+        "changed_nodes": [
+          "collect"
+        ],
+        "changed_edges": {
+          "added_relation_keys": [],
+          "removed_relation_keys": [],
+          "changed_existing_edge_ids": []
+        }
+      }
+    },
+    {
+      "case": "C5_mixed_labeled_condition_branches",
+      "instruction": "Redirect the failure branch from Eligibility Decision to Audit Review.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": []
+      },
+      "status": "success",
+      "condition_preserved": true,
+      "branch_label_preserved": true,
+      "correct_execution": true,
+      "correct_clarification": false,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "changed_nodes": [],
+      "changed_edges": {
+        "added_relation_keys": [
+          [
+            "decision",
+            "audit_review",
+            "failure"
+          ]
+        ],
+        "removed_relation_keys": [
+          [
+            "decision",
+            "manual_review",
+            "failure"
+          ]
+        ],
+        "changed_existing_edge_ids": [
+          "e_decision_manual"
+        ]
+      },
+      "details": {
+        "redirected_failure": {
+          "id": "e_decision_manual",
+          "condition": {
+            "expression": "amount > 1000",
+            "language": "cel"
+          },
+          "branch_label": "high_amount",
+          "source": "decision",
+          "target": "audit_review",
+          "label": "failure"
+        },
+        "failure_condition_preserved": true,
+        "success_unchanged": true,
+        "exception_unchanged": true,
+        "unlabeled_unchanged": true,
+        "changed_edges": {
+          "added_relation_keys": [
+            [
+              "decision",
+              "audit_review",
+              "failure"
+            ]
+          ],
+          "removed_relation_keys": [
+            [
+              "decision",
+              "manual_review",
+              "failure"
+            ]
+          ],
+          "changed_existing_edge_ids": [
+            "e_decision_manual"
+          ]
+        }
+      }
+    }
+  ]
+}

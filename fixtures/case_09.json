@@ -1,0 +1,11 @@
+{
+  "case_id":"case_09", "title":"连续追问编辑", "instruction":"把刚新增的“人工修正”改为“主管复核”，不要改变其位置和连线。",
+  "graph":{"nodes":[
+    {"id":"start","type":"start","label":"开始","x":0,"y":0}, {"id":"format_check","type":"decision","label":"格式正确？","x":200,"y":0}, {"id":"submit","type":"task","label":"提交申请","x":400,"y":-80}, {"id":"manual_fix","type":"human_review","label":"人工修正","x":400,"y":120}, {"id":"end","type":"end","label":"结束","x":600,"y":-80}
+  ],"edges":[
+    {"id":"e1","source":"start","target":"format_check","label":""}, {"id":"e2","source":"format_check","target":"submit","label":"是"}, {"id":"e3","source":"format_check","target":"manual_fix","label":"否"}, {"id":"e4","source":"manual_fix","target":"format_check","label":""}, {"id":"e5","source":"submit","target":"end","label":""}
+  ]},
+  "context":{"selected_node_ids":["manual_fix"]},
+  "acceptance":{"node_delta":0,"edge_delta":0,"unchanged_node_ids":["start","format_check","submit","end"],"expected_nodes":[{"id":"manual_fix","type":"human_review","label":"主管复核","x":400,"y":120}],"expected_edges":[{"source":"format_check","target":"manual_fix","label":"否"},{"source":"manual_fix","target":"format_check"}]},
+  "human_review_points":["“刚新增的”被正确解析为当前图的 manual_fix", "仅标签被修改"]
+}

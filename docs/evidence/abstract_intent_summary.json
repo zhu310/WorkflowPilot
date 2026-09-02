@@ -1,0 +1,61 @@
+{
+  "T1": {
+    "total": 5,
+    "correct_execution": 0,
+    "correct_clarification": 5,
+    "unsupported": 0,
+    "false_success": 0,
+    "incorrect_execution": 0,
+    "unintended_change": 0,
+    "first_failure_layers": []
+  },
+  "T2": {
+    "total": 5,
+    "correct_execution": 5,
+    "correct_clarification": 0,
+    "unsupported": 0,
+    "false_success": 0,
+    "incorrect_execution": 0,
+    "unintended_change": 0,
+    "first_failure_layers": []
+  },
+  "T3": {
+    "total": 5,
+    "correct_execution": 0,
+    "correct_clarification": 5,
+    "unsupported": 0,
+    "false_success": 0,
+    "incorrect_execution": 0,
+    "unintended_change": 0,
+    "first_failure_layers": []
+  },
+  "T4": {
+    "total": 5,
+    "correct_execution": 0,
+    "correct_clarification": 5,
+    "unsupported": 0,
+    "false_success": 0,
+    "incorrect_execution": 0,
+    "unintended_change": 0,
+    "first_failure_layers": []
+  },
+  "T5": {
+    "total": 5,
+    "correct_execution": 0,
+    "correct_clarification": 5,
+    "unsupported": 0,
+    "false_success": 0,
+    "incorrect_execution": 0,
+    "unintended_change": 0,
+    "first_failure_layers": []
+  },
+  "total": {
+    "runs": 25,
+    "correct_execution": 5,
+    "correct_clarification": 20,
+    "unsupported": 0,
+    "false_success": 0,
+    "incorrect_execution": 0,
+    "unintended_change": 0
+  }
+}

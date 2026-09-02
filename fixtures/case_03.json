@@ -1,0 +1,36 @@
+{
+  "case_id": "case_03",
+  "title": "删除中间节点并正确重连",
+  "instruction": "删除“重复校验”节点，并把它前后的流程直接连接起来。其他节点和连线不要改变。",
+  "graph": {
+    "nodes": [
+      {"id": "start", "type": "start", "label": "开始", "x": 0, "y": 0},
+      {"id": "collect", "type": "task", "label": "收集材料", "x": 200, "y": 0},
+      {"id": "duplicate_check", "type": "task", "label": "重复校验", "x": 400, "y": 0},
+      {"id": "approve", "type": "task", "label": "审批", "x": 600, "y": 0},
+      {"id": "end", "type": "end", "label": "结束", "x": 800, "y": 0}
+    ],
+    "edges": [
+      {"id": "e1", "source": "start", "target": "collect", "label": ""},
+      {"id": "e2", "source": "collect", "target": "duplicate_check", "label": ""},
+      {"id": "e3", "source": "duplicate_check", "target": "approve", "label": ""},
+      {"id": "e4", "source": "approve", "target": "end", "label": ""}
+    ]
+  },
+  "acceptance": {
+    "node_delta": -1,
+    "edge_delta": -1,
+    "unchanged_node_ids": ["start", "collect", "approve", "end"],
+    "expected_edges": [
+      {"source": "start", "target": "collect"},
+      {"source": "collect", "target": "approve"},
+      {"source": "approve", "target": "end"}
+    ],
+    "absent_node_ids": ["duplicate_check"],
+    "forbidden_edges": [
+      {"source": "collect", "target": "duplicate_check"},
+      {"source": "duplicate_check", "target": "approve"}
+    ]
+  },
+  "human_review_points": ["输出中完全没有 duplicate_check 节点", "collect 到 approve 的直接连接符合删除并重连语义"]
+}
