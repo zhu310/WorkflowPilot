@@ -1,5 +1,5 @@
 {
-  "root": "experiments\\runs\\stage3-multiturn-acceptance-20260902-135210",
+  "root": "experiments\\runs\\stage3-multiturn-acceptance-20260903-161522",
   "totals": {
     "cases": 4,
     "passed_cases": 4,
@@ -98,9 +98,11 @@
               },
               {
                 "op": "add_edge",
+                "id": "e5",
                 "source": "risk_check",
                 "target": "manual_review",
-                "label": "failure"
+                "label": "failure",
+                "edge_id": "e5"
               }
             ],
             "error": null,
@@ -370,7 +372,7 @@
                 }
               ]
             },
-            "created_at": "2026-09-02T05:52:17+00:00"
+            "created_at": "2026-09-03T08:15:29+00:00"
           },
           "v3": {
             "version_id": "v3",
@@ -466,7 +468,7 @@
                 }
               ]
             },
-            "created_at": "2026-09-02T05:52:19+00:00"
+            "created_at": "2026-09-03T08:15:30+00:00"
           }
         },
         "version_order": [
@@ -554,6 +556,7 @@
                         }
                       }
                     ],
+                    "edge_properties": [],
                     "explicit_relations": [],
                     "absent_entities": [],
                     "clarification": {
@@ -626,6 +629,7 @@
                             }
                           }
                         ],
+                        "edge_properties": [],
                         "explicit_relations": [],
                         "absent_entities": [],
                         "clarification": {
@@ -713,6 +717,7 @@
                     "identity_check",
                     "risk_check"
                   ],
+                  "allowed_edge_property_targets": [],
                   "allow_absent_entities": false
                 }
               ],
@@ -756,6 +761,7 @@
                     "derivation": "grounded_position_offset"
                   }
                 ],
+                "edge_properties": [],
                 "entity_create": false,
                 "absent_entities": []
               },
@@ -802,6 +808,7 @@
                             }
                           }
                         ],
+                        "edge_properties": [],
                         "explicit_relations": [],
                         "absent_entities": [],
                         "clarification": {
@@ -929,6 +936,7 @@
                       "identity_check",
                       "risk_check"
                     ],
+                    "allowed_edge_property_targets": [],
                     "allow_absent_entities": false
                   },
                   "obligations": {
@@ -971,6 +979,7 @@
                         "derivation": "grounded_position_offset"
                       }
                     ],
+                    "edge_properties": [],
                     "entity_create": false,
                     "absent_entities": [],
                     "structural_participants": [],
@@ -1006,6 +1015,7 @@
                         }
                       }
                     ],
+                    "edge_properties": [],
                     "structural_regions": [],
                     "explicit_relations": []
                   },
@@ -1047,6 +1057,7 @@
                     "allowed_existing_node_ids": [],
                     "allow_new_entities": false,
                     "allowed_property_targets": [],
+                    "allowed_edge_property_targets": [],
                     "allow_absent_entities": false
                   },
                   "generation_requirements": [],
@@ -1062,7 +1073,8 @@
                     "control_flow_regions": [],
                     "auxiliary_relations": [],
                     "absent_entities": [],
-                    "properties": []
+                    "properties": [],
+                    "edge_properties": []
                   },
                   "structural_participant_coverage": true,
                   "final_ir": {
@@ -1094,7 +1106,8 @@
                           "y": 0
                         }
                       }
-                    ]
+                    ],
+                    "edge_properties": []
                   },
                   "obligation_coverage": true,
                   "obligation_errors": [],
@@ -1118,7 +1131,8 @@
                           "y": 0
                         }
                       }
-                    ]
+                    ],
+                    "edge_properties": []
                   },
                   "constraints": {
                     "entities": [],
@@ -1450,15 +1464,7 @@
                       "identity_check",
                       "risk_check"
                     ],
-                    "resolved_scope_node_ids": [
-                      "approval",
-                      "end",
-                      "identity_check",
-                      "manual_review",
-                      "reject",
-                      "risk_check",
-                      "start"
-                    ],
+                    "resolved_scope_node_ids": [],
                     "history_reference_used": true,
                     "matched_transaction_id": "tx1",
                     "matched_mutation_ids": [
@@ -1481,6 +1487,7 @@
                         }
                       }
                     ],
+                    "edge_properties": [],
                     "explicit_relations": [],
                     "absent_entities": [],
                     "clarification": {
@@ -1489,16 +1496,9 @@
                       "reason": ""
                     },
                     "scope_policy": {
-                      "kind": "global",
-                      "node_ids": [
-                        "approval",
-                        "end",
-                        "identity_check",
-                        "manual_review",
-                        "reject",
-                        "risk_check",
-                        "start"
-                      ]
+                      "kind": "selected_only",
+                      "selected_only": true,
+                      "node_ids": []
                     }
                   }
                 }
@@ -1512,15 +1512,7 @@
                     "identity_check",
                     "risk_check"
                   ],
-                  "resolved_scope_node_ids": [
-                    "approval",
-                    "end",
-                    "identity_check",
-                    "manual_review",
-                    "reject",
-                    "risk_check",
-                    "start"
-                  ],
+                  "resolved_scope_node_ids": [],
                   "history_reference_used": true,
                   "matched_transaction_id": "tx1",
                   "matched_mutation_ids": [
@@ -1547,15 +1539,7 @@
                           "identity_check",
                           "risk_check"
                         ],
-                        "resolved_scope_node_ids": [
-                          "approval",
-                          "end",
-                          "identity_check",
-                          "manual_review",
-                          "reject",
-                          "risk_check",
-                          "start"
-                        ],
+                        "resolved_scope_node_ids": [],
                         "history_reference_used": true,
                         "matched_transaction_id": "tx1",
                         "matched_mutation_ids": [
@@ -1578,6 +1562,7 @@
                             }
                           }
                         ],
+                        "edge_properties": [],
                         "explicit_relations": [],
                         "absent_entities": [],
                         "clarification": {
@@ -1586,16 +1571,9 @@
                           "reason": ""
                         },
                         "scope_policy": {
-                          "kind": "global",
-                          "node_ids": [
-                            "approval",
-                            "end",
-                            "identity_check",
-                            "manual_review",
-                            "reject",
-                            "risk_check",
-                            "start"
-                          ]
+                          "kind": "selected_only",
+                          "selected_only": true,
+                          "node_ids": []
                         }
                       }
                     }
@@ -1609,15 +1587,7 @@
                         "identity_check",
                         "risk_check"
                       ],
-                      "resolved_scope_node_ids": [
-                        "approval",
-                        "end",
-                        "identity_check",
-                        "manual_review",
-                        "reject",
-                        "risk_check",
-                        "start"
-                      ],
+                      "resolved_scope_node_ids": [],
                       "history_reference_used": true,
                       "matched_transaction_id": "tx1",
                       "matched_mutation_ids": [
@@ -1628,17 +1598,11 @@
                   ],
                   "local_graph_facts": {
                     "node_ids": [
-                      "approval",
-                      "end",
                       "identity_check",
-                      "manual_review",
-                      "reject",
-                      "risk_check",
-                      "start"
+                      "risk_check"
                     ],
                     "context_node_ids": [
                       "approval",
-                      "end",
                       "identity_check",
                       "manual_review",
                       "reject",
@@ -1648,10 +1612,7 @@
                     "edge_ids": [
                       "e1",
                       "e2",
-                      "e3",
-                      "e4",
-                      "e5",
-                      "e6"
+                      "e3"
                     ],
                     "relation_types": [
                       ""
@@ -1660,13 +1621,8 @@
                   "signature": {
                     "kind": "topology",
                     "nodes": [
-                      "approval",
-                      "end",
                       "identity_check",
-                      "manual_review",
-                      "reject",
-                      "risk_check",
-                      "start"
+                      "risk_check"
                     ],
                     "relation_types": [
                       ""
@@ -1692,7 +1648,6 @@
                   "allowed_auxiliary_relation_groups": [],
                   "allowed_existing_node_ids": [
                     "approval",
-                    "end",
                     "identity_check",
                     "manual_review",
                     "reject",
@@ -1703,6 +1658,7 @@
                   "allowed_property_targets": [
                     "identity_check"
                   ],
+                  "allowed_edge_property_targets": [],
                   "allow_absent_entities": false
                 }
               ],
@@ -1719,6 +1675,7 @@
                     "derivation": "historical_mutation_reference"
                   }
                 ],
+                "edge_properties": [],
                 "entity_create": false,
                 "absent_entities": []
               },
@@ -1737,15 +1694,7 @@
                           "identity_check",
                           "risk_check"
                         ],
-                        "resolved_scope_node_ids": [
-                          "approval",
-                          "end",
-                          "identity_check",
-                          "manual_review",
-                          "reject",
-                          "risk_check",
-                          "start"
-                        ],
+                        "resolved_scope_node_ids": [],
                         "history_reference_used": true,
                         "matched_transaction_id": "tx1",
                         "matched_mutation_ids": [
@@ -1768,6 +1717,7 @@
                             }
                           }
                         ],
+                        "edge_properties": [],
                         "explicit_relations": [],
                         "absent_entities": [],
                         "clarification": {
@@ -1776,16 +1726,9 @@
                           "reason": ""
                         },
                         "scope_policy": {
-                          "kind": "global",
-                          "node_ids": [
-                            "approval",
-                            "end",
-                            "identity_check",
-                            "manual_review",
-                            "reject",
-                            "risk_check",
-                            "start"
-                          ]
+                          "kind": "selected_only",
+                          "selected_only": true,
+                          "node_ids": []
                         }
                       }
                     }
@@ -1799,15 +1742,7 @@
                         "identity_check",
                         "risk_check"
                       ],
-                      "resolved_scope_node_ids": [
-                        "approval",
-                        "end",
-                        "identity_check",
-                        "manual_review",
-                        "reject",
-                        "risk_check",
-                        "start"
-                      ],
+                      "resolved_scope_node_ids": [],
                       "history_reference_used": true,
                       "matched_transaction_id": "tx1",
                       "matched_mutation_ids": [
@@ -1859,13 +1794,6 @@
                         "label": "Reject",
                         "x": 720,
                         "y": -130
-                      },
-                      {
-                        "id": "end",
-                        "type": "end",
-                        "label": "End",
-                        "x": 720,
-                        "y": 0
                       }
                     ],
                     "edges": [
@@ -1913,7 +1841,6 @@
                     "allowed_auxiliary_relation_groups": [],
                     "allowed_existing_node_ids": [
                       "approval",
-                      "end",
                       "identity_check",
                       "manual_review",
                       "reject",
@@ -1924,6 +1851,7 @@
                     "allowed_property_targets": [
                       "identity_check"
                     ],
+                    "allowed_edge_property_targets": [],
                     "allow_absent_entities": false
                   },
                   "obligations": {
@@ -1939,6 +1867,7 @@
                         "derivation": "historical_mutation_reference"
                       }
                     ],
+                    "edge_properties": [],
                     "entity_create": false,
                     "absent_entities": [],
                     "structural_participants": [],
@@ -1956,6 +1885,7 @@
                         }
                       }
                     ],
+                    "edge_properties": [],
                     "structural_regions": [],
                     "explicit_relations": []
                   },
@@ -1985,6 +1915,7 @@
                     "allowed_existing_node_ids": [],
                     "allow_new_entities": false,
                     "allowed_property_targets": [],
+                    "allowed_edge_property_targets": [],
                     "allow_absent_entities": false
                   },
                   "generation_requirements": [],
@@ -2000,7 +1931,8 @@
                     "control_flow_regions": [],
                     "auxiliary_relations": [],
                     "absent_entities": [],
-                    "properties": []
+                    "properties": [],
+                    "edge_properties": []
                   },
                   "structural_participant_coverage": true,
                   "final_ir": {
@@ -2014,7 +1946,8 @@
                           "x": 180
                         }
                       }
-                    ]
+                    ],
+                    "edge_properties": []
                   },
                   "obligation_coverage": true,
                   "obligation_errors": [],
@@ -2030,7 +1963,8 @@
                           "x": 180
                         }
                       }
-                    ]
+                    ],
+                    "edge_properties": []
                   },
                   "constraints": {
                     "entities": [],
@@ -2540,20 +2474,20 @@
                   "label": "retry"
                 },
                 {
-                  "id": "e_new_1",
                   "source": "new_1",
                   "target": "approval",
-                  "label": ""
+                  "label": "",
+                  "id": "e_new_1"
                 },
                 {
-                  "id": "e_new_2",
                   "source": "risk_check",
                   "target": "new_1",
-                  "label": ""
+                  "label": "",
+                  "id": "e_new_2"
                 }
               ]
             },
-            "created_at": "2026-09-02T05:52:22+00:00"
+            "created_at": "2026-09-03T08:15:33+00:00"
           }
         },
         "version_order": [
@@ -2610,6 +2544,7 @@
                   "grounded_desired_state": {
                     "abstract_goals": [],
                     "properties": [],
+                    "edge_properties": [],
                     "explicit_relations": [],
                     "absent_entities": [],
                     "clarification": {
@@ -2654,6 +2589,7 @@
                       "grounded_desired_state": {
                         "abstract_goals": [],
                         "properties": [],
+                        "edge_properties": [],
                         "explicit_relations": [],
                         "absent_entities": [],
                         "clarification": {
@@ -2740,12 +2676,14 @@
                   ],
                   "allow_new_entities": true,
                   "allowed_property_targets": [],
+                  "allowed_edge_property_targets": [],
                   "allow_absent_entities": false
                 }
               ],
               "global_obligations": {
                 "auxiliary": [],
                 "properties": [],
+                "edge_properties": [],
                 "entity_create": true,
                 "absent_entities": []
               },
@@ -2766,6 +2704,7 @@
                       "grounded_desired_state": {
                         "abstract_goals": [],
                         "properties": [],
+                        "edge_properties": [],
                         "explicit_relations": [],
                         "absent_entities": [],
                         "clarification": {
@@ -2890,11 +2829,13 @@
                     ],
                     "allow_new_entities": true,
                     "allowed_property_targets": [],
+                    "allowed_edge_property_targets": [],
                     "allow_absent_entities": false
                   },
                   "obligations": {
                     "auxiliary": [],
                     "properties": [],
+                    "edge_properties": [],
                     "entity_create": true,
                     "absent_entities": [],
                     "structural_participants": [
@@ -2925,6 +2866,7 @@
                     ],
                     "absent_entities": [],
                     "properties": [],
+                    "edge_properties": [],
                     "structural_regions": [],
                     "explicit_relations": []
                   },
@@ -2974,6 +2916,7 @@
                     ],
                     "allow_new_entities": true,
                     "allowed_property_targets": [],
+                    "allowed_edge_property_targets": [],
                     "allow_absent_entities": false,
                     "locked_new_entities": [
                       {
@@ -3011,7 +2954,7 @@
                       "resolved_scope_node_ids": []
                     }
                   ],
-                  "raw_ir": "{\n  \"control_flow_regions\": [\n    {\n      \"relation_type\": \"\",\n      \"structure\": {\n        \"type\": \"sequence\",\n        \"items\": [\n          {\n            \"type\": \"node\",\n            \"id\": \"risk_check\"\n          },\n          {\n            \"type\": \"node\",\n            \"ref\": \"audit\",\n            \"node_type\": \"task\",\n            \"label\": \"Audit\"\n          },\n          {\n            \"type\": \"node\",\n            \"id\": \"approval\"\n          }\n        ]\n      }\n    }\n  ],\n  \"auxiliary_relations\": [],\n  \"absent_entities\": [],\n  \"properties\": []\n}",
+                  "raw_ir": "{\n  \"control_flow_regions\": [\n    {\n      \"relation_type\": \"\",\n      \"structure\": {\n        \"type\": \"sequence\",\n        \"items\": [\n          {\n            \"type\": \"node\",\n            \"id\": \"risk_check\"\n          },\n          {\n            \"type\": \"node\",\n            \"ref\": \"audit\",\n            \"node_type\": \"task\",\n            \"label\": \"Audit\"\n          },\n          {\n            \"type\": \"node\",\n            \"id\": \"approval\"\n          }\n        ]\n      }\n    }\n  ],\n  \"auxiliary_relations\": [],\n  \"absent_entities\": [],\n  \"properties\": [],\n  \"edge_properties\": []\n}",
                   "parse_error": null,
                   "first_pass_ir_valid": true,
                   "schema_retry_triggered": false,
@@ -3045,7 +2988,8 @@
                     ],
                     "auxiliary_relations": [],
                     "absent_entities": [],
-                    "properties": []
+                    "properties": [],
+                    "edge_properties": []
                   },
                   "structural_participant_coverage": true,
                   "final_ir": {
@@ -3075,7 +3019,8 @@
                     ],
                     "auxiliary_relations": [],
                     "absent_entities": [],
-                    "properties": []
+                    "properties": [],
+                    "edge_properties": []
                   },
                   "obligation_coverage": true,
                   "obligation_errors": [],
@@ -3116,7 +3061,8 @@
                     ],
                     "auxiliary_relations": [],
                     "absent_entities": [],
-                    "properties": []
+                    "properties": [],
+                    "edge_properties": []
                   },
                   "constraints": {
                     "entities": [
@@ -3280,11 +3226,11 @@
                       "label": ""
                     },
                     "constraint_rule": "relation_required",
-                    "constraint": [
-                      "new_1",
-                      "approval",
-                      ""
-                    ]
+                    "constraint": {
+                      "source": "new_1",
+                      "target": "approval",
+                      "label": ""
+                    }
                   },
                   {
                     "step": {
@@ -3294,11 +3240,11 @@
                       "label": ""
                     },
                     "constraint_rule": "relation_required",
-                    "constraint": [
-                      "risk_check",
-                      "new_1",
-                      ""
-                    ]
+                    "constraint": {
+                      "source": "risk_check",
+                      "target": "new_1",
+                      "label": ""
+                    }
                   }
                 ],
                 "constraints": {
@@ -3533,7 +3479,7 @@
           "details": {
             "changed_nodes": [],
             "steps": [],
-            "error": "The instruction 'Undo the second one' is ambiguous without a clear list of recent actions.",
+            "error": "missing historical target reference",
             "history_reference_used": false
           }
         }
@@ -3730,7 +3676,7 @@
                 }
               ]
             },
-            "created_at": "2026-09-02T05:52:23+00:00"
+            "created_at": "2026-09-03T08:15:34+00:00"
           }
         },
         "version_order": [
@@ -3817,6 +3763,7 @@
                         }
                       }
                     ],
+                    "edge_properties": [],
                     "explicit_relations": [],
                     "absent_entities": [],
                     "clarification": {
@@ -3917,6 +3864,7 @@
                             }
                           }
                         ],
+                        "edge_properties": [],
                         "explicit_relations": [],
                         "absent_entities": [],
                         "clarification": {
@@ -4037,6 +3985,7 @@
                     "identity_check",
                     "risk_check"
                   ],
+                  "allowed_edge_property_targets": [],
                   "allow_absent_entities": false
                 }
               ],
@@ -4080,6 +4029,7 @@
                     "derivation": "grounded_position_offset"
                   }
                 ],
+                "edge_properties": [],
                 "entity_create": false,
                 "absent_entities": []
               },
@@ -4138,6 +4088,7 @@
                             }
                           }
                         ],
+                        "edge_properties": [],
                         "explicit_relations": [],
                         "absent_entities": [],
                         "clarification": {
@@ -4289,6 +4240,7 @@
                       "identity_check",
                       "risk_check"
                     ],
+                    "allowed_edge_property_targets": [],
                     "allow_absent_entities": false
                   },
                   "obligations": {
@@ -4331,6 +4283,7 @@
                         "derivation": "grounded_position_offset"
                       }
                     ],
+                    "edge_properties": [],
                     "entity_create": false,
                     "absent_entities": [],
                     "structural_participants": [],
@@ -4366,6 +4319,7 @@
                         }
                       }
                     ],
+                    "edge_properties": [],
                     "structural_regions": [],
                     "explicit_relations": []
                   },
@@ -4407,6 +4361,7 @@
                     "allowed_existing_node_ids": [],
                     "allow_new_entities": false,
                     "allowed_property_targets": [],
+                    "allowed_edge_property_targets": [],
                     "allow_absent_entities": false
                   },
                   "generation_requirements": [],
@@ -4422,7 +4377,8 @@
                     "control_flow_regions": [],
                     "auxiliary_relations": [],
                     "absent_entities": [],
-                    "properties": []
+                    "properties": [],
+                    "edge_properties": []
                   },
                   "structural_participant_coverage": true,
                   "final_ir": {
@@ -4454,7 +4410,8 @@
                           "y": 0
                         }
                       }
-                    ]
+                    ],
+                    "edge_properties": []
                   },
                   "obligation_coverage": true,
                   "obligation_errors": [],
@@ -4478,7 +4435,8 @@
                           "y": 0
                         }
                       }
-                    ]
+                    ],
+                    "edge_properties": []
                   },
                   "constraints": {
                     "entities": [],
@@ -4816,12 +4774,13 @@
                   "grounded_desired_state": {
                     "abstract_goals": [],
                     "properties": [],
+                    "edge_properties": [],
                     "explicit_relations": [],
                     "absent_entities": [],
                     "clarification": {
                       "needed": true,
-                      "question": "Which action is 'the second one'? Please specify the exact edit to undo.",
-                      "reason": "The instruction 'Undo the second one' is ambiguous without a clear list of recent actions."
+                      "question": "Which edited node should I restore?",
+                      "reason": "missing historical target reference"
                     },
                     "scope_policy": {
                       "kind": "global",
@@ -4875,12 +4834,13 @@
                       "grounded_desired_state": {
                         "abstract_goals": [],
                         "properties": [],
+                        "edge_properties": [],
                         "explicit_relations": [],
                         "absent_entities": [],
                         "clarification": {
                           "needed": true,
-                          "question": "Which action is 'the second one'? Please specify the exact edit to undo.",
-                          "reason": "The instruction 'Undo the second one' is ambiguous without a clear list of recent actions."
+                          "question": "Which edited node should I restore?",
+                          "reason": "missing historical target reference"
                         },
                         "scope_policy": {
                           "kind": "global",
@@ -4989,12 +4949,14 @@
                   ],
                   "allow_new_entities": false,
                   "allowed_property_targets": [],
+                  "allowed_edge_property_targets": [],
                   "allow_absent_entities": false
                 }
               ],
               "global_obligations": {
                 "auxiliary": [],
                 "properties": [],
+                "edge_properties": [],
                 "entity_create": false,
                 "absent_entities": []
               },
@@ -5002,7 +4964,7 @@
               "merged_constraints": null,
               "planner": null,
               "stop_layer": "Ground",
-              "stop_reason": "The instruction 'Undo the second one' is ambiguous without a clear list of recent actions.",
+              "stop_reason": "missing historical target reference",
               "current_graph": {
                 "nodes": [
                   {
@@ -5096,14 +5058,14 @@
               },
               "clarification": {
                 "needed": true,
-                "question": "Which action is 'the second one'? Please specify the exact edit to undo.",
-                "reason": "The instruction 'Undo the second one' is ambiguous without a clear list of recent actions."
+                "question": "Which edited node should I restore?",
+                "reason": "missing historical target reference"
               }
             },
             "plan": [],
             "resulting_version_id": null,
             "status": "needs_clarification",
-            "error": "The instruction 'Undo the second one' is ambiguous without a clear list of recent actions."
+            "error": "missing historical target reference"
           }
         ]
       },

@@ -1,0 +1,270 @@
+{
+  "root": "experiments\\runs\\stage3-relation-metadata-regression-20260903-161553",
+  "totals": {
+    "total": 7,
+    "metadata_preserved": 7,
+    "correct_execution": 6,
+    "correct_clarification": 1,
+    "false_success": 0,
+    "invalid_graph": 0,
+    "unauthorized_change": 0,
+    "unintended_change": 0
+  },
+  "first_deviation_stages": {},
+  "cases": [
+    {
+      "case": "R1_unlabeled_redirect",
+      "instruction": "Redirect the selected edge to Manual Review.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": [
+          "e_unlabeled"
+        ]
+      },
+      "status": "success",
+      "metadata_preserved": true,
+      "correct_execution": true,
+      "correct_clarification": false,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "details": {
+        "redirected_edge": {
+          "id": "e_unlabeled",
+          "metadata": {
+            "priority": "normal"
+          },
+          "source": "src_unlabeled",
+          "target": "new_target",
+          "label": ""
+        },
+        "metadata_preserved": true,
+        "old_edge_payload": {
+          "id": "e_unlabeled",
+          "metadata": {
+            "priority": "normal"
+          }
+        },
+        "sibling_preserved": true
+      }
+    },
+    {
+      "case": "R2_success_redirect",
+      "instruction": "Redirect the selected success relation to Manual Review.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": [
+          "e_success"
+        ]
+      },
+      "status": "success",
+      "metadata_preserved": true,
+      "correct_execution": true,
+      "correct_clarification": false,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "details": {
+        "redirected_edge": {
+          "id": "e_success",
+          "condition": {
+            "expression": "ok"
+          },
+          "branch_label": "ok_branch",
+          "source": "src_success",
+          "target": "new_target",
+          "label": "success"
+        },
+        "metadata_preserved": true,
+        "old_edge_payload": {
+          "id": "e_success",
+          "condition": {
+            "expression": "ok"
+          },
+          "branch_label": "ok_branch"
+        },
+        "sibling_preserved": true
+      }
+    },
+    {
+      "case": "R3_failure_redirect",
+      "instruction": "Redirect the selected failure relation to Manual Review.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": [
+          "e_failure"
+        ]
+      },
+      "status": "success",
+      "metadata_preserved": true,
+      "correct_execution": true,
+      "correct_clarification": false,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "details": {
+        "redirected_edge": {
+          "id": "e_failure",
+          "condition": {
+            "expression": "failed"
+          },
+          "branch_label": "failed_branch",
+          "source": "src_failure",
+          "target": "new_target",
+          "label": "failure"
+        },
+        "metadata_preserved": true,
+        "old_edge_payload": {
+          "id": "e_failure",
+          "condition": {
+            "expression": "failed"
+          },
+          "branch_label": "failed_branch"
+        },
+        "sibling_preserved": true
+      }
+    },
+    {
+      "case": "R4_retry_redirect",
+      "instruction": "Redirect the selected retry relation to Manual Review.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": [
+          "e_retry"
+        ]
+      },
+      "status": "success",
+      "metadata_preserved": true,
+      "correct_execution": true,
+      "correct_clarification": false,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "details": {
+        "redirected_edge": {
+          "id": "e_retry",
+          "metadata": {
+            "max": 3
+          },
+          "source": "src_retry",
+          "target": "new_target",
+          "label": "retry"
+        },
+        "metadata_preserved": true,
+        "old_edge_payload": {
+          "id": "e_retry",
+          "metadata": {
+            "max": 3
+          }
+        },
+        "sibling_preserved": true
+      }
+    },
+    {
+      "case": "R5_exception_redirect",
+      "instruction": "Redirect the selected exception relation to Manual Review.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": [
+          "e_exception"
+        ]
+      },
+      "status": "success",
+      "metadata_preserved": true,
+      "correct_execution": true,
+      "correct_clarification": false,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "details": {
+        "redirected_edge": {
+          "id": "e_exception",
+          "metadata": {
+            "handler": "default"
+          },
+          "source": "src_exception",
+          "target": "new_target",
+          "label": "exception"
+        },
+        "metadata_preserved": true,
+        "old_edge_payload": {
+          "id": "e_exception",
+          "metadata": {
+            "handler": "default"
+          }
+        },
+        "sibling_preserved": true
+      }
+    },
+    {
+      "case": "R6_mixed_metadata_edge",
+      "instruction": "Redirect the selected branch to Manual Review.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": [
+          "e_success"
+        ]
+      },
+      "status": "success",
+      "metadata_preserved": true,
+      "correct_execution": true,
+      "correct_clarification": false,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "details": {
+        "redirected_edge": {
+          "id": "e_success",
+          "condition": {
+            "expression": "ok"
+          },
+          "branch_label": "ok_branch",
+          "source": "src_success",
+          "target": "new_target",
+          "label": "success"
+        },
+        "metadata_preserved": true,
+        "old_edge_payload": {
+          "id": "e_success",
+          "condition": {
+            "expression": "ok"
+          },
+          "branch_label": "ok_branch"
+        },
+        "sibling_preserved": true
+      }
+    },
+    {
+      "case": "R7_ambiguous_edge_reference",
+      "instruction": "Redirect this edge to Manual Review.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": []
+      },
+      "status": "needs_clarification",
+      "metadata_preserved": true,
+      "correct_execution": false,
+      "correct_clarification": true,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "details": {
+        "graph_unchanged": true
+      }
+    }
+  ]
+}

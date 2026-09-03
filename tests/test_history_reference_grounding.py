@@ -151,6 +151,22 @@ def test_no_history_context_requires_clarification() -> None:
     assert property_rows(grounded) == []
 
 
+def test_ordinal_history_reference_requires_clarification() -> None:
+    grounded = ground_requirement(
+        graph(),
+        {
+            "id": "r1",
+            "text": "Undo the second one.",
+        },
+        request_context={"recent_transaction_diff": recent_diff()},
+    )
+
+    clarification = grounded["grounded_desired_state"]["clarification"]
+    assert clarification["needed"] is True
+    assert clarification["reason"] == "missing historical target reference"
+    assert property_rows(grounded) == []
+
+
 def test_transaction_diff_records_property_mutations() -> None:
     before = graph()
     after = graph()

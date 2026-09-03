@@ -1,5 +1,5 @@
 {
-  "root": "experiments\\runs\\stage3-condition-branch-acceptance-20260902-173620",
+  "root": "experiments\\runs\\stage3-condition-branch-acceptance-20260903-161553",
   "fixture": {
     "node_count": 10,
     "edge_count": 12,
@@ -11,11 +11,11 @@
     ]
   },
   "totals": {
-    "total": 5,
-    "condition_preserved": 5,
-    "branch_label_preserved": 5,
-    "correct_execution": 4,
-    "correct_clarification": 1,
+    "total": 8,
+    "condition_preserved": 8,
+    "branch_label_preserved": 8,
+    "correct_execution": 6,
+    "correct_clarification": 2,
     "false_success": 0,
     "invalid_graph": 0,
     "unauthorized_change": 0,
@@ -273,6 +273,141 @@
             "e_decision_manual"
           ]
         }
+      }
+    },
+    {
+      "case": "C6_branch_label_active_edit",
+      "instruction": "Rename selected branch label to approved.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": [
+          "e_decision_auto"
+        ]
+      },
+      "status": "success",
+      "condition_preserved": true,
+      "branch_label_preserved": true,
+      "correct_execution": true,
+      "correct_clarification": false,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "changed_nodes": [],
+      "changed_edges": {
+        "added_relation_keys": [],
+        "removed_relation_keys": [],
+        "changed_existing_edge_ids": [
+          "e_decision_auto"
+        ]
+      },
+      "details": {
+        "target_edge": {
+          "id": "e_decision_auto",
+          "source": "decision",
+          "target": "auto_approve",
+          "label": "success",
+          "condition": {
+            "expression": "amount <= 1000",
+            "language": "cel"
+          },
+          "branch_label": "approved"
+        },
+        "target_identity_preserved": true,
+        "condition_metadata_preserved": true,
+        "branch_label_metadata_preserved": true,
+        "sibling_branches_unchanged": true,
+        "changed_edges": {
+          "added_relation_keys": [],
+          "removed_relation_keys": [],
+          "changed_existing_edge_ids": [
+            "e_decision_auto"
+          ]
+        }
+      }
+    },
+    {
+      "case": "C7_condition_expression_explicit_replacement",
+      "instruction": "Replace selected branch condition expression with amount <= 5000.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": [
+          "e_decision_auto"
+        ]
+      },
+      "status": "success",
+      "condition_preserved": true,
+      "branch_label_preserved": true,
+      "correct_execution": true,
+      "correct_clarification": false,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "changed_nodes": [],
+      "changed_edges": {
+        "added_relation_keys": [],
+        "removed_relation_keys": [],
+        "changed_existing_edge_ids": [
+          "e_decision_auto"
+        ]
+      },
+      "details": {
+        "target_edge": {
+          "id": "e_decision_auto",
+          "source": "decision",
+          "target": "auto_approve",
+          "label": "success",
+          "condition": {
+            "expression": "amount <= 5000",
+            "language": "cel"
+          },
+          "branch_label": "low_amount"
+        },
+        "expected_condition": {
+          "expression": "amount <= 5000",
+          "language": "cel"
+        },
+        "target_identity_preserved": true,
+        "condition_metadata_preserved": true,
+        "branch_label_metadata_preserved": true,
+        "sibling_branches_unchanged": true,
+        "changed_edges": {
+          "added_relation_keys": [],
+          "removed_relation_keys": [],
+          "changed_existing_edge_ids": [
+            "e_decision_auto"
+          ]
+        }
+      }
+    },
+    {
+      "case": "C8_ambiguous_condition_edit_clarification",
+      "instruction": "Replace the condition expression from Eligibility Decision with amount <= 5000.",
+      "selection": {
+        "node_ids": [],
+        "edge_ids": []
+      },
+      "status": "needs_clarification",
+      "condition_preserved": true,
+      "branch_label_preserved": true,
+      "correct_execution": false,
+      "correct_clarification": true,
+      "false_success": false,
+      "invalid_graph": false,
+      "unauthorized_change": false,
+      "unintended_change": false,
+      "first_deviation_stage": null,
+      "changed_nodes": [],
+      "changed_edges": {
+        "added_relation_keys": [],
+        "removed_relation_keys": [],
+        "changed_existing_edge_ids": []
+      },
+      "details": {
+        "graph_unchanged": true
       }
     }
   ]

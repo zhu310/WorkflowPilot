@@ -18,6 +18,8 @@ WorkflowPilot: An LLM-powered workflow graph editing system.
 | Edge create/delete/redirect | VERIFIED | `docs/evidence/formal_200_summary.json` |
 | Labeled relation edit | VERIFIED | `docs/evidence/formal_200_summary.json`, `docs/evidence/large_graph_summary.json` |
 | Conditional branch preservation and active redirect metadata preservation | VERIFIED | `docs/evidence/condition_branch_summary.json` |
+| Branch label active editing | VERIFIED | `docs/evidence/condition_branch_summary.json`, `tests/test_edge_property_edits.py` |
+| Condition expression explicit replacement | VERIFIED | `docs/evidence/condition_branch_summary.json`, `tests/test_edge_property_edits.py` |
 | Serial-to-parallel topology rewrite | VERIFIED | `docs/evidence/formal_200_summary.json` |
 | Retry / exception / failure side relation preservation | VERIFIED | `docs/evidence/formal_200_summary.json`, `docs/evidence/condition_branch_summary.json` |
 | Mixed structural, relation, and property edits | VERIFIED | `docs/evidence/formal_200_summary.json` |
@@ -60,8 +62,8 @@ See `docs/evidence/formal_200_summary.json` and `docs/evidence/deterministic_str
 | Selected multi-node align | Not implemented | Non-blocking layout enhancement. Group move and selected-only preservation are verified. |
 | Selected multi-node distribute | Not implemented | Non-blocking layout enhancement. |
 | Group create/delete/add/remove/resize | Not implemented | Current requirement coverage is group/stage/subprocess reading, scope grounding, and preservation. |
-| Condition expression editing | Not implemented | Conditional branch preservation and redirect metadata preservation are verified. |
-| Branch label editing | Not implemented | Branch labels are preserved through unrelated edits and conditional redirects. |
+| Open-ended condition generation / optimization | Not implemented | Only explicit `condition.expression` replacement is verified. The system does not generate business rules. |
+| Complex condition parser / CEL validator | Not implemented | The current release preserves and replaces condition fields but does not parse or validate CEL semantics. |
 | Dedicated loop analysis / unreachable-node repair proposal | Not implemented | Advanced graph analysis, not required for the current release acceptance baseline. |
 | 1000+ node graph | Untested | Bonus-scale scenario. Current verified large graph is 360 nodes / 399 edges. |
 | Token / model cost reporting | Partial | Evidence schema has cost fields, but current summaries do not include concrete cost accounting. |
@@ -71,7 +73,7 @@ See `docs/evidence/formal_200_summary.json` and `docs/evidence/deterministic_str
 
 - Precise layout alignment and distribution.
 - Group CRUD and group resizing.
-- Condition expression and branch label active editing.
+- Open-ended condition generation, complex condition parsing, and CEL semantic validation.
 - Dedicated graph analysis for unreachable nodes, loops, and repair suggestions.
 - 1000+ node stress acceptance.
 - Richer performance and cost dashboards.

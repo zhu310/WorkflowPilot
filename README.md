@@ -51,7 +51,7 @@ Detailed evidence is in `docs/evidence/`, especially `docs/evidence/capability_m
 - Scope handling: explicit object, selected nodes/edges, visible area, stage/group/subprocess, and global canvas.
 - Clarification: ambiguous object, branch, scope, and historical reference cases.
 - Multi-turn editing: versioned graph continuation, rollback/redo, and recent transaction mutation reference grounding.
-- Conditional branches: branch labels and condition metadata are preserved through local edits and active redirects.
+- Conditional branches: branch labels and condition metadata are preserved through local edits and active redirects; selected `branch_label` edits and explicit `condition.expression` replacements are verified as existing edge property mutations.
 - Visualization: before/after graph views, changed objects, preserved objects, transaction steps, and trace summary.
 
 ## Repository Layout

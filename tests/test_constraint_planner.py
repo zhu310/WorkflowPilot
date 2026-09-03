@@ -72,6 +72,19 @@ def test_executor_rejects_incomplete_or_mismatched_authorization() -> None:
     assert "authorization" in (result.error or "")
 
 
+def test_executor_rejects_unauthorized_update_edge() -> None:
+    value = graph([("A", "start"), ("B", "end")], [("A", "B", "success")])
+    result = execute_deterministic(
+        value,
+        {"core_node_ids": [], "core_edge_ids": []},
+        {"incoming": [], "outgoing": []},
+        [{"op": "update_edge", "edge_id": "e1", "changes": {"branch_label": "approved"}}],
+        [],
+    )
+    assert result.graph is None
+    assert "authorization" in (result.error or "")
+
+
 def test_layout_and_edge_properties_lower_to_existing_atomic_operations() -> None:
     value = graph([("A", "start"), ("B", "end")], [("A", "B", "failure")])
     planned = plan_constraints(value, {"entities": [], "properties": [{"node_id": "A", "changes": {"x": 80, "y": 30}}], "edge_properties": [{"edge_id": "e1", "changes": {"label": "exception"}}], "required_relations": [], "forbidden_relations": []})

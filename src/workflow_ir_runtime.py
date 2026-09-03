@@ -64,6 +64,9 @@ Return exactly:
         "properties": [
           {"target":"source_node"|"target_node"|"selected_node"|"scope_nodes","node_id":"exact existing id/name if explicit","changes":{"label":"...","join":{"mode":"all"}}}
         ],
+        "edge_properties": [
+          {"target":"selected_edge","edge_id":"exact existing edge id if explicit","source":"source_node","target_node":"target_node","relation_type":"explicit route label/type when needed","changes":{"branch_label":"...","condition":{"expression":"explicit expression from user","language":"optional explicit language"}}}
+        ],
         "position_offsets": [
           {"target":"source_node"|"target_node"|"selected_node"|"scope_nodes","node_id":"exact existing id/name if explicit","dx":0,"dy":0}
         ],
@@ -87,6 +90,8 @@ Rules:
 - Keep references only when explicit in the request wording.
 - Distinguish the user's requested future goal from current graph facts. Do not rewrite a requested improvement into an already-existing current relation or property unless the user explicitly asked for that exact fact to be preserved.
 - Use desired_state whenever the user explicitly specifies a target property value, coordinate move offset, explicit relation destination, deletion, or selected-only scope.
+- Use desired_state.edge_properties for explicit existing-edge property edits only. branch_label is distinct from relation_type / edge label. Do not change relation_type, label, source, target, condition, or other metadata for a branch_label request.
+- For condition.expression edits, only copy an explicit expression supplied by the user. Do not generate, optimize, infer, or rewrite business condition logic.
 - Use desired_state.abstract_goals when the user asks for a high-level outcome that is not itself a concrete node/edge/property edit. Abstract goals describe requested final-state properties for validation; they are not edit actions.
 - Include only properties explicitly requested by the user. Do not invent join/wait properties for rename, move, redirect, or delete requests.
 - If the request says "selected node", "selected step", or equivalent, use `source_node: "$selected_node"` and/or desired_state targets with `target:"selected_node"`.
@@ -145,6 +150,12 @@ Return exactly:
       "node_id": "existing node id",
       "changes": {"join": {"mode": "all"}} or {"label": "New label"}
     }
+  ],
+  "edge_properties": [
+    {
+      "edge_id": "existing edge id",
+      "changes": {"branch_label": "New branch label"} or {"condition": {"expression": "explicit expression", "language": "optional explicit language"}}
+    }
   ]
 }
 
@@ -162,6 +173,7 @@ Rules:
 - For unlabeled relations, relation_type must be "" only when the grounded relation is truly unlabeled.
 - If a downstream node must wait for all incoming work, use canonical property {"join":{"mode":"all"}} or parallel.join_mode="all".
 - If a node must be renamed, use properties with {"label":"..."}.
+- If an already authorized existing edge branch_label or condition.expression must be changed, use edge_properties. Do not use relation_type / label for branch_label, and do not invent condition expressions.
 - For layout/readability improvements, use properties such as {"x": ...} and {"y": ...} on allowed existing nodes instead of rewriting business topology when topology does not need to change.
 - If auxiliary_relations are allowed for the current unit, you may use them to rewrite the final targets of an owned relation group when that is the clearest way to realize the requested goal.
 - If an existing node must be deleted, include it in absent_entities.
@@ -530,6 +542,7 @@ def run_workflow_ir_transaction(
         has_abstract_goal = any(obligations.get("abstract_goals") for obligations in per_unit_obligations)
         has_non_abstract_target = any(
             obligations.get("properties")
+            or obligations.get("edge_properties")
             or obligations.get("auxiliary")
             or obligations.get("absent_entities")
             or obligations.get("entity_specs")
@@ -560,6 +573,7 @@ def run_workflow_ir_transaction(
         for obligations in per_unit_obligations:
             unit_keys = [
                 *(obligation_key("property", row) for row in obligations.get("properties", [])),
+                *(obligation_key("edge_property", row) for row in obligations.get("edge_properties", [])),
                 *(obligation_key("explicit_relation", row) for row in obligations.get("auxiliary", [])),
                 *(obligation_key("absent_entity", row) for row in obligations.get("absent_entities", [])),
                 *(obligation_key("entity_new", row) for row in obligations.get("entity_specs", [])),
@@ -572,6 +586,7 @@ def run_workflow_ir_transaction(
             duplicate_owner_keys[key] += 1
         global_expected_keys = {
             *(obligation_key("property", row) for row in global_obligations.get("properties", [])),
+            *(obligation_key("edge_property", row) for row in global_obligations.get("edge_properties", [])),
             *(obligation_key("explicit_relation", row) for row in global_obligations.get("auxiliary", [])),
             *(obligation_key("absent_entity", row) for row in global_obligations.get("absent_entities", [])),
         }
@@ -622,6 +637,7 @@ def run_workflow_ir_transaction(
             unit_runs.append(unit_record)
             any_realized_content = any_realized_content or bool(
                 obligations.get("properties")
+                or obligations.get("edge_properties")
                 or obligations.get("auxiliary")
                 or obligations.get("absent_entities")
                 or obligations.get("entity_specs")
@@ -640,7 +656,7 @@ def run_workflow_ir_transaction(
                 )
                 break
 
-            projected_ir = {"control_flow_regions": [], "auxiliary_relations": [], "absent_entities": [], "properties": []}
+            projected_ir = {"control_flow_regions": [], "auxiliary_relations": [], "absent_entities": [], "properties": [], "edge_properties": []}
             raw_ir = None
             parse_error = None
             schema_error = None
@@ -695,7 +711,7 @@ def run_workflow_ir_transaction(
                         projected_ir = retry_projected
                         schema_error = None
                     else:
-                        projected_ir = {"control_flow_regions": [], "auxiliary_relations": [], "absent_entities": [], "properties": []}
+                        projected_ir = {"control_flow_regions": [], "auxiliary_relations": [], "absent_entities": [], "properties": [], "edge_properties": []}
                         schema_error = retry_error
 
             participant_coverage = structural_participant_coverage(projected_ir, structural_slots)

@@ -58,6 +58,25 @@ def normalize_properties(rows: list[Any]) -> list[dict[str, Any]]:
     return normalized_rows
 
 
+def normalize_edge_changes(changes: dict[str, Any], current_edge: dict[str, Any] | None = None) -> dict[str, Any]:
+    data = dict(changes)
+    if "condition_expression" in data and "condition" not in data:
+        data["condition"] = {"expression": data.pop("condition_expression")}
+    allowed: dict[str, Any] = {}
+    branch_label = data.get("branch_label")
+    if isinstance(branch_label, str) and branch_label.strip():
+        allowed["branch_label"] = branch_label.strip()
+    condition = data.get("condition")
+    if isinstance(condition, dict) and isinstance(condition.get("expression"), str) and condition["expression"].strip():
+        current_condition = current_edge.get("condition") if isinstance(current_edge, dict) else None
+        target_condition = deepcopy(current_condition) if isinstance(current_condition, dict) else {}
+        target_condition["expression"] = condition["expression"].strip()
+        if isinstance(condition.get("language"), str) and condition["language"].strip():
+            target_condition["language"] = condition["language"].strip()
+        allowed["condition"] = target_condition
+    return allowed
+
+
 def graph_is_valid(graph_data: dict[str, Any] | None) -> bool:
     if not isinstance(graph_data, dict):
         return False
@@ -480,6 +499,59 @@ def _resolve_node_reference(
     return (matches[0], []) if len(matches) == 1 else (None, matches)
 
 
+def _edge_by_id(graph_data: dict[str, Any], edge_id: str | None) -> dict[str, Any] | None:
+    if not isinstance(edge_id, str):
+        return None
+    return next((edge for edge in graph_data.get("edges", []) if isinstance(edge, dict) and edge.get("id") == edge_id), None)
+
+
+def _resolve_edge_property_target(
+    graph_data: dict[str, Any],
+    row: dict[str, Any],
+    grounded_refs: dict[str, Any],
+    selection: dict[str, Any] | None,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    edge_id = row.get("edge_id")
+    if isinstance(edge_id, str):
+        edge = _edge_by_id(graph_data, edge_id)
+        return edge, [] if edge is not None else []
+    if row.get("target") == "selected_edge" or row.get("edge") == "selected_edge":
+        selected_id = grounded_refs.get("selected_edge_id") if isinstance(grounded_refs.get("selected_edge_id"), str) else _selected_edge_id(selection)
+        if selected_id:
+            edge = _edge_by_id(graph_data, selected_id)
+            return edge, []
+        selected_ids = selection_edge_ids(selection)
+        if selected_ids:
+            return None, selected_ids
+
+    source = None
+    target = None
+    source_ambiguous: list[str] = []
+    target_ambiguous: list[str] = []
+    if isinstance(row.get("source_node"), str):
+        source, source_ambiguous = _resolve_node_reference(graph_data, row["source_node"], selection)
+    elif row.get("source") == "source_node":
+        source = grounded_refs.get("source_node_id") if isinstance(grounded_refs.get("source_node_id"), str) else None
+    if isinstance(row.get("target_node"), str):
+        target, target_ambiguous = _resolve_node_reference(graph_data, row["target_node"], selection)
+    elif row.get("target") == "target_node":
+        target = grounded_refs.get("target_node_id") if isinstance(grounded_refs.get("target_node_id"), str) else None
+    if source_ambiguous or target_ambiguous:
+        return None, sorted(set(source_ambiguous + target_ambiguous))
+    relation_type = sanitize_relation_type(row.get("relation_type"), graph_data)
+    if relation_type is None and row.get("relation_type") == "relation_type" and isinstance(grounded_refs.get("relation_type"), str):
+        relation_type = grounded_refs["relation_type"]
+    candidates = [
+        edge
+        for edge in graph_data.get("edges", [])
+        if isinstance(edge, dict)
+        and (source is None or edge.get("source") == source)
+        and (target is None or edge.get("target") == target)
+        and (relation_type is None or edge.get("label", "") == relation_type)
+    ]
+    return (candidates[0], []) if len(candidates) == 1 else (None, [edge["id"] for edge in candidates if isinstance(edge.get("id"), str)])
+
+
 def _scope_node_filter(scope_policy: dict[str, Any]) -> set[str]:
     return {
         node_id
@@ -514,7 +586,7 @@ def _apply_scope_to_ambiguous_references(grounded_refs: dict[str, Any], scope_po
 def _has_history_reference_signal(text: str) -> bool:
     lowered = text.lower()
     restore_terms = ("undo", "revert", "restore", "撤销", "还原", "恢复")
-    temporal_terms = ("previous", "last", "recent", "earlier", "original", "back to", "之前", "刚才", "上一", "上次", "原来")
+    temporal_terms = ("previous", "last", "recent", "earlier", "original", "back to", "first one", "second one", "the other one", "之前", "刚才", "上一", "上次", "原来")
     mutation_terms = ("move", "moved", "rename", "renamed", "change", "changed", "edit", "edited", "移动", "挪动", "改名", "修改")
     has_restore_action = any(term in lowered for term in restore_terms)
     has_history_reference = any(term in lowered for term in temporal_terms)
@@ -529,6 +601,9 @@ def _has_history_reference_signal(text: str) -> bool:
         "last",
         "original",
         "back to",
+        "first one",
+        "second one",
+        "the other one",
         "刚才",
         "上一",
         "上次",
@@ -952,6 +1027,100 @@ def _resolve_grounded_properties(
     return list(deduped.values())
 
 
+def _fallback_edge_property_rows_from_text(text: str) -> list[dict[str, Any]]:
+    lowered = text.lower()
+    rows: list[dict[str, Any]] = []
+    branch_match = re.search(r"\b(?:rename|change|set|update)\s+(?:the\s+)?(?:selected\s+)?branch[_ -]?label\s+to\s+(.+?)[\.\n]*$", text, re.IGNORECASE)
+    if branch_match:
+        value = branch_match.group(1).strip().strip("\"'")
+        if value:
+            rows.append({"target": "selected_edge", "changes": {"branch_label": value}})
+    condition_match = re.search(
+        r"\b(?:replace|change|set|update)\s+(?:the\s+)?(?:selected\s+)?(?:branch\s+)?condition(?:\.expression|\s+expression)?\s+(?:with|to)\s+(.+?)[\.\n]*$",
+        text,
+        re.IGNORECASE,
+    )
+    if condition_match:
+        expression = condition_match.group(1).strip().strip("\"'")
+        if expression:
+            rows.append({"target": "selected_edge", "changes": {"condition": {"expression": expression}}})
+    elif "condition" in lowered and any(token in lowered for token in ("optimize", "generate", "better", "更合理", "优化", "生成")):
+        rows.append({"target": "selected_edge", "changes": {}})
+    return rows
+
+
+def _resolve_grounded_edge_properties(
+    graph_data: dict[str, Any],
+    requirement: dict[str, Any],
+    grounded_refs: dict[str, Any],
+    selection: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    desired_state = requirement.get("desired_state", {}) if isinstance(requirement.get("desired_state"), dict) else {}
+    rows = [row for row in desired_state.get("edge_properties", []) if isinstance(row, dict)]
+    if not rows:
+        rows = _fallback_edge_property_rows_from_text(str(requirement.get("text", "")))
+    edge_properties: list[dict[str, Any]] = []
+    text = str(requirement.get("text", ""))
+    lowered_text = text.lower()
+    mentioned_nodes = explicit_mentions(text, graph_data)
+
+    def text_selects_edge(edge: dict[str, Any]) -> bool:
+        edge_id = edge.get("id")
+        target = edge.get("target")
+        label = edge.get("label", "")
+        if isinstance(edge_id, str) and edge_id.lower() in lowered_text:
+            return True
+        if isinstance(target, str) and target in mentioned_nodes:
+            return True
+        return bool(isinstance(label, str) and label and re.search(rf"(?<![a-z0-9_]){re.escape(label.lower())}(?![a-z0-9_])", lowered_text))
+
+    for row in rows:
+        if not isinstance(row.get("changes"), dict):
+            continue
+        edge, ambiguous = _resolve_edge_property_target(graph_data, row, grounded_refs, selection)
+        if ambiguous:
+            grounded_refs.setdefault("ambiguous_edge_ids", sorted(ambiguous))
+            continue
+        if not isinstance(edge, dict) or not isinstance(edge.get("id"), str):
+            continue
+        if not selection_edge_ids(selection) and not text_selects_edge(edge):
+            sibling_edges = [
+                candidate
+                for candidate in graph_data.get("edges", [])
+                if isinstance(candidate, dict)
+                and candidate.get("source") == edge.get("source")
+                and ("condition" in candidate or "branch_label" in candidate)
+                and isinstance(candidate.get("id"), str)
+            ]
+            if len(sibling_edges) > 1:
+                grounded_refs.setdefault("ambiguous_edge_ids", sorted(candidate["id"] for candidate in sibling_edges))
+                continue
+        changes = normalize_edge_changes(row["changes"], edge)
+        if not changes:
+            continue
+        delta = {key: value for key, value in changes.items() if edge.get(key) != value}
+        if not delta:
+            continue
+        grounded_refs.setdefault("selected_edge_id", edge["id"])
+        grounded_refs.setdefault("source_node_id", edge.get("source"))
+        grounded_refs.setdefault("target_node_id", edge.get("target"))
+        grounded_refs.setdefault("relation_type", edge.get("label", ""))
+        edge_properties.append(
+            {
+                "edge_id": edge["id"],
+                "source_requirement_id": requirement.get("id"),
+                "derivations": {key: "grounded_explicit_edge_property" for key in delta},
+                "changes": delta,
+            }
+        )
+    deduped = {
+        (row["edge_id"], json.dumps(row["changes"], ensure_ascii=False, sort_keys=True)): row
+        for row in edge_properties
+        if row.get("changes")
+    }
+    return list(deduped.values())
+
+
 def _resolve_grounded_relations(
     graph_data: dict[str, Any],
     requirement: dict[str, Any],
@@ -1066,6 +1235,16 @@ def ground_requirement(
     if mentions:
         grounded_refs["mentioned_node_ids"] = mentions
     lowered = text.lower()
+    if any(token in lowered for token in ("this branch", "selected branch", "this edge", "selected edge")) and not selection_edge_ids(selection):
+        candidate_edges = [
+            edge["id"]
+            for edge in graph_data.get("edges", [])
+            if isinstance(edge, dict)
+            and isinstance(edge.get("id"), str)
+            and ("condition" in edge or "branch_label" in edge or edge.get("label", ""))
+        ]
+        grounded_refs.pop("selected_edge_id", None)
+        grounded_refs["ambiguous_edge_ids"] = sorted(candidate_edges)
 
     if "former predecessor of" in lowered and " to " in lowered and len(mentions) >= 2:
         anchor = mentions[0]
@@ -1127,9 +1306,11 @@ def ground_requirement(
         if history_refs.get("history_reference_used") is True
         else _resolve_grounded_properties(graph_data, requirement, grounded_refs, selection, request_context)
     )
+    edge_properties = _resolve_grounded_edge_properties(graph_data, requirement, grounded_refs, selection)
     grounded_desired_state = {
         "abstract_goals": _normalize_abstract_goals(requirement),
         "properties": properties,
+        "edge_properties": edge_properties,
         "explicit_relations": _resolve_grounded_relations(graph_data, requirement, grounded_refs, selection),
         "absent_entities": [],
         "clarification": (
@@ -1173,6 +1354,13 @@ def requirement_local_facts(graph_data: dict[str, Any], requirement: dict[str, A
     edge_ids: set[str] = set()
     relation_keys: set[tuple[str, str, str]] = set()
     context_node_ids: set[str] = set(core_node_ids)
+    for row in desired_state.get("edge_properties", []):
+        if isinstance(row, dict) and isinstance(row.get("edge_id"), str):
+            edge = _edge_by_id(graph_data, row["edge_id"])
+            if isinstance(edge, dict):
+                edge_ids.add(row["edge_id"])
+                relation_keys.add((edge["source"], edge["target"], edge.get("label", "")))
+                context_node_ids.update([edge["source"], edge["target"]])
     for edge in graph_data.get("edges", []):
         if edge.get("id") == refs.get("selected_edge_id"):
             edge_ids.add(edge["id"])
@@ -1399,7 +1587,29 @@ def _property_targets_from_requirements(requirements: list[dict[str, Any]], refe
     return allowed
 
 
+def _has_edge_property_edit(requirement: dict[str, Any]) -> bool:
+    desired_state = requirement.get("grounded_desired_state", {}) if isinstance(requirement.get("grounded_desired_state"), dict) else {}
+    if "grounded_desired_state" not in requirement and isinstance(requirement.get("desired_state"), dict):
+        desired_state = requirement["desired_state"]
+    if desired_state.get("edge_properties"):
+        return True
+    text = str(requirement.get("text", "")).lower()
+    return bool(re.search(r"\bbranch[_ -]?label\b", text)) or ("condition" in text and "expression" in text)
+
+
+def _edge_property_targets_from_requirements(requirements: list[dict[str, Any]]) -> set[str]:
+    allowed: set[str] = set()
+    for requirement in requirements:
+        desired_state = requirement.get("grounded_desired_state", {}) if isinstance(requirement.get("grounded_desired_state"), dict) else {}
+        for row in desired_state.get("edge_properties", []):
+            if isinstance(row, dict) and isinstance(row.get("edge_id"), str):
+                allowed.add(row["edge_id"])
+    return allowed
+
+
 def _requires_structural_region(requirement: dict[str, Any], _ref: dict[str, Any]) -> bool:
+    if _has_edge_property_edit(requirement):
+        return False
     text = requirement.get("text", "").lower()
     topology_tokens = ("after", "before", "between", "parallel", "branch", "sequence", "route", "insert", "add ", "create ", "new ")
     has_topology_signal = any(token in text for token in topology_tokens)
@@ -1557,12 +1767,28 @@ def explicit_relation_rows_for_requirement(requirement: dict[str, Any], refs: di
 
 def _normalize_abstract_goals(requirement: dict[str, Any]) -> list[dict[str, str]]:
     desired_state = requirement.get("desired_state", {}) if isinstance(requirement.get("desired_state"), dict) else {}
+    text = str(requirement.get("text", "")).lower()
+    concrete_topology_text = any(
+        token in text
+        for token in (
+            " after ",
+            " before ",
+            " between ",
+            "parallel",
+            "both ",
+            "complete before",
+            "completed after",
+            "run after",
+        )
+    )
     rows = []
     for row in desired_state.get("abstract_goals", []):
         if not isinstance(row, dict):
             continue
         goal_type = row.get("goal_type")
         description = row.get("description", requirement.get("text", ""))
+        if concrete_topology_text and goal_type in {None, "", "other"}:
+            continue
         if isinstance(goal_type, str) and goal_type:
             rows.append({"goal_type": goal_type, "description": str(description)})
     return rows
@@ -1590,7 +1816,7 @@ def _has_delete_intent(text: str) -> bool:
 
 def _has_concrete_edit_signal(requirement: dict[str, Any], refs: dict[str, Any]) -> bool:
     desired_state = requirement.get("grounded_desired_state", {}) if isinstance(requirement.get("grounded_desired_state"), dict) else {}
-    if desired_state.get("properties") or desired_state.get("explicit_relations") or desired_state.get("absent_entities"):
+    if desired_state.get("properties") or desired_state.get("edge_properties") or desired_state.get("explicit_relations") or desired_state.get("absent_entities"):
         return True
     text = str(requirement.get("text", "")).lower()
     concrete_tokens = (
@@ -1674,6 +1900,7 @@ def build_unit_contract(graph_data: dict[str, Any], unit: dict[str, Any]) -> dic
             allow_absent_entities = True
     auxiliary_relation_types = sorted({label for _source, label in auxiliary_groups})
     property_targets = sorted(_property_targets_from_requirements(requirements, references))
+    edge_property_targets = sorted(_edge_property_targets_from_requirements(requirements))
     return {
         "allowed_structural_relation_types": sorted(structural_relation_types),
         "allowed_auxiliary_relation_types": auxiliary_relation_types,
@@ -1686,6 +1913,7 @@ def build_unit_contract(graph_data: dict[str, Any], unit: dict[str, Any]) -> dic
         ),
         "allow_new_entities": goal_allows_entity_creation(texts),
         "allowed_property_targets": property_targets,
+        "allowed_edge_property_targets": edge_property_targets,
         "allow_absent_entities": allow_absent_entities,
     }
 
@@ -1715,7 +1943,7 @@ def _abstract_preserve_constraints(scope_node_ids: list[str], graph_data: dict[s
 
 
 def explicit_obligations(requirements: list[dict[str, Any]], graph_data: dict[str, Any]) -> dict[str, Any]:
-    obligations = {"auxiliary": [], "properties": [], "entity_create": False, "absent_entities": []}
+    obligations = {"auxiliary": [], "properties": [], "edge_properties": [], "entity_create": False, "absent_entities": []}
     for requirement in requirements:
         text = str(requirement.get("text", "")).lower()
         original_text = str(requirement.get("text", ""))
@@ -1765,7 +1993,22 @@ def explicit_obligations(requirements: list[dict[str, Any]], graph_data: dict[st
                             "derivation": (row.get("derivations", {}) or {}).get(key, "grounded_explicit_property"),
                         }
                     )
-        elif any(token in text for token in ("wait", "join", "incoming", "all incoming")):
+        if desired_state.get("edge_properties"):
+            for row in desired_state["edge_properties"]:
+                if not (isinstance(row, dict) and isinstance(row.get("edge_id"), str) and isinstance(row.get("changes"), dict)):
+                    continue
+                for key, value in row["changes"].items():
+                    obligations["edge_properties"].append(
+                        {
+                            "edge_id": row["edge_id"],
+                            "property": key,
+                            "kind": key,
+                            "value": deepcopy(value),
+                            "source_requirement_id": row.get("source_requirement_id", requirement.get("id")),
+                            "derivation": (row.get("derivations", {}) or {}).get(key, "grounded_explicit_edge_property"),
+                        }
+                    )
+        if not desired_state.get("properties") and any(token in text for token in ("wait", "join", "incoming", "all incoming")):
             property_target = source or target or next(iter(mentioned), None)
             if property_target:
                 obligations["properties"].append(
@@ -1779,7 +2022,7 @@ def explicit_obligations(requirements: list[dict[str, Any]], graph_data: dict[st
                         "derivation": "textual_explicit_join",
                     }
                 )
-        if not desired_state.get("properties") and text.startswith("rename ") and " to " in text:
+        if not desired_state.get("properties") and not desired_state.get("edge_properties") and not _has_edge_property_edit(requirement) and text.startswith("rename ") and " to " in text:
             property_target = source or next(iter(mentioned), None)
             new_label = original_text.split(" to ", 1)[1].strip().rstrip(".")
             if property_target and new_label:
@@ -1814,6 +2057,18 @@ def explicit_obligations(requirements: list[dict[str, Any]], graph_data: dict[st
             for row in obligations["properties"]
         }.values()
     )
+    obligations["edge_properties"] = list(
+        {
+            (
+                row["edge_id"],
+                row["kind"],
+                json.dumps(row.get("value"), ensure_ascii=False, sort_keys=True),
+                row.get("source_requirement_id"),
+                row.get("derivation"),
+            ): row
+            for row in obligations["edge_properties"]
+        }.values()
+    )
     obligations["absent_entities"] = list({row["node_id"]: row for row in obligations["absent_entities"]}.values())
     return obligations
 
@@ -1827,6 +2082,7 @@ def required_obligations(
     obligations = {
         "auxiliary": [],
         "properties": [],
+        "edge_properties": [],
         "entity_create": False,
         "absent_entities": [],
         "structural_participants": [],
@@ -1910,9 +2166,13 @@ def required_obligations(
         obligations["auxiliary"].extend(explicit_rows)
 
     property_targets = set(unit_contract.get("allowed_property_targets", []))
+    edge_property_targets = set(unit_contract.get("allowed_edge_property_targets", []))
     for row in global_obligations["properties"]:
         if row["node_id"] in property_targets:
             obligations["properties"].append(row)
+    for row in global_obligations.get("edge_properties", []):
+        if row["edge_id"] in edge_property_targets:
+            obligations["edge_properties"].append(row)
     for row in global_obligations["auxiliary"]:
         if (row["source"], row["relation_type"]) in allowed_aux_groups:
             obligations["auxiliary"].append(row)
@@ -1937,6 +2197,18 @@ def required_obligations(
                 row.get("derivation"),
             ): row
             for row in obligations["properties"]
+        }.values()
+    )
+    obligations["edge_properties"] = list(
+        {
+            (
+                row["edge_id"],
+                row["kind"],
+                json.dumps(row.get("value"), ensure_ascii=False, sort_keys=True),
+                row.get("source_requirement_id"),
+                row.get("derivation"),
+            ): row
+            for row in obligations["edge_properties"]
         }.values()
     )
     obligations["absent_entities"] = list({row["node_id"]: row for row in obligations["absent_entities"]}.values())
@@ -2014,10 +2286,15 @@ def skeleton_from_obligations(
         else:
             property_name = row.get("property", row["kind"])
             properties.append({"node_id": row["node_id"], "changes": {property_name: row["value"]}})
+    edge_properties: list[dict[str, Any]] = []
+    for row in obligations.get("edge_properties", []):
+        property_name = row.get("property", row["kind"])
+        edge_properties.append({"edge_id": row["edge_id"], "changes": {property_name: deepcopy(row["value"])}})
     skeleton = {
         "entities": deterministic_entities,
         "absent_entities": [{"node_id": row["node_id"]} for row in obligations["absent_entities"]],
         "properties": properties,
+        "edge_properties": edge_properties,
         "structural_regions": [],
         "explicit_relations": group_explicit_relations(obligations["auxiliary"]),
     }
@@ -2061,6 +2338,8 @@ def obligation_realization(
     realization_map: dict[str, list[dict[str, str]]] = defaultdict(list)
     for row in obligations.get("properties", []):
         realization_map[obligation_key("property", row)].append({"owner_unit_id": owner_unit_id, "realization_mode": "deterministic_fact"})
+    for row in obligations.get("edge_properties", []):
+        realization_map[obligation_key("edge_property", row)].append({"owner_unit_id": owner_unit_id, "realization_mode": "deterministic_fact"})
     for row in obligations.get("auxiliary", []):
         realization_map[obligation_key("explicit_relation", row)].append({"owner_unit_id": owner_unit_id, "realization_mode": "deterministic_fact"})
     for row in obligations.get("absent_entities", []):
@@ -2074,6 +2353,7 @@ def obligation_realization(
 
     expected_keys = {
         *(obligation_key("property", row) for row in obligations.get("properties", [])),
+        *(obligation_key("edge_property", row) for row in obligations.get("edge_properties", [])),
         *(obligation_key("explicit_relation", row) for row in obligations.get("auxiliary", [])),
         *(obligation_key("absent_entity", row) for row in obligations.get("absent_entities", [])),
         *(obligation_key("entity_new", row) for row in obligations.get("entity_specs", [])),
@@ -2088,7 +2368,7 @@ def obligation_realization(
         "orphan_obligations": orphan_obligations,
         "duplicate_realizations": duplicate_realizations,
         "obligation_realization_complete": not orphan_obligations and not duplicate_realizations,
-        "deterministic_facts_count": len(skeleton["entities"]) + len(skeleton["absent_entities"]) + len(skeleton["properties"]) + len(skeleton["explicit_relations"]),
+        "deterministic_facts_count": len(skeleton["entities"]) + len(skeleton["absent_entities"]) + len(skeleton["properties"]) + len(skeleton["edge_properties"]) + len(skeleton["explicit_relations"]),
         "semantic_slots_count": len(structural_slots),
     }
 
@@ -2107,6 +2387,7 @@ def generation_contract(
             "allowed_existing_node_ids": [],
             "allow_new_entities": False,
             "allowed_property_targets": [],
+            "allowed_edge_property_targets": [],
             "allow_absent_entities": False,
         }
     allowed_structural = sorted(
@@ -2133,6 +2414,7 @@ def generation_contract(
         "allowed_existing_node_ids": [node_id for node_id in unit_contract.get("allowed_existing_node_ids", []) if node_id in locked_existing_ids],
         "allow_new_entities": bool(deterministic_entities),
         "allowed_property_targets": allowed_property_targets,
+        "allowed_edge_property_targets": [],
         "allow_absent_entities": False,
         "locked_new_entities": deterministic_entities,
         "locked_structural_slots": structural_slots,
@@ -2209,6 +2491,17 @@ def normalize_ir(value: dict[str, Any]) -> dict[str, Any]:
             ],
             key=lambda row: row["node_id"],
         ),
+        "edge_properties": sorted(
+            [
+                {"edge_id": row["edge_id"], "changes": normalize_edge_changes(row["changes"])}
+                for row in value.get("edge_properties", [])
+                if isinstance(row, dict)
+                and isinstance(row.get("edge_id"), str)
+                and isinstance(row.get("changes"), dict)
+                and normalize_edge_changes(row["changes"])
+            ],
+            key=lambda row: row["edge_id"],
+        ),
     }
 
 
@@ -2275,7 +2568,7 @@ def is_schema_structural_error(error: str | None) -> bool:
 def validate_ir(value: dict[str, Any] | None, graph_data: dict[str, Any], unit_contract: dict[str, Any]) -> tuple[bool, str | None]:
     if not isinstance(value, dict):
         return False, "invalid workflow ir"
-    if not all(isinstance(value.get(key, []), list) for key in ("control_flow_regions", "auxiliary_relations", "absent_entities", "properties")):
+    if not all(isinstance(value.get(key, []), list) for key in ("control_flow_regions", "auxiliary_relations", "absent_entities", "properties", "edge_properties")):
         return False, "workflow ir top-level fields must be arrays"
     known_nodes = graph_node_ids(graph_data)
     known_labels = graph_labels(graph_data)
@@ -2290,6 +2583,7 @@ def validate_ir(value: dict[str, Any] | None, graph_data: dict[str, Any], unit_c
     }
     allow_new_entities = bool(unit_contract.get("allow_new_entities"))
     allowed_property_targets = set(unit_contract.get("allowed_property_targets", []))
+    allowed_edge_property_targets = set(unit_contract.get("allowed_edge_property_targets", []))
     allow_absent_entities = bool(unit_contract.get("allow_absent_entities"))
 
     def validate_structure(structure: Any) -> tuple[bool, str | None]:
@@ -2366,6 +2660,18 @@ def validate_ir(value: dict[str, Any] | None, graph_data: dict[str, Any], unit_c
             return False, "invalid property row"
         if row["node_id"] not in allowed_property_targets:
             return False, "property target is not allowed by unit contract"
+    known_edges = {edge.get("id") for edge in graph_data.get("edges", []) if isinstance(edge, dict) and isinstance(edge.get("id"), str)}
+    for row in value["edge_properties"]:
+        if not (
+            isinstance(row, dict)
+            and isinstance(row.get("edge_id"), str)
+            and row["edge_id"] in known_edges
+            and isinstance(row.get("changes"), dict)
+            and normalize_edge_changes(row["changes"], _edge_by_id(graph_data, row["edge_id"]))
+        ):
+            return False, "invalid edge property row"
+        if row["edge_id"] not in allowed_edge_property_targets:
+            return False, "edge property target is not allowed by unit contract"
     for row in value["absent_entities"]:
         if not (isinstance(row, dict) and isinstance(row.get("node_id"), str) and row["node_id"] in known_nodes):
             return False, "invalid absent entity row"
@@ -2390,11 +2696,12 @@ def ir_nodes(structure: dict[str, Any]) -> list[dict[str, Any]]:
 
 def project_generated_ir(raw_ir: dict[str, Any] | None, generation_contract: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(raw_ir, dict):
-        return {"control_flow_regions": [], "auxiliary_relations": [], "absent_entities": [], "properties": []}
+        return {"control_flow_regions": [], "auxiliary_relations": [], "absent_entities": [], "properties": [], "edge_properties": []}
     allowed_structural = set(generation_contract.get("allowed_structural_relation_types", []))
     allowed_auxiliary = set(generation_contract.get("allowed_auxiliary_relation_types", []))
     allowed_existing = set(generation_contract.get("allowed_existing_node_ids", []))
     allowed_property_targets = set(generation_contract.get("allowed_property_targets", []))
+    allowed_edge_property_targets = set(generation_contract.get("allowed_edge_property_targets", []))
     allowed_auxiliary_groups = {
         (row["source"], row["relation_type"])
         for row in generation_contract.get("allowed_auxiliary_relation_groups", [])
@@ -2437,6 +2744,18 @@ def project_generated_ir(raw_ir: dict[str, Any] | None, generation_contract: dic
             continue
         projected_properties.append({"node_id": row["node_id"], "changes": row["changes"]})
 
+    projected_edge_properties = []
+    for row in raw_ir.get("edge_properties", []):
+        if not (
+            isinstance(row, dict)
+            and isinstance(row.get("edge_id"), str)
+            and row["edge_id"] in allowed_edge_property_targets
+            and isinstance(row.get("changes"), dict)
+            and normalize_edge_changes(row["changes"])
+        ):
+            continue
+        projected_edge_properties.append({"edge_id": row["edge_id"], "changes": row["changes"]})
+
     projected_auxiliary = []
     for row in raw_ir.get("auxiliary_relations", []):
         if not (
@@ -2458,6 +2777,7 @@ def project_generated_ir(raw_ir: dict[str, Any] | None, generation_contract: dic
             "auxiliary_relations": projected_auxiliary,
             "absent_entities": [],
             "properties": projected_properties,
+            "edge_properties": projected_edge_properties,
         }
     )
 
@@ -2469,6 +2789,7 @@ def merge_skeleton_and_generated(skeleton: dict[str, Any], generated_ir: dict[st
             "auxiliary_relations": list(skeleton.get("explicit_relations", [])) + list(generated_ir.get("auxiliary_relations", [])),
             "absent_entities": list(skeleton.get("absent_entities", [])),
             "properties": list(skeleton.get("properties", [])) + list(generated_ir.get("properties", [])),
+            "edge_properties": list(skeleton.get("edge_properties", [])) + list(generated_ir.get("edge_properties", [])),
         }
     )
 
@@ -2592,6 +2913,16 @@ def obligation_coverage(ir: dict[str, Any] | None, obligations: dict[str, Any]) 
             if key not in property_lookup:
                 errors.append(f"missing property obligation {row['node_id']}.{row['kind']}={row['value']}")
 
+    edge_property_lookup = {
+        (row.get("edge_id"), json.dumps(row.get("changes", {}), sort_keys=True, ensure_ascii=False))
+        for row in ir.get("edge_properties", [])
+        if isinstance(row, dict)
+    }
+    for row in obligations.get("edge_properties", []):
+        key = (row["edge_id"], json.dumps({row["kind"]: row["value"]}, sort_keys=True, ensure_ascii=False))
+        if key not in edge_property_lookup:
+            errors.append(f"missing edge property obligation {row['edge_id']}.{row['kind']}={row['value']}")
+
     if obligations["entity_create"]:
         has_new_ref = any(
             "ref" in node
@@ -2637,6 +2968,7 @@ def obligation_coverage(ir: dict[str, Any] | None, obligations: dict[str, Any]) 
 def compile_ir(ir: dict[str, Any], _graph_data: dict[str, Any]) -> dict[str, Any]:
     entities: dict[str, dict[str, Any]] = {}
     properties: dict[str, dict[str, Any]] = {}
+    edge_properties: dict[str, dict[str, Any]] = {}
 
     def add_property(node_id: str, changes: dict[str, Any]) -> None:
         current = properties.get(node_id, {})
@@ -2700,12 +3032,17 @@ def compile_ir(ir: dict[str, Any], _graph_data: dict[str, Any]) -> dict[str, Any
         )
     for row in ir.get("properties", []):
         add_property(row["node_id"], row["changes"])
+    for row in ir.get("edge_properties", []):
+        current = edge_properties.get(row["edge_id"], {})
+        current.update(normalize_edge_changes(row["changes"]))
+        edge_properties[row["edge_id"]] = current
     return {
         "entities": sorted(entities.values(), key=lambda row: row["ref"]),
         "control_flow_regions": control_flow_regions,
         "auxiliary_relations": list(ir.get("auxiliary_relations", [])),
         "absent_entities": list(ir.get("absent_entities", [])),
         "properties": [{"node_id": node_id, "changes": changes} for node_id, changes in sorted(properties.items()) if changes],
+        "edge_properties": [{"edge_id": edge_id, "changes": changes} for edge_id, changes in sorted(edge_properties.items()) if changes],
     }
 
 
@@ -2777,6 +3114,16 @@ def validate_compiled_property_provenance(
         if isinstance(row.get("node_id"), str)
     }
     allowed = explicit_authorized | derived_authorized
+    explicit_edge_authorized = {
+        (
+            row["edge_id"],
+            row.get("property", row["kind"]),
+            json.dumps(row["value"], ensure_ascii=False, sort_keys=True),
+        )
+        for row in obligations.get("edge_properties", [])
+        if isinstance(row, dict) and isinstance(row.get("edge_id"), str)
+    }
+    existing_edges = {edge["id"] for edge in graph_data.get("edges", []) if isinstance(edge, dict) and isinstance(edge.get("id"), str)}
     errors: list[str] = []
     for row in compiled.get("properties", []):
         if not (isinstance(row, dict) and isinstance(row.get("node_id"), str) and isinstance(row.get("changes"), dict)):
@@ -2791,6 +3138,17 @@ def validate_compiled_property_provenance(
             if key not in allowed:
                 errors.append(
                     f"unauthorized property mutation {row['node_id']} {json.dumps({property_name: value}, ensure_ascii=False, sort_keys=True)}"
+                )
+    for row in compiled.get("edge_properties", []):
+        if not (isinstance(row, dict) and isinstance(row.get("edge_id"), str) and isinstance(row.get("changes"), dict)):
+            continue
+        if row["edge_id"] not in existing_edges:
+            continue
+        for property_name, value in normalize_edge_changes(row["changes"]).items():
+            key = (row["edge_id"], property_name, json.dumps(value, ensure_ascii=False, sort_keys=True))
+            if key not in explicit_edge_authorized:
+                errors.append(
+                    f"unauthorized edge property mutation {row['edge_id']} {json.dumps({property_name: value}, ensure_ascii=False, sort_keys=True)}"
                 )
     return not errors, errors
 
@@ -2817,6 +3175,18 @@ def graph_satisfies_obligations(graph_data: dict[str, Any], obligations: dict[st
             continue
         if node.get(property_name) != row["value"]:
             return False
+    edge_map = {
+        edge["id"]: edge
+        for edge in graph_data.get("edges", [])
+        if isinstance(edge, dict) and isinstance(edge.get("id"), str)
+    }
+    for row in obligations.get("edge_properties", []):
+        edge = edge_map.get(row["edge_id"])
+        if not isinstance(edge, dict):
+            return False
+        property_name = row.get("property", row.get("kind"))
+        if edge.get(property_name) != row["value"]:
+            return False
     for row in obligations.get("auxiliary", []):
         if (row["source"], row["target"], row["relation_type"]) not in edges:
             return False
@@ -2836,6 +3206,9 @@ def requirement_needs_clarification(requirement: dict[str, Any]) -> tuple[bool, 
         reason = clarification.get("reason") if isinstance(clarification.get("reason"), str) else "clarification required"
         return True, question or "Please clarify the unresolved edit target.", reason
     refs = requirement.get("references", {}) if isinstance(requirement.get("references"), dict) else {}
+    text = str(requirement.get("text", "")).lower()
+    if any(token in text for token in ("this branch", "selected branch", "this edge", "selected edge")) and not refs.get("selected_edge_id"):
+        return True, "Which branch do you want to edit?", "ambiguous edge reference"
     ambiguous = sorted(
         {
             *refs.get("ambiguous_source_node_ids", []),
@@ -2846,6 +3219,9 @@ def requirement_needs_clarification(requirement: dict[str, Any]) -> tuple[bool, 
     )
     if ambiguous:
         return True, f"Which node do you want to edit? Candidates: {', '.join(ambiguous)}.", "ambiguous node reference"
+    ambiguous_edges = sorted({edge_id for edge_id in refs.get("ambiguous_edge_ids", []) if isinstance(edge_id, str)})
+    if ambiguous_edges:
+        return True, f"Which branch do you want to edit? Candidates: {', '.join(ambiguous_edges)}.", "ambiguous edge reference"
     abstract_goals = desired_state.get("abstract_goals", []) if isinstance(desired_state.get("abstract_goals"), list) else []
     if any(isinstance(row, dict) and row.get("goal_type") in {None, "", "other"} for row in abstract_goals):
         return (
@@ -2904,6 +3280,24 @@ def constraints_from_compiled(graph_data: dict[str, Any], compiled: dict[str, An
         if changes:
             property_rows.append({"node_id": row["node_id"], "changes": changes})
     constraints["properties"] = property_rows
+    edges_by_id = {
+        edge["id"]: edge
+        for edge in graph_data.get("edges", [])
+        if isinstance(edge, dict) and isinstance(edge.get("id"), str)
+    }
+    edge_property_rows: list[dict[str, Any]] = []
+    for row in compiled.get("edge_properties", []):
+        if not (isinstance(row, dict) and isinstance(row.get("edge_id"), str) and isinstance(row.get("changes"), dict)):
+            continue
+        edge = edges_by_id.get(row["edge_id"], {})
+        changes = {
+            key: value
+            for key, value in normalize_edge_changes(row["changes"], edge if isinstance(edge, dict) else None).items()
+            if not isinstance(edge, dict) or edge.get(key) != value
+        }
+        if changes:
+            edge_property_rows.append({"edge_id": row["edge_id"], "changes": changes})
+    constraints["edge_properties"] = edge_property_rows
     current_node_ids = graph_node_ids(graph_data)
     target_edges: set[tuple[str, str, str]] = set()
     target_edge_rows: dict[tuple[str, str, str], dict[str, Any]] = {}
@@ -2990,6 +3384,7 @@ def merge_constraints(graph_data: dict[str, Any], unit_constraints: list[dict[st
     merged = empty_constraints()
     entity_rows: dict[str, dict[str, Any]] = {}
     property_rows: dict[str, dict[str, Any]] = {}
+    edge_property_rows: dict[str, dict[str, Any]] = {}
     absent_entities: set[str] = set()
     required: dict[tuple[str, str, str], dict[str, Any]] = {}
     forbidden: set[tuple[str, str, str]] = set()
@@ -3005,6 +3400,12 @@ def merge_constraints(graph_data: dict[str, Any], unit_constraints: list[dict[st
             for key, value in row["changes"].items():
                 if key in current and current[key] != value:
                     return None, "conflicting node properties across units"
+                current[key] = value
+        for row in constraints.get("edge_properties", []):
+            current = edge_property_rows.setdefault(row["edge_id"], {})
+            for key, value in row["changes"].items():
+                if key in current and current[key] != value:
+                    return None, "conflicting edge properties across units"
                 current[key] = value
         for row in constraints.get("absent_entities", []):
             if isinstance(row, dict) and isinstance(row.get("node_id"), str):
@@ -3023,6 +3424,7 @@ def merge_constraints(graph_data: dict[str, Any], unit_constraints: list[dict[st
     merged["entities"] = [entity_rows[key] for key in sorted(entity_rows)]
     merged["absent_entities"] = [{"node_id": node_id} for node_id in sorted(absent_entities)]
     merged["properties"] = [{"node_id": node_id, "changes": changes} for node_id, changes in sorted(property_rows.items()) if changes]
+    merged["edge_properties"] = [{"edge_id": edge_id, "changes": changes} for edge_id, changes in sorted(edge_property_rows.items()) if changes]
     merged["required_relations"] = [required[key] for key in sorted(required)]
     merged["forbidden_relations"] = [{"source": s, "target": t, "label": l} for s, t, l in sorted(forbidden)]
     merged["preserve"] = {
