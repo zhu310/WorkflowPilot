@@ -243,6 +243,7 @@ class TransactionResult:
     graph_context: dict[str, Any] | None = None
     specification: dict[str, Any] | None = None
     mutation_authorization: list[dict[str, Any]] | None = None
+    clarification_message: str | None = None
 
 
 def _normalize_text(value: str) -> str:
@@ -635,6 +636,7 @@ def run_transaction(
         graph_context=result.get("graph_context"),
         specification=result.get("specification"),
         mutation_authorization=result.get("mutation_authorization"),
+        clarification_message=result.get("clarification_message"),
     )
 
 

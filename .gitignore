@@ -19,6 +19,10 @@ __pycache__/
 *.tmp
 *.bak
 
+# Frontend
+node_modules/
+dist/
+
 # Large artifacts
 experiments/runs/
 runs/

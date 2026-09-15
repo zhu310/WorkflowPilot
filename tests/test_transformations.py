@@ -5,6 +5,8 @@ from copy import deepcopy
 from src import mvp23
 from src.mvp22 import execute_deterministic
 from src.transformations import PARALLELIZE_SELECTED_CHAIN_TO_JOIN, compile_parallelize_selected_chain_to_join
+from src.workflow_ir_core import canonicalize_schema_variants, compile_ir, constraints_from_compiled, requirement_needs_clarification
+from src.workflow_ir_runtime import run_workflow_ir_transaction
 
 
 def graph_for(branch_ids: list[str], join_id: str, join_type: str = "task") -> dict:
@@ -43,6 +45,147 @@ def test_two_node_parallel_uses_minimum_diff() -> None:
     assert len(compiled["steps"]) == 4
     assert pairs(output) == {("start", "material", ""), ("start", "risk", ""), ("material", "approval", ""), ("risk", "approval", ""), ("approval", "end", "")}
     assert next(node for node in output["nodes"] if node["id"] == "approval")["join"] == {"mode": "all"}
+
+
+def test_chinese_parallel_topology_is_not_treated_as_abstract_only() -> None:
+    requirement = {
+        "text": "把材料审核和风控审核改成并行结构",
+        "references": {"mentioned_node_ids": ["material", "risk"]},
+        "grounded_desired_state": {
+            "abstract_goals": [{"goal_type": "other", "description": "改成并行结构"}],
+            "clarification": {"needed": False, "question": "", "reason": ""},
+        },
+    }
+
+    assert requirement_needs_clarification(requirement) == (False, None, None)
+
+
+def test_underspecified_abstract_goal_asks_in_chinese() -> None:
+    requirement = {
+        "text": "this logic is confusing",
+        "references": {"mentioned_node_ids": []},
+        "grounded_desired_state": {
+            "abstract_goals": [{"goal_type": "other", "description": "logic is confusing"}],
+            "clarification": {"needed": False, "question": "", "reason": ""},
+        },
+    }
+
+    needs_clarification, question, reason = requirement_needs_clarification(requirement)
+
+    assert needs_clarification is True
+    assert reason == "underspecified abstract goal"
+    assert question is not None and question.startswith("\u8bf7\u8bf4\u660e")
+
+
+def test_answer_only_boundary_sentence_does_not_execute_as_fresh_edit() -> None:
+    graph = graph_for(["material", "risk"], "approval")
+
+    result = run_workflow_ir_transaction(
+        graph,
+        1,
+        {"node_ids": [], "edge_ids": []},
+        "\u4ece material \u5f00\u59cb\uff0c\u5230 approval \u7ed3\u675f",
+    )
+
+    assert result["status"] == "needs_clarification"
+    assert result["error"] == "answer-only boundary reference"
+    assert result["final_graph"] is None
+
+
+def test_standalone_parallel_ir_infers_serial_chain_boundaries() -> None:
+    graph = graph_for(["material", "risk"], "approval")
+    workflow_ir = {
+        "control_flow_regions": [
+            {
+                "relation_type": "",
+                "structure": {
+                    "type": "parallel",
+                    "join_mode": "all",
+                    "branches": [
+                        {"type": "node", "id": "material"},
+                        {"type": "node", "id": "risk"},
+                    ],
+                },
+            }
+        ],
+        "auxiliary_relations": [],
+        "absent_entities": [],
+        "properties": [],
+        "edge_properties": [],
+    }
+
+    constraints = constraints_from_compiled(graph, compile_ir(workflow_ir, graph))
+
+    assert {(row["source"], row["target"], row.get("label", "")) for row in constraints["required_relations"]} == {
+        ("start", "material", ""),
+        ("start", "risk", ""),
+        ("material", "approval", ""),
+        ("risk", "approval", ""),
+    }
+    assert constraints["forbidden_relations"] == [{"source": "material", "target": "risk", "label": ""}]
+    assert constraints["properties"] == [{"node_id": "approval", "changes": {"join": {"mode": "all"}}}]
+
+
+def test_parallel_branches_accept_single_item_array_variants() -> None:
+    workflow_ir = {
+        "control_flow_regions": [
+            {
+                "relation_type": "",
+                "structure": {
+                    "type": "parallel",
+                    "join_mode": "all",
+                    "branches": [
+                        [{"type": "node", "id": "material"}],
+                        [{"type": "node", "id": "risk"}],
+                    ],
+                },
+            }
+        ],
+        "auxiliary_relations": [],
+        "absent_entities": [],
+        "properties": [],
+        "edge_properties": [],
+    }
+
+    canonical, changed = canonicalize_schema_variants(workflow_ir)
+
+    assert changed is True
+    assert canonical["control_flow_regions"][0]["structure"]["branches"] == [
+        {"type": "node", "id": "material"},
+        {"type": "node", "id": "risk"},
+    ]
+
+
+def test_incomplete_standalone_parallel_does_not_lower_to_delete_only() -> None:
+    graph = graph_for(["material", "risk"], "approval")
+    graph["edges"].append({"id": "e_side", "source": "risk", "target": "manual", "label": ""})
+    workflow_ir = {
+        "control_flow_regions": [
+            {
+                "relation_type": "",
+                "structure": {
+                    "type": "parallel",
+                    "join_mode": "all",
+                    "branches": [
+                        {"type": "node", "id": "material"},
+                        {"type": "node", "id": "risk"},
+                    ],
+                },
+            }
+        ],
+        "auxiliary_relations": [],
+        "absent_entities": [],
+        "properties": [],
+        "edge_properties": [],
+    }
+
+    compiled = compile_ir(workflow_ir, graph)
+    constraints = constraints_from_compiled(graph, compiled)
+
+    assert compiled["control_flow_regions"][0]["incomplete_parallel_boundary"] is True
+    assert constraints["required_relations"] == []
+    assert constraints["forbidden_relations"] == []
+    assert constraints["properties"] == []
 
 
 def test_three_node_parallel_preserves_external_graph() -> None:

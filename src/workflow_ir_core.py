@@ -16,6 +16,32 @@ NON_EDGE_RELATION_TOKENS = (
 )
 
 STRUCTURE_TYPES = {"node", "sequence", "parallel", "choice"}
+TOPOLOGY_SIGNAL_TOKENS = (
+    "after",
+    "before",
+    "between",
+    "parallel",
+    "branch",
+    "sequence",
+    "route",
+    "insert",
+    "add ",
+    "create ",
+    "new ",
+    "并行",
+    "串行",
+    "分支",
+    "顺序",
+    "路由",
+    "插入",
+    "新增",
+    "创建",
+    "前面",
+    "后面",
+    "之前",
+    "之后",
+    "之间",
+)
 SCOPE_CONTAINER_KINDS = ("stage", "group", "subprocess")
 SCOPE_CONTAINER_COLLECTION_KEYS = {
     "stage": "stages",
@@ -1448,12 +1474,11 @@ def _requirements_structurally_dependent(left: dict[str, Any], right: dict[str, 
         "original predecessor",
         "original successor",
     )
-    topology_tokens = ("between", "before", "after", "route", "sequence", "parallel", "insert", "add ", "create ", "new ")
     left_text = left["text"].lower()
     right_text = right["text"].lower()
     if not (any(token in left_text for token in dependency_tokens) or any(token in right_text for token in dependency_tokens)):
         return False
-    if not (any(token in left_text for token in topology_tokens) or any(token in right_text for token in topology_tokens)):
+    if not (any(token in left_text for token in TOPOLOGY_SIGNAL_TOKENS) or any(token in right_text for token in TOPOLOGY_SIGNAL_TOKENS)):
         return False
     left_nodes = set(left["local_facts"]["context_node_ids"])
     right_nodes = set(right["local_facts"]["context_node_ids"])
@@ -1611,8 +1636,7 @@ def _requires_structural_region(requirement: dict[str, Any], _ref: dict[str, Any
     if _has_edge_property_edit(requirement):
         return False
     text = requirement.get("text", "").lower()
-    topology_tokens = ("after", "before", "between", "parallel", "branch", "sequence", "route", "insert", "add ", "create ", "new ")
-    has_topology_signal = any(token in text for token in topology_tokens)
+    has_topology_signal = any(token in text for token in TOPOLOGY_SIGNAL_TOKENS)
     if any(token in text for token in ("rename", "wait", "join", "incoming")) and not has_topology_signal:
         return False
     return has_topology_signal
@@ -2507,6 +2531,8 @@ def normalize_ir(value: dict[str, Any]) -> dict[str, Any]:
 
 def canonicalize_schema_variants(value: dict[str, Any] | None) -> tuple[dict[str, Any] | None, bool]:
     def canonicalize_structure(structure: Any) -> Any:
+        if isinstance(structure, list) and len(structure) == 1:
+            return canonicalize_structure(structure[0])
         if not isinstance(structure, dict):
             return structure
         row = deepcopy(structure)
@@ -2965,7 +2991,78 @@ def obligation_coverage(ir: dict[str, Any] | None, obligations: dict[str, Any]) 
     return not errors, errors
 
 
-def compile_ir(ir: dict[str, Any], _graph_data: dict[str, Any]) -> dict[str, Any]:
+def _structure_existing_node_ids(structure: dict[str, Any]) -> set[str]:
+    if structure["type"] == "node":
+        return {structure["id"]} if "id" in structure else set()
+    children = structure.get("items" if structure["type"] == "sequence" else "branches", [])
+    result: set[str] = set()
+    for child in children:
+        result.update(_structure_existing_node_ids(child))
+    return result
+
+
+def _inferred_parallel_boundary(graph_data: dict[str, Any], structure: dict[str, Any], relation_type: str) -> tuple[str, str, list[str]] | None:
+    if structure.get("type") != "parallel" or structure.get("join_mode") not in {"all", "any"}:
+        return None
+    branch_ids: list[str] = []
+    for branch in structure.get("branches", []):
+        nodes = _structure_existing_node_ids(branch)
+        if len(nodes) != 1:
+            return None
+        branch_ids.append(next(iter(nodes)))
+    branch_set = set(branch_ids)
+    if len(branch_set) < 2 or len(branch_set) != len(branch_ids):
+        return None
+
+    internal_edges = [
+        edge
+        for edge in graph_data.get("edges", [])
+        if isinstance(edge, dict)
+        and edge.get("source") in branch_set
+        and edge.get("target") in branch_set
+        and edge.get("label", "") == relation_type
+    ]
+    if len(internal_edges) != len(branch_set) - 1:
+        return None
+    incoming = {node_id: [] for node_id in branch_set}
+    outgoing = {node_id: [] for node_id in branch_set}
+    for edge in internal_edges:
+        incoming[edge["target"]].append(edge["source"])
+        outgoing[edge["source"]].append(edge["target"])
+    heads = [node_id for node_id in branch_set if not incoming[node_id]]
+    tails = [node_id for node_id in branch_set if not outgoing[node_id]]
+    if len(heads) != 1 or len(tails) != 1:
+        return None
+    if any(len(items) > 1 for items in incoming.values()) or any(len(items) > 1 for items in outgoing.values()):
+        return None
+    ordered = [heads[0]]
+    while outgoing[ordered[-1]]:
+        ordered.append(outgoing[ordered[-1]][0])
+    if len(ordered) != len(branch_set):
+        return None
+
+    upstream_edges = [
+        edge
+        for edge in graph_data.get("edges", [])
+        if isinstance(edge, dict)
+        and edge.get("target") == ordered[0]
+        and edge.get("source") not in branch_set
+        and edge.get("label", "") == relation_type
+    ]
+    join_edges = [
+        edge
+        for edge in graph_data.get("edges", [])
+        if isinstance(edge, dict)
+        and edge.get("source") == ordered[-1]
+        and edge.get("target") not in branch_set
+        and edge.get("label", "") == relation_type
+    ]
+    if len(upstream_edges) != 1 or len(join_edges) != 1:
+        return None
+    return upstream_edges[0]["source"], join_edges[0]["target"], ordered
+
+
+def compile_ir(ir: dict[str, Any], graph_data: dict[str, Any]) -> dict[str, Any]:
     entities: dict[str, dict[str, Any]] = {}
     properties: dict[str, dict[str, Any]] = {}
     edge_properties: dict[str, dict[str, Any]] = {}
@@ -2974,15 +3071,6 @@ def compile_ir(ir: dict[str, Any], _graph_data: dict[str, Any]) -> dict[str, Any
         current = properties.get(node_id, {})
         current.update(normalize_changes(changes))
         properties[node_id] = current
-
-    def structure_nodes(structure: dict[str, Any]) -> set[str]:
-        if structure["type"] == "node":
-            return {structure["id"]} if "id" in structure else set()
-        children = structure.get("items" if structure["type"] == "sequence" else "branches", [])
-        result: set[str] = set()
-        for child in children:
-            result.update(structure_nodes(child))
-        return result
 
     def compile_structure(structure: dict[str, Any], relation_type: str) -> dict[str, Any]:
         kind = structure["type"]
@@ -3021,13 +3109,23 @@ def compile_ir(ir: dict[str, Any], _graph_data: dict[str, Any]) -> dict[str, Any
     control_flow_regions: list[dict[str, Any]] = []
     for region in ir.get("control_flow_regions", []):
         compiled = compile_structure(region["structure"], region["relation_type"])
+        boundary = _inferred_parallel_boundary(graph_data, region["structure"], region["relation_type"])
+        incomplete_parallel_boundary = region["structure"].get("type") == "parallel" and boundary is None
+        if boundary is not None:
+            upstream_node_id, join_node_id, branch_ids = boundary
+            for branch_id in branch_ids:
+                compiled["edges"].add((upstream_node_id, branch_id, region["relation_type"]))
+                compiled["edges"].add((branch_id, join_node_id, region["relation_type"]))
+            if region["structure"].get("join_mode") == "all":
+                add_property(join_node_id, {"join": {"mode": "all"}})
         control_flow_regions.append(
             {
                 "relation_type": region["relation_type"],
                 "edges": sorted(compiled["edges"]),
-                "node_ids": sorted(structure_nodes(region["structure"])),
+                "node_ids": sorted(_structure_existing_node_ids(region["structure"])),
                 "entries": compiled["entries"],
                 "exits": compiled["exits"],
+                "incomplete_parallel_boundary": incomplete_parallel_boundary,
             }
         )
     for row in ir.get("properties", []):
@@ -3046,7 +3144,7 @@ def compile_ir(ir: dict[str, Any], _graph_data: dict[str, Any]) -> dict[str, Any
     }
 
 
-def _structural_property_authorizations(final_ir: dict[str, Any]) -> list[dict[str, Any]]:
+def _structural_property_authorizations(graph_data: dict[str, Any], final_ir: dict[str, Any]) -> list[dict[str, Any]]:
     authorized: list[dict[str, Any]] = []
 
     def compile_structure(structure: dict[str, Any]) -> dict[str, Any]:
@@ -3081,6 +3179,16 @@ def _structural_property_authorizations(final_ir: dict[str, Any]) -> list[dict[s
     for region in final_ir.get("control_flow_regions", []):
         if isinstance(region, dict) and isinstance(region.get("structure"), dict):
             compile_structure(region["structure"])
+            boundary = _inferred_parallel_boundary(graph_data, region["structure"], region["relation_type"])
+            if boundary is not None and region["structure"].get("join_mode") == "all":
+                authorized.append(
+                    {
+                        "node_id": boundary[1],
+                        "property": "join",
+                        "value": {"mode": "all"},
+                        "derivation": "inferred_structural_parallel_join",
+                    }
+                )
     return authorized
 
 
@@ -3110,7 +3218,7 @@ def validate_compiled_property_provenance(
             row["property"],
             json.dumps(row["value"], ensure_ascii=False, sort_keys=True),
         )
-        for row in _structural_property_authorizations(final_ir)
+        for row in _structural_property_authorizations(graph_data, final_ir)
         if isinstance(row.get("node_id"), str)
     }
     allowed = explicit_authorized | derived_authorized
@@ -3224,9 +3332,13 @@ def requirement_needs_clarification(requirement: dict[str, Any]) -> tuple[bool, 
         return True, f"Which branch do you want to edit? Candidates: {', '.join(ambiguous_edges)}.", "ambiguous edge reference"
     abstract_goals = desired_state.get("abstract_goals", []) if isinstance(desired_state.get("abstract_goals"), list) else []
     if any(isinstance(row, dict) and row.get("goal_type") in {None, "", "other"} for row in abstract_goals):
+        mentioned_nodes = refs.get("mentioned_node_ids", []) if isinstance(refs.get("mentioned_node_ids"), list) else []
+        has_topology_signal = any(token in text for token in TOPOLOGY_SIGNAL_TOKENS)
+        if has_topology_signal and len({node_id for node_id in mentioned_nodes if isinstance(node_id, str)}) >= 2:
+            return False, None, None
         return (
             True,
-            "What concrete success criterion should I use for this high-level goal?",
+            "请说明你希望流程达到的具体结构，或先让我给出几种可选改法后由你确认。",
             "underspecified abstract goal",
         )
     return False, None, None
@@ -3304,6 +3416,8 @@ def constraints_from_compiled(graph_data: dict[str, Any], compiled: dict[str, An
     owned_current_edges: set[tuple[str, str, str]] = set()
     owned_components: dict[str, list[set[str]]] = {}
     for region in compiled.get("control_flow_regions", []):
+        if region.get("incomplete_parallel_boundary") is True:
+            continue
         relation_type = region["relation_type"]
         region_nodes = set(region.get("node_ids", [])) | {
             endpoint

@@ -15,6 +15,7 @@ from .workflow_ir_core import (
     compile_ir,
     constraints_from_compiled,
     explicit_obligations,
+    explicit_mentions,
     form_spec_units,
     generation_contract,
     graph_context_for_unit,
@@ -86,6 +87,11 @@ Return exactly:
 }
 Rules:
 - Preserve all requested edit semantics; do not omit, weaken, or add requirements.
+- Current user instruction is the only request for this turn.
+- conversation_history contains only earlier visible business dialogue. Use it only to resolve references, omitted context, or what the user is answering now.
+- Do not reactivate old edit intents from conversation_history unless the current instruction explicitly refers to them.
+- Current graph is the only structural source of truth. If conversation_history conflicts with the graph, follow the graph.
+- Never copy conversation_history into requirements as pending work; extract only requirements requested or explicitly referenced by the current instruction.
 - Requirements may be coarse or split; they do not need perfect Specify granularity.
 - Keep references only when explicit in the request wording.
 - Distinguish the user's requested future goal from current graph facts. Do not rewrite a requested improvement into an already-existing current relation or property unless the user explicitly asked for that exact fact to be preserved.
@@ -210,6 +216,23 @@ def _complete_json(system_prompt: str, payload: dict[str, Any]) -> JsonRun:
     )
 
 
+def _conversation_history_for_understand(request_context: dict[str, Any] | None) -> list[dict[str, str]]:
+    if not isinstance(request_context, dict):
+        return []
+    raw_history = request_context.get("conversation_history")
+    if not isinstance(raw_history, list):
+        return []
+    history: list[dict[str, str]] = []
+    for row in raw_history:
+        if not isinstance(row, dict):
+            continue
+        role = row.get("role")
+        content = row.get("content")
+        if role in {"user", "assistant"} and isinstance(content, str) and content.strip():
+            history.append({"role": role, "content": content.strip()})
+    return history
+
+
 def _safe_normalize_ir(value: dict[str, Any] | None) -> dict[str, Any] | None:
     if not isinstance(value, dict):
         return None
@@ -320,6 +343,143 @@ def _unsupported_validation_goals(per_unit_obligations: list[dict[str, Any]]) ->
     return unsupported
 
 
+def _ambiguous_ordinal_history_reference(graph: dict[str, Any], instruction: str) -> bool:
+    lowered = instruction.lower()
+    ordinal_terms = ("first one", "second one", "the other one", "第一个", "第二个", "另一个")
+    restore_terms = ("undo", "revert", "restore", "撤销", "还原", "恢复")
+    return (
+        any(term in lowered for term in ordinal_terms)
+        and any(term in lowered for term in restore_terms)
+        and not explicit_mentions(instruction, graph)
+    )
+
+
+def _ambiguous_anaphoric_parallel_reference(instruction: str) -> bool:
+    lowered = instruction.lower()
+    anaphoric_parallel_terms = (
+        "this parallel structure",
+        "that parallel structure",
+        "the parallel structure",
+        "这个并行结构",
+        "该并行结构",
+        "上述并行结构",
+        "前面的并行结构",
+        "刚才的并行结构",
+    )
+    branch_terms = ("branch", "branches", "并行分支", "分支节点", "分支是", "节点是")
+    return any(term in lowered for term in anaphoric_parallel_terms) and not any(term in lowered for term in branch_terms)
+
+
+def _answer_only_boundary_reference(instruction: str) -> bool:
+    compact = "".join(instruction.split()).lower()
+    cn_from = "\u4ece"
+    cn_to = "\u5230"
+    has_boundary = (cn_from in compact and cn_to in compact) or ("from" in compact and "to" in compact)
+    if not has_boundary:
+        return False
+    edit_terms = (
+        "\u6539",
+        "\u4fee\u6539",
+        "\u6539\u6210",
+        "\u6539\u4e3a",
+        "\u8fde\u63a5",
+        "\u65b0\u589e",
+        "\u5220\u9664",
+        "\u91cd\u547d\u540d",
+        "\u63d2\u5165",
+        "\u5e76\u884c",
+        "\u4e32\u884c",
+        "\u5206\u652f",
+        "change",
+        "modify",
+        "make",
+        "connect",
+        "add",
+        "delete",
+        "rename",
+        "insert",
+        "parallel",
+        "sequence",
+        "branch",
+    )
+    return not any(term in compact for term in edit_terms)
+
+
+def _node_by_id(graph: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {
+        node["id"]: node
+        for node in graph.get("nodes", [])
+        if isinstance(node, dict) and isinstance(node.get("id"), str)
+    }
+
+
+def _label_for(node: dict[str, Any] | None, fallback: str) -> str:
+    if isinstance(node, dict) and isinstance(node.get("label"), str) and node["label"].strip():
+        return node["label"].strip()
+    return fallback
+
+
+def _mentioned_node_ids(grounded_requirements: list[dict[str, Any]]) -> list[str]:
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for requirement in grounded_requirements:
+        refs = requirement.get("references", {}) if isinstance(requirement.get("references"), dict) else {}
+        for node_id in refs.get("mentioned_node_ids", []):
+            if isinstance(node_id, str) and node_id not in seen:
+                seen.add(node_id)
+                ordered.append(node_id)
+        for key in ("source_node_id", "target_node_id", "selected_node_id"):
+            node_id = refs.get(key)
+            if isinstance(node_id, str) and node_id not in seen:
+                seen.add(node_id)
+                ordered.append(node_id)
+    return ordered
+
+
+def _parallel_clarification_question(graph: dict[str, Any], grounded_requirements: list[dict[str, Any]]) -> str:
+    default = "请明确哪些节点作为并行分支，以及它们完成后汇聚到哪个节点。"
+    mentioned = [node_id for node_id in _mentioned_node_ids(grounded_requirements) if node_id in _node_by_id(graph)]
+    if len(mentioned) != 2:
+        return default
+
+    nodes = _node_by_id(graph)
+    first_id, second_id = mentioned
+    first_label = _label_for(nodes.get(first_id), first_id)
+    second_label = _label_for(nodes.get(second_id), second_id)
+    direct_edge = next(
+        (
+            edge
+            for edge in graph.get("edges", [])
+            if isinstance(edge, dict)
+            and {edge.get("source"), edge.get("target")} == {first_id, second_id}
+            and edge.get("label", "") == ""
+        ),
+        None,
+    )
+    if not direct_edge:
+        return default
+
+    source_id = str(direct_edge.get("source"))
+    target_id = str(direct_edge.get("target"))
+    source_label = _label_for(nodes.get(source_id), source_id)
+    target_label = _label_for(nodes.get(target_id), target_id)
+    first_type = str(nodes.get(first_id, {}).get("type", ""))
+    second_type = str(nodes.get(second_id, {}).get("type", ""))
+    if "decision" not in {first_type, second_type}:
+        return default
+
+    decision_id = first_id if first_type == "decision" else second_id
+    decision_label = _label_for(nodes.get(decision_id), decision_id)
+    return (
+        f"当前流程中“{source_label}”直接进入“{target_label}”，"
+        f"其中“{decision_label}”通常依赖前置节点的输出。"
+        f"如果把“{first_label}”和“{second_label}”作为并行分支，"
+        "判断依据可能不明确。你是想让其他节点并行后汇聚到"
+        f"“{decision_label}”，还是确认让这两个节点并行？"
+        "请明确并行分支分别是哪几个节点，以及它们完成后汇聚到哪个节点。"
+    )
+
+
 def _orchestration_trace(
     graph: dict[str, Any],
     instruction: str,
@@ -415,9 +575,67 @@ def run_workflow_ir_transaction(
 ) -> dict[str, Any]:
     del revision, short_context, resolved_constraints, allowed_transformations
     normalized_request_context = normalize_request_context(selection, request_context)
+    conversation_history = _conversation_history_for_understand(request_context)
+    if _ambiguous_ordinal_history_reference(graph, instruction):
+        return _clarification_response(
+            graph,
+            selection,
+            normalized_request_context,
+            instruction,
+            [],
+            [],
+            {},
+            [],
+            {},
+            [],
+            "Ground",
+            "missing historical target reference",
+            "Which edited node should I restore?",
+            False,
+        )
+    if _ambiguous_anaphoric_parallel_reference(instruction):
+        return _clarification_response(
+            graph,
+            selection,
+            normalized_request_context,
+            instruction,
+            [],
+            [],
+            {},
+            [],
+            {},
+            [],
+            "Ground",
+            "parallel structure lacks explicit branch nodes",
+            "请明确哪些节点作为并行分支，以及它们完成后汇聚到哪个节点。",
+            False,
+        )
+    if _answer_only_boundary_reference(instruction):
+        return _clarification_response(
+            graph,
+            selection,
+            normalized_request_context,
+            instruction,
+            [],
+            [],
+            {"passed": False, "errors": []},
+            [],
+            {},
+            [],
+            "Ground",
+            "answer-only boundary reference",
+            "我理解了你补充的起止范围，但还需要结合上一轮修改目标一起处理。请说明并行分支分别是哪几个节点，以及它们完成后汇聚到哪个节点。",
+            False,
+        )
     understand_run = _complete_json(
         UNDERSTAND_SYSTEM,
-        {"instruction": instruction, "graph": graph, "selection": selection, "request_context": normalized_request_context},
+        {
+            "instruction": instruction,
+            "conversation_history": conversation_history,
+            "graph": graph,
+            "selection": selection,
+            "request_context": normalized_request_context,
+        },
     )
     if understand_run.parsed_json is None:
         return {
@@ -535,7 +753,7 @@ def run_workflow_ir_transaction(
                 unit_runs,
                 "Obligation Realization",
                 json.dumps({"unsupported_validation_goals": unsupported_validation_goals}, ensure_ascii=False, sort_keys=True),
-                "What concrete success criterion should I use to validate this high-level goal?",
+                "请说明你希望用什么具体结构或业务规则来判断这个高层目标已经达成。",
                 normalized_from_fence,
             )
 
@@ -563,7 +781,7 @@ def run_workflow_ir_transaction(
                 unit_runs,
                 "Obligation Realization",
                 "abstract goal has no concrete target change",
-                "What concrete edit should I apply before validating this high-level goal?",
+                "请说明你希望我具体修改哪些节点、连线或流程关系。",
                 normalized_from_fence,
             )
 
@@ -752,6 +970,11 @@ def run_workflow_ir_transaction(
                 break
 
             compiled = compile_ir(final_ir, graph)
+            if any(region.get("incomplete_parallel_boundary") is True for region in compiled.get("control_flow_regions", [])):
+                unit_record["compiled"] = compiled
+                stop_layer = "Target Skeleton"
+                stop_reason = "parallel structure lacks unambiguous boundary"
+                break
             property_provenance_valid, property_provenance_errors = validate_compiled_property_provenance(
                 graph,
                 final_ir,
@@ -785,6 +1008,40 @@ def run_workflow_ir_transaction(
             stop_reason = planner.get("reason")
 
     if stop_layer is not None:
+        if stop_reason == "required structural participants not fully realized":
+            return _clarification_response(
+                graph,
+                selection,
+                normalized_request_context,
+                instruction,
+                grounded_requirements,
+                units,
+                conservation,
+                unit_contracts,
+                global_obligations,
+                unit_runs,
+                stop_layer,
+                stop_reason,
+                _parallel_clarification_question(graph, grounded_requirements),
+                normalized_from_fence,
+            )
+        if stop_reason == "parallel structure lacks unambiguous boundary":
+            return _clarification_response(
+                graph,
+                selection,
+                normalized_request_context,
+                instruction,
+                grounded_requirements,
+                units,
+                conservation,
+                unit_contracts,
+                global_obligations,
+                unit_runs,
+                stop_layer,
+                stop_reason,
+                _parallel_clarification_question(graph, grounded_requirements),
+                normalized_from_fence,
+            )
         return {
             "status": "unsupported",
             "error": stop_reason,
