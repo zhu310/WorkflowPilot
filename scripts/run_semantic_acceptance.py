@@ -40,6 +40,154 @@ def contains_changes(row: dict[str, Any], changes: dict[str, Any]) -> bool:
     return True
 
 
+def without_paths(value: dict[str, Any], paths: set[str]) -> dict[str, Any]:
+    result = json.loads(json.dumps(value, ensure_ascii=False))
+    for path in paths:
+        current: Any = result
+        parts = path.split(".")
+        for part in parts[:-1]:
+            if not isinstance(current, dict):
+                current = None
+                break
+            current = current.get(part)
+        if isinstance(current, dict):
+            current.pop(parts[-1], None)
+    return result
+
+
+def strict_preserve_errors(before: dict[str, Any], final_graph: dict[str, Any], expected: dict[str, Any]) -> list[str]:
+    before_nodes = {node.get("id"): node for node in before.get("nodes", []) if isinstance(node, dict)}
+    final_nodes = {node.get("id"): node for node in final_graph.get("nodes", []) if isinstance(node, dict)}
+    before_edges_by_id = {edge.get("id"): edge for edge in before.get("edges", []) if isinstance(edge, dict)}
+    final_edges_by_id = {edge.get("id"): edge for edge in final_graph.get("edges", []) if isinstance(edge, dict)}
+    before_edge_keys = {edge_key(edge): edge for edge in before.get("edges", []) if isinstance(edge, dict)}
+    final_edge_keys = {edge_key(edge): edge for edge in final_graph.get("edges", []) if isinstance(edge, dict)}
+
+    allowed_added_nodes = set(expected.get("required_nodes", []))
+    allowed_removed_nodes = set(expected.get("forbidden_nodes", []))
+    allowed_added_edges = {edge_key(row) for row in expected.get("required_edges", []) if edge_key(row) not in before_edge_keys}
+    allowed_removed_edges = {edge_key(row) for row in expected.get("forbidden_edges", [])}
+    allowed_node_properties: dict[str, set[str]] = {}
+    allowed_edge_properties: dict[str, set[str]] = {}
+    for row in expected.get("required_properties", []):
+        changes = row.get("changes", {})
+        if not isinstance(changes, dict):
+            continue
+        if isinstance(row.get("node_id"), str):
+            allowed_node_properties.setdefault(row["node_id"], set()).update(changes.keys())
+        elif isinstance(row.get("edge_id"), str):
+            allowed_edge_properties.setdefault(row["edge_id"], set()).update(changes.keys())
+
+    errors: list[str] = []
+    for node_id, before_node in before_nodes.items():
+        final_node = final_nodes.get(node_id)
+        if final_node is None:
+            if node_id not in allowed_removed_nodes:
+                errors.append(f"unexpected_node_change: removed {node_id}")
+            continue
+        allowed_paths = allowed_node_properties.get(node_id, set())
+        if without_paths(before_node, allowed_paths) != without_paths(final_node, allowed_paths):
+            errors.append(f"unexpected_property_change: node {node_id}")
+    for node_id in final_nodes:
+        if node_id not in before_nodes and node_id not in allowed_added_nodes:
+            errors.append(f"unexpected_node_change: added {node_id}")
+
+    for edge_id, before_edge in before_edges_by_id.items():
+        final_edge = final_edges_by_id.get(edge_id)
+        before_key = edge_key(before_edge)
+        if final_edge is None:
+            if before_key not in allowed_removed_edges:
+                errors.append(f"unexpected_edge_change: removed {edge_id}")
+            continue
+        allowed_paths = allowed_edge_properties.get(edge_id, set())
+        if without_paths(before_edge, allowed_paths) != without_paths(final_edge, allowed_paths):
+            errors.append(f"unexpected_property_change: edge {edge_id}")
+    for edge_id, final_edge in final_edges_by_id.items():
+        if edge_id not in before_edges_by_id and edge_key(final_edge) not in allowed_added_edges:
+            errors.append(f"unexpected_edge_change: added {edge_id}")
+    for key in before_edge_keys:
+        if key not in final_edge_keys and key not in allowed_removed_edges:
+            errors.append(f"unexpected_edge_change: missing relation {key}")
+    for key in final_edge_keys:
+        if key not in before_edge_keys and key not in allowed_added_edges:
+            errors.append(f"unexpected_edge_change: extra relation {key}")
+    return errors
+
+
+def is_legal_new_ref(value: str) -> bool:
+    return value.startswith("new_")
+
+
+def preflight_expected(case_id: str, graph: dict[str, Any], expected: dict[str, Any], step: int | None = None) -> list[dict[str, Any]]:
+    nodes = {node.get("id") for node in graph.get("nodes", []) if isinstance(node, dict)}
+    edge_ids = {edge.get("id") for edge in graph.get("edges", []) if isinstance(edge, dict)}
+    errors: list[dict[str, Any]] = []
+
+    def add(kind: str, fields: Any) -> None:
+        row: dict[str, Any] = {"case_id": case_id, "conflict_kind": kind, "fields": fields}
+        if step is not None:
+            row["step"] = step
+        errors.append(row)
+
+    required_nodes = set(expected.get("required_nodes", []))
+    forbidden_nodes = set(expected.get("forbidden_nodes", []))
+    node_conflicts = sorted(required_nodes & forbidden_nodes)
+    if node_conflicts:
+        add("required_forbidden_node_conflict", {"node_ids": node_conflicts})
+
+    required_edges = {edge_key(row) for row in expected.get("required_edges", [])}
+    forbidden_edges = {edge_key(row) for row in expected.get("forbidden_edges", [])}
+    edge_conflicts = sorted(required_edges & forbidden_edges)
+    if edge_conflicts:
+        add("required_forbidden_edge_conflict", {"edges": edge_conflicts})
+
+    preserved_nodes = set(expected.get("preserved_nodes", []))
+    preserved_edges = set(expected.get("preserved_edges", []))
+    for row in expected.get("required_properties", []):
+        if isinstance(row.get("node_id"), str) and row["node_id"] in preserved_nodes:
+            add("preserved_node_property_mutation_conflict", {"node_id": row["node_id"], "required_properties": row.get("changes", {})})
+        if isinstance(row.get("edge_id"), str) and row["edge_id"] in preserved_edges:
+            add("preserved_edge_property_mutation_conflict", {"edge_id": row["edge_id"], "required_properties": row.get("changes", {})})
+
+    for node_id in required_nodes | forbidden_nodes | preserved_nodes:
+        if node_id not in nodes and not is_legal_new_ref(str(node_id)):
+            add("unknown_node_reference", {"node_id": node_id})
+    for row in expected.get("required_edges", []) + expected.get("forbidden_edges", []):
+        for field in ("source", "target"):
+            value = str(row.get(field, ""))
+            if value not in nodes and not is_legal_new_ref(value):
+                add("unknown_edge_endpoint_reference", {"edge": row, "field": field, "node_id": value})
+    for edge_id in preserved_edges:
+        if edge_id not in edge_ids and not is_legal_new_ref(str(edge_id)):
+            add("unknown_edge_reference", {"edge_id": edge_id})
+    for row in expected.get("required_properties", []):
+        if isinstance(row.get("node_id"), str):
+            node_id = row["node_id"]
+            if node_id not in nodes and not is_legal_new_ref(node_id):
+                add("unknown_property_node_reference", {"node_id": node_id})
+        if isinstance(row.get("edge_id"), str):
+            edge_id = row["edge_id"]
+            if edge_id not in edge_ids and not is_legal_new_ref(edge_id):
+                add("unknown_property_edge_reference", {"edge_id": edge_id})
+    return errors
+
+
+def preflight_cases(cases: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    errors: list[dict[str, Any]] = []
+    for case in cases:
+        case_id = str(case.get("id", ""))
+        graph = case.get("initial_graph", {})
+        steps = case.get("steps")
+        if isinstance(steps, list):
+            for index, step in enumerate(steps, start=1):
+                expected = step.get("expected", {}) if isinstance(step.get("expected"), dict) else {}
+                errors.extend(preflight_expected(case_id, graph, expected, index))
+        else:
+            expected = case.get("expected", {}) if isinstance(case.get("expected"), dict) else {}
+            errors.extend(preflight_expected(case_id, graph, expected))
+    return errors
+
+
 def evaluate_expected(before: dict[str, Any], final_graph: dict[str, Any] | None, expected: dict[str, Any]) -> tuple[bool, str, list[str]]:
     if expected.get("failure_stage"):
         return True, "", []
@@ -82,9 +230,11 @@ def evaluate_expected(before: dict[str, Any], final_graph: dict[str, Any] | None
     for edge_id in expected.get("preserved_edges", []):
         if before_edges_by_id.get(edge_id) != final_edges_by_id.get(edge_id):
             errors.append(f"preserved edge changed: {edge_id}")
+    if expected.get("strict_preserve_others") is True:
+        errors.extend(strict_preserve_errors(before, final_graph, expected))
 
     if errors:
-        preservation_errors = [error for error in errors if error.startswith("preserved")]
+        preservation_errors = [error for error in errors if error.startswith("preserved") or error.startswith("unexpected_")]
         return False, "preservation_violation" if preservation_errors else "final_graph_semantics", errors
     return True, "", []
 
@@ -195,6 +345,11 @@ def main() -> int:
         cases = [case for case in cases if case.get("id") in wanted]
     if args.limit:
         cases = cases[: args.limit]
+
+    preflight_errors = preflight_cases(cases)
+    if preflight_errors:
+        print(json.dumps({"preflight_errors": preflight_errors}, ensure_ascii=False, indent=2))
+        return 2
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_dir = args.output_dir / timestamp
