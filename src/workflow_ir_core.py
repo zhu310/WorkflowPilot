@@ -2529,6 +2529,382 @@ def normalize_ir(value: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+UNDERSTAND_SEMANTIC_SPEC_KEYS = {"status", "workflow_ir", "semantic_goals", "clarification"}
+UNDERSTAND_SEMANTIC_SPEC_STATUSES = {"resolved", "partial", "clarification"}
+UNDERSTAND_EDGE_PATCH_FIELDS = {"required_edges", "forbidden_edges", "required_relations", "forbidden_relations"}
+
+
+def normalize_understand_semantic_spec(value: dict[str, Any] | None) -> dict[str, Any]:
+    value = value if isinstance(value, dict) else {}
+    workflow_ir = value.get("workflow_ir") if isinstance(value.get("workflow_ir"), dict) else {}
+    workflow_canonical, _ = canonicalize_schema_variants(workflow_ir)
+    workflow_normalized = normalize_ir(workflow_canonical if isinstance(workflow_canonical, dict) else workflow_ir)
+    semantic_goals = [
+        dict(row)
+        for row in value.get("semantic_goals", [])
+        if isinstance(row, dict) and isinstance(row.get("description"), str) and row["description"].strip()
+    ]
+    clarification = value.get("clarification") if isinstance(value.get("clarification"), dict) else {}
+    status = value.get("status") if value.get("status") in UNDERSTAND_SEMANTIC_SPEC_STATUSES else "partial"
+    return {
+        "status": status,
+        "workflow_ir": workflow_normalized,
+        "semantic_goals": semantic_goals,
+        "clarification": {
+            "needed": bool(clarification.get("needed")),
+            "question": str(clarification.get("question", "")),
+            "reason": str(clarification.get("reason", "")),
+        },
+    }
+
+
+def _contains_edge_patch_fields(value: Any) -> bool:
+    if isinstance(value, dict):
+        if any(key in value for key in UNDERSTAND_EDGE_PATCH_FIELDS):
+            return True
+        return any(_contains_edge_patch_fields(child) for child in value.values())
+    if isinstance(value, list):
+        return any(_contains_edge_patch_fields(child) for child in value)
+    return False
+
+
+def validate_understand_semantic_spec(value: dict[str, Any] | None, graph_data: dict[str, Any]) -> tuple[bool, str | None]:
+    if not isinstance(value, dict):
+        return False, "invalid understand semantic specification"
+    if _contains_edge_patch_fields(value):
+        return False, "complete topology edge patch fields are not allowed in understand semantic specification"
+    unknown_keys = set(value) - UNDERSTAND_SEMANTIC_SPEC_KEYS
+    if unknown_keys:
+        return False, f"unknown understand semantic specification fields: {', '.join(sorted(unknown_keys))}"
+    if value.get("status") not in UNDERSTAND_SEMANTIC_SPEC_STATUSES:
+        return False, "invalid understand semantic specification status"
+
+    normalized = normalize_understand_semantic_spec(value)
+    known_nodes = sorted(graph_node_ids(graph_data))
+    known_labels = sorted(graph_labels(graph_data))
+    known_edges = sorted(
+        edge["id"]
+        for edge in graph_data.get("edges", [])
+        if isinstance(edge, dict) and isinstance(edge.get("id"), str)
+    )
+    contract = {
+        "allowed_existing_node_ids": known_nodes,
+        "allowed_structural_relation_types": known_labels,
+        "allowed_auxiliary_relation_types": known_labels,
+        "allowed_property_targets": known_nodes,
+        "allowed_edge_property_targets": known_edges,
+        "allow_absent_entities": True,
+        "allow_new_entities": True,
+    }
+    valid, error = validate_ir(normalized["workflow_ir"], graph_data, contract)
+    if not valid:
+        return False, error
+    if normalized["status"] == "clarification" and normalized["workflow_ir"] != normalize_ir({}):
+        return False, "clarification status must not include workflow_ir"
+    return True, None
+
+
+def ground_understand_semantic_spec(
+    value: dict[str, Any] | None,
+    graph_data: dict[str, Any],
+    selection: dict[str, Any] | None = None,
+    request_context: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    del request_context
+    normalized = normalize_understand_semantic_spec(value)
+    issues: list[dict[str, Any]] = []
+    provenance: list[dict[str, Any]] = []
+
+    def add_issue(kind: str, location: str, reference: Any, candidates: list[str], reason: str) -> None:
+        issues.append(
+            {
+                "kind": kind,
+                "location": location,
+                "reference": reference,
+                "candidates": sorted(candidates),
+                "reason": reason,
+            }
+        )
+
+    def add_provenance(location: str, reference: Any, resolved_id: str, resolution_type: str) -> None:
+        provenance.append(
+            {
+                "location": location,
+                "reference": reference,
+                "resolved_id": resolved_id,
+                "resolution_type": resolution_type,
+            }
+        )
+
+    def resolve_node_ref(raw: Any, location: str) -> str | None:
+        node_id, ambiguous = _resolve_node_reference(graph_data, raw, selection)
+        if node_id is not None:
+            add_provenance(location, raw, node_id, "node")
+            return node_id
+        if ambiguous:
+            add_issue("ambiguous_node_reference", location, raw, ambiguous, "multiple graph nodes match reference")
+        else:
+            add_issue("missing_node_reference", location, raw, [], "no graph node matches reference")
+        return None
+
+    def ground_structure(structure: Any, location: str) -> dict[str, Any] | None:
+        if not isinstance(structure, dict) or structure.get("type") not in STRUCTURE_TYPES:
+            add_issue("invalid_structure", location, structure, [], "structure node is invalid")
+            return None
+        kind = structure["type"]
+        row: dict[str, Any] = {"type": kind}
+        if kind == "node":
+            if isinstance(structure.get("ref"), str) and structure.get("ref").strip():
+                row["ref"] = structure["ref"]
+                if isinstance(structure.get("node_type"), str):
+                    row["node_type"] = structure["node_type"]
+                if isinstance(structure.get("label"), str):
+                    row["label"] = structure["label"]
+                add_provenance(location, structure["ref"], structure["ref"], "new_ref")
+                return row
+            if isinstance(structure.get("id"), str):
+                node_id = resolve_node_ref(structure["id"], f"{location}.id")
+                if node_id is not None:
+                    row["id"] = node_id
+                    return row
+            return None
+        child_key = "items" if kind == "sequence" else "branches"
+        children = structure.get(child_key, [])
+        if not isinstance(children, list):
+            add_issue("invalid_structure", f"{location}.{child_key}", children, [], "structure children must be a list")
+            return None
+        grounded_children = [
+            grounded
+            for index, child in enumerate(children)
+            if (grounded := ground_structure(child, f"{location}.{child_key}[{index}]")) is not None
+        ]
+        row[child_key] = grounded_children
+        if kind == "parallel" and structure.get("join_mode") in {"all", "any"}:
+            row["join_mode"] = structure["join_mode"]
+        return row
+
+    if normalized["status"] == "clarification":
+        return {
+            **normalized,
+            "workflow_ir": normalize_ir({}),
+            "grounding": {"issues": issues, "provenance": provenance},
+        }
+
+    raw_workflow_ir = value.get("workflow_ir", {}) if isinstance(value, dict) and isinstance(value.get("workflow_ir"), dict) else {}
+    raw_canonical, _ = canonicalize_schema_variants(raw_workflow_ir)
+    raw_workflow_ir = raw_canonical if isinstance(raw_canonical, dict) else raw_workflow_ir
+    grounded_ir = {
+        "control_flow_regions": [],
+        "auxiliary_relations": [],
+        "absent_entities": [],
+        "properties": [],
+        "edge_properties": [],
+    }
+
+    for index, region in enumerate(raw_workflow_ir.get("control_flow_regions", [])):
+        if not isinstance(region, dict):
+            continue
+        relation_type = sanitize_relation_type(region.get("relation_type", ""), graph_data)
+        if relation_type is None:
+            add_issue("invalid_relation_type", f"workflow_ir.control_flow_regions[{index}].relation_type", region.get("relation_type"), [], "relation_type is not a graph label")
+            continue
+        structure = ground_structure(region.get("structure"), f"workflow_ir.control_flow_regions[{index}].structure")
+        if structure is not None:
+            grounded_ir["control_flow_regions"].append({"relation_type": relation_type, "structure": structure})
+
+    for index, row in enumerate(raw_workflow_ir.get("properties", [])):
+        if not isinstance(row, dict) or not isinstance(row.get("changes"), dict):
+            continue
+        node_id = resolve_node_ref(row.get("node_id"), f"workflow_ir.properties[{index}].node_id")
+        changes = normalize_changes(row["changes"])
+        if node_id is not None and changes:
+            grounded_ir["properties"].append({"node_id": node_id, "changes": changes})
+
+    for index, row in enumerate(raw_workflow_ir.get("auxiliary_relations", [])):
+        if not isinstance(row, dict):
+            continue
+        source = resolve_node_ref(row.get("source"), f"workflow_ir.auxiliary_relations[{index}].source")
+        relation_type = sanitize_relation_type(row.get("relation_type", ""), graph_data)
+        if relation_type is None:
+            add_issue("invalid_relation_type", f"workflow_ir.auxiliary_relations[{index}].relation_type", row.get("relation_type"), [], "relation_type is not a graph label")
+            continue
+        targets: list[str] = []
+        for target_index, target in enumerate(row.get("targets", []) if isinstance(row.get("targets"), list) else []):
+            target_id = resolve_node_ref(target, f"workflow_ir.auxiliary_relations[{index}].targets[{target_index}]")
+            if target_id is not None:
+                targets.append(target_id)
+        if source is not None and targets:
+            grounded_ir["auxiliary_relations"].append({"source": source, "relation_type": relation_type, "targets": targets})
+
+    for index, row in enumerate(raw_workflow_ir.get("absent_entities", [])):
+        if not isinstance(row, dict):
+            continue
+        node_id = resolve_node_ref(row.get("node_id"), f"workflow_ir.absent_entities[{index}].node_id")
+        if node_id is not None:
+            grounded_ir["absent_entities"].append({"node_id": node_id})
+
+    for index, row in enumerate(raw_workflow_ir.get("edge_properties", [])):
+        if not isinstance(row, dict) or not isinstance(row.get("changes"), dict):
+            continue
+        edge = None
+        edge_id = row.get("edge_id")
+        if isinstance(edge_id, str):
+            edge = _edge_by_id(graph_data, edge_id)
+            if edge is None:
+                add_issue("missing_edge_reference", f"workflow_ir.edge_properties[{index}].edge_id", edge_id, [], "no graph edge matches reference")
+        else:
+            source = resolve_node_ref(row.get("source"), f"workflow_ir.edge_properties[{index}].source") if row.get("source") is not None else None
+            target_ref = row.get("target_node", row.get("target"))
+            target = resolve_node_ref(target_ref, f"workflow_ir.edge_properties[{index}].target") if target_ref is not None else None
+            relation_type = sanitize_relation_type(row.get("relation_type"), graph_data)
+            candidates = [
+                candidate
+                for candidate in graph_data.get("edges", [])
+                if isinstance(candidate, dict)
+                and (source is None or candidate.get("source") == source)
+                and (target is None or candidate.get("target") == target)
+                and (relation_type is None or candidate.get("label", "") == relation_type)
+                and isinstance(candidate.get("id"), str)
+            ]
+            if len(candidates) == 1:
+                edge = candidates[0]
+            elif candidates:
+                add_issue("ambiguous_edge_reference", f"workflow_ir.edge_properties[{index}]", {"source": row.get("source"), "target": target_ref, "relation_type": row.get("relation_type")}, [edge["id"] for edge in candidates], "multiple graph edges match reference")
+            else:
+                add_issue("missing_edge_reference", f"workflow_ir.edge_properties[{index}]", {"source": row.get("source"), "target": target_ref, "relation_type": row.get("relation_type")}, [], "no graph edge matches reference")
+        if isinstance(edge, dict) and isinstance(edge.get("id"), str):
+            add_provenance(f"workflow_ir.edge_properties[{index}]", row.get("edge_id", {"source": row.get("source"), "target": row.get("target")}), edge["id"], "edge")
+            changes = normalize_edge_changes(row["changes"], edge)
+            if changes:
+                grounded_ir["edge_properties"].append({"edge_id": edge["id"], "changes": changes})
+
+    return {
+        "status": normalized["status"],
+        "workflow_ir": normalize_ir(grounded_ir),
+        "semantic_goals": normalized["semantic_goals"],
+        "clarification": normalized["clarification"],
+        "grounding": {"issues": issues, "provenance": provenance},
+    }
+
+
+def _semantic_spec_validation_contract(graph_data: dict[str, Any]) -> dict[str, Any]:
+    known_nodes = sorted(graph_node_ids(graph_data))
+    known_labels = sorted(graph_labels(graph_data))
+    known_edges = sorted(
+        edge["id"]
+        for edge in graph_data.get("edges", [])
+        if isinstance(edge, dict) and isinstance(edge.get("id"), str)
+    )
+    return {
+        "allowed_existing_node_ids": known_nodes,
+        "allowed_structural_relation_types": known_labels,
+        "allowed_auxiliary_relation_types": known_labels,
+        "allowed_property_targets": known_nodes,
+        "allowed_edge_property_targets": known_edges,
+        "allow_absent_entities": True,
+        "allow_new_entities": True,
+    }
+
+
+def validate_grounded_semantic_spec(value: dict[str, Any] | None, graph_data: dict[str, Any]) -> dict[str, Any]:
+    issues: list[dict[str, Any]] = []
+
+    def add_issue(kind: str, message: str, severity: str = "error", location: str = "") -> None:
+        issues.append({"kind": kind, "message": message, "severity": severity, "location": location})
+
+    if not isinstance(value, dict):
+        add_issue("invalid_spec", "grounded semantic specification must be an object")
+        return {"valid": False, "deterministic_ready": False, "issues": issues}
+
+    if "deterministic_ready" in value:
+        add_issue(
+            "llm_deterministic_ready_not_allowed",
+            "deterministic_ready is a programmatic validation result, not a semantic spec field",
+            location="deterministic_ready",
+        )
+
+    status = value.get("status")
+    if status not in UNDERSTAND_SEMANTIC_SPEC_STATUSES:
+        add_issue("invalid_status", "semantic specification status is invalid", location="status")
+
+    workflow_ir = value.get("workflow_ir")
+    clarification = value.get("clarification") if isinstance(value.get("clarification"), dict) else {}
+    semantic_goals = value.get("semantic_goals", [])
+    grounding = value.get("grounding") if isinstance(value.get("grounding"), dict) else {}
+    grounding_issues = grounding.get("issues", [])
+    if isinstance(grounding_issues, list) and grounding_issues:
+        add_issue("grounding_issues_present", "grounding still has ambiguous, missing, or invalid references", location="grounding.issues")
+    elif not isinstance(grounding_issues, list):
+        add_issue("invalid_grounding_issues", "grounding.issues must be an array", location="grounding.issues")
+
+    valid_ir, ir_error = validate_ir(workflow_ir, graph_data, _semantic_spec_validation_contract(graph_data))
+    if not valid_ir:
+        add_issue("invalid_workflow_ir", ir_error or "workflow_ir failed validation", location="workflow_ir")
+
+    if status == "clarification" and workflow_ir != normalize_ir({}):
+        add_issue("clarification_has_executable_spec", "clarification status must not carry executable workflow_ir", location="workflow_ir")
+
+    if status == "partial":
+        add_issue("partial_spec", "partial semantic specification is not ready for deterministic compile", severity="blocking", location="status")
+
+    if isinstance(semantic_goals, list) and semantic_goals:
+        add_issue("unresolved_semantic_goals", "semantic_goals require future semantic completion or clarification", severity="blocking", location="semantic_goals")
+    elif not isinstance(semantic_goals, list):
+        add_issue("invalid_semantic_goals", "semantic_goals must be an array", location="semantic_goals")
+
+    if bool(clarification.get("needed")):
+        add_issue("clarification_needed", "clarification is still needed before deterministic compile", severity="blocking", location="clarification")
+
+    hard_error = any(issue["severity"] == "error" for issue in issues)
+    ready_blocker = any(issue["severity"] in {"error", "blocking"} for issue in issues)
+    return {
+        "valid": not hard_error,
+        "deterministic_ready": status == "resolved" and not ready_blocker,
+        "issues": issues,
+    }
+
+
+def compile_grounded_semantic_spec(
+    value: dict[str, Any] | None,
+    graph_data: dict[str, Any],
+    validation_result: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    validation = validation_result if isinstance(validation_result, dict) else validate_grounded_semantic_spec(value, graph_data)
+    if validation.get("deterministic_ready") is not True:
+        return {
+            "ok": False,
+            "stage": "validation",
+            "validation": validation,
+            "compiled": None,
+            "constraints": None,
+            "issues": list(validation.get("issues", [])) if isinstance(validation.get("issues"), list) else [],
+        }
+    if not isinstance(value, dict) or not isinstance(value.get("workflow_ir"), dict):
+        issue = {"kind": "invalid_workflow_ir", "message": "grounded semantic specification has no workflow_ir", "severity": "error", "location": "workflow_ir"}
+        return {"ok": False, "stage": "validation", "validation": validation, "compiled": None, "constraints": None, "issues": [issue]}
+
+    compiled = compile_ir(value["workflow_ir"], graph_data)
+    compile_issues = [
+        {
+            "kind": "incomplete_parallel_boundary",
+            "message": "compiler could not infer complete parallel boundary for a control_flow_region",
+            "severity": "blocking",
+            "location": f"compiled.control_flow_regions[{index}]",
+        }
+        for index, region in enumerate(compiled.get("control_flow_regions", []))
+        if isinstance(region, dict) and region.get("incomplete_parallel_boundary") is True
+    ]
+    constraints = constraints_from_compiled(graph_data, compiled)
+    return {
+        "ok": not compile_issues,
+        "stage": "compile" if compile_issues else "constraints",
+        "validation": validation,
+        "compiled": compiled,
+        "constraints": constraints,
+        "issues": compile_issues,
+    }
+
+
 def canonicalize_schema_variants(value: dict[str, Any] | None) -> tuple[dict[str, Any] | None, bool]:
     def canonicalize_structure(structure: Any) -> Any:
         if isinstance(structure, list) and len(structure) == 1:

@@ -120,6 +120,51 @@ Rules:
 """
 
 
+UNDERSTAND_SEMANTIC_SPECIFICATION_SYSTEM = """Return one JSON object that describes the user's semantic editing target without producing graph mutation steps.
+
+Return exactly:
+{
+  "status": "resolved" | "partial" | "clarification",
+  "workflow_ir": {
+    "control_flow_regions": [],
+    "properties": [
+      {"node_id": "existing node id", "changes": {"label": "New label"}}
+    ],
+    "edge_properties": [
+      {"edge_id": "existing edge id", "changes": {"branch_label": "label", "condition": {"expression": "explicit expression"}}}
+    ],
+    "auxiliary_relations": [
+      {"source": "existing node id", "relation_type": "success|failure|retry|exception|real graph label, or \"\" for unlabeled", "targets": ["existing node id"]}
+    ],
+    "absent_entities": [
+      {"node_id": "existing node id explicitly requested for deletion"}
+    ]
+  },
+  "semantic_goals": [
+    {"goal_type": "other", "description": "goal that cannot yet be represented as Workflow IR"}
+  ],
+  "clarification": {"needed": false, "question": "", "reason": ""}
+}
+
+Rules:
+- This is a semantic specification contract for a future execution path. The current production transaction path does not consume it yet.
+- status=resolved means the user semantics appear specifiable; it does not mean deterministic_ready and does not authorize compilation.
+- status=partial means the user goal has a direction but still needs local graph/context completion before it can become executable.
+- status=clarification means there are multiple reasonable business or topology meanings; do not output workflow_ir in this status.
+- deterministic_ready is a future programmatic Ground/Validation decision. Never output deterministic_ready.
+- Reuse the existing Workflow IR structural grammar: node, sequence, parallel, choice. Do not invent merge, insert, redirect, branch, or operation-specific operators.
+- workflow_ir reuses the existing Workflow IR fields directly. Do not create another IR layer.
+- control_flow_regions express compositional topology only. For example, A/B parallel then C is sequence(parallel(A, B), C).
+- Simple edits such as rename, node properties, edge properties, relation metadata, and entity deletion should use the existing Workflow IR fields directly; do not wrap them in topology structures.
+- Do not output complete topology edge patches. Never output required_edges, forbidden_edges, required_relations, forbidden_relations, hidden fan-out/fan-in, old-edge replacement sets, or minimum diffs.
+- Relation metadata such as success, failure, retry, and exception must stay as relation_type values in auxiliary_relations or control_flow_regions when explicitly requested.
+- branch_label and condition.expression must stay in edge_properties. Do not encode them as relation_type.
+- If the target cannot yet be safely represented as Workflow IR, preserve it in semantic_goals and set partial or clarification as appropriate.
+- Conversation history may only resolve references and omissions. Current graph remains the source of structural truth.
+- Return JSON only.
+"""
+
+
 IR_SYSTEM = """Return one JSON object describing only the target workflow structure for the current unit.
 
 Return exactly:
