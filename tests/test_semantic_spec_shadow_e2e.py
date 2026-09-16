@@ -59,7 +59,7 @@ def execute_shadow(spec: dict, current_graph: dict | None = None) -> dict:
     return {"grounded": grounded, "shadow": shadow, "planned": planned, "final_graph": executed.graph}
 
 
-def test_sequence_reorder_final_graph_exposes_boundary_reconnect_gap() -> None:
+def test_sequence_reorder_final_graph_reconnects_boundary() -> None:
     result = execute_shadow(
         {
             "status": "resolved",
@@ -75,10 +75,10 @@ def test_sequence_reorder_final_graph_exposes_boundary_reconnect_gap() -> None:
 
     assert ("n_b", "n_a", "") in final_edges
     assert ("n_a", "n_b", "") not in final_edges
-    assert ("n_x", "n_a", "") in final_edges
-    assert ("n_b", "n_c", "") in final_edges
-    assert ("n_x", "n_b", "") not in final_edges
-    assert ("n_a", "n_c", "") not in final_edges
+    assert ("n_x", "n_b", "") in final_edges
+    assert ("n_a", "n_c", "") in final_edges
+    assert ("n_x", "n_a", "") not in final_edges
+    assert ("n_b", "n_c", "") not in final_edges
 
 
 def test_standalone_parallel_final_graph_satisfies_parallel_semantics() -> None:
@@ -100,7 +100,7 @@ def test_standalone_parallel_final_graph_satisfies_parallel_semantics() -> None:
     assert node_by_id(result["final_graph"], "n_c")["join"] == {"mode": "all"}
 
 
-def test_nested_parallel_merge_final_graph_exposes_missing_upstream_fanout_gap() -> None:
+def test_nested_parallel_merge_final_graph_reconnects_upstream_fanout() -> None:
     result = execute_shadow(
         {
             "status": "resolved",
@@ -123,14 +123,12 @@ def test_nested_parallel_merge_final_graph_exposes_missing_upstream_fanout_gap()
 
     final_edges = edge_set(result["final_graph"])
 
-    assert {("n_a", "n_c", ""), ("n_b", "n_c", "")} <= final_edges
+    assert {("n_x", "n_a", ""), ("n_x", "n_b", ""), ("n_a", "n_c", ""), ("n_b", "n_c", "")} <= final_edges
     assert ("n_a", "n_b", "") not in final_edges
-    assert ("n_x", "n_a", "") in final_edges
-    assert ("n_x", "n_b", "") not in final_edges
     assert node_by_id(result["final_graph"], "n_c")["join"] == {"mode": "all"}
 
 
-def test_mixed_topology_final_graph_exposes_same_missing_upstream_fanout_gap() -> None:
+def test_mixed_topology_final_graph_reconnects_upstream_fanout() -> None:
     result = execute_shadow(
         {
             "status": "resolved",
@@ -154,10 +152,49 @@ def test_mixed_topology_final_graph_exposes_same_missing_upstream_fanout_gap() -
 
     final_edges = edge_set(result["final_graph"])
 
-    assert {("n_a", "n_c", ""), ("n_b", "n_c", ""), ("n_c", "n_d", "")} <= final_edges
+    assert {("n_x", "n_a", ""), ("n_x", "n_b", ""), ("n_a", "n_c", ""), ("n_b", "n_c", ""), ("n_c", "n_d", "")} <= final_edges
     assert ("n_a", "n_b", "") not in final_edges
-    assert ("n_x", "n_b", "") not in final_edges
     assert node_by_id(result["final_graph"], "n_c")["join"] == {"mode": "all"}
+
+
+def test_topology_edit_preserves_metadata_relations() -> None:
+    result = execute_shadow(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {"relation_type": "", "structure": {"type": "parallel", "join_mode": "all", "branches": [{"type": "node", "id": "A"}, {"type": "node", "id": "B"}]}}
+                ]
+            },
+        }
+    )
+
+    final_edges = edge_set(result["final_graph"])
+
+    assert ("n_a", "n_review", "success") in final_edges
+    assert ("n_b", "n_review", "failure") in final_edges
+
+
+def test_ambiguous_boundary_stops_at_compile() -> None:
+    current_graph = graph()
+    current_graph["nodes"].append({"id": "n_y", "type": "task", "label": "Y", "x": -100, "y": 100})
+    current_graph["edges"].append({"id": "e_y_a", "source": "n_y", "target": "n_a", "label": ""})
+    grounded = ground_understand_semantic_spec(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {"relation_type": "", "structure": {"type": "parallel", "join_mode": "all", "branches": [{"type": "node", "id": "A"}, {"type": "node", "id": "B"}]}}
+                ]
+            },
+        },
+        current_graph,
+    )
+    shadow = compile_grounded_semantic_spec(grounded, current_graph)
+
+    assert shadow["ok"] is False
+    assert shadow["stage"] == "compile"
+    assert shadow["issues"][0]["kind"] == "ambiguous_structural_boundary"
 
 
 def test_node_property_final_graph_matches_spec() -> None:

@@ -2966,16 +2966,13 @@ def compile_grounded_semantic_spec(
         return {"ok": False, "stage": "validation", "validation": validation, "compiled": None, "constraints": None, "issues": [issue]}
 
     compiled = compile_ir(value["workflow_ir"], graph_data)
-    compile_issues = [
-        {
-            "kind": "incomplete_parallel_boundary",
-            "message": "compiler could not infer complete parallel boundary for a control_flow_region",
-            "severity": "blocking",
-            "location": f"compiled.control_flow_regions[{index}]",
-        }
-        for index, region in enumerate(compiled.get("control_flow_regions", []))
-        if isinstance(region, dict) and region.get("incomplete_parallel_boundary") is True
-    ]
+    compile_issues: list[dict[str, Any]] = []
+    for index, region in enumerate(compiled.get("control_flow_regions", [])):
+        if not isinstance(region, dict):
+            continue
+        for issue in region.get("compile_issues", []):
+            if isinstance(issue, dict):
+                compile_issues.append({**issue, "location": issue.get("location") or f"compiled.control_flow_regions[{index}]"})
     constraints = constraints_from_compiled(graph_data, compiled)
     return {
         "ok": not compile_issues,
@@ -3520,6 +3517,85 @@ def _inferred_parallel_boundary(graph_data: dict[str, Any], structure: dict[str,
     return upstream_edges[0]["source"], join_edges[0]["target"], ordered
 
 
+def _region_boundary_lowering(
+    graph_data: dict[str, Any],
+    relation_type: str,
+    current_nodes: set[str],
+    target_entries: list[str],
+    target_exits: list[str],
+    target_edges: set[tuple[str, str, str]],
+) -> dict[str, Any]:
+    existing_nodes = graph_node_ids(graph_data)
+    current_existing_nodes = current_nodes & existing_nodes
+    target_entry_nodes = {node_id for node_id in target_entries if node_id in existing_nodes}
+    target_exit_nodes = {node_id for node_id in target_exits if node_id in existing_nodes}
+    current_edges = [
+        edge
+        for edge in graph_data.get("edges", [])
+        if isinstance(edge, dict)
+        and isinstance(edge.get("source"), str)
+        and isinstance(edge.get("target"), str)
+        and edge.get("label", "") == relation_type
+    ]
+    internal_edges = {
+        (edge["source"], edge["target"], relation_type)
+        for edge in current_edges
+        if edge["source"] in current_existing_nodes and edge["target"] in current_existing_nodes
+    }
+    incoming_edges = {
+        (edge["source"], edge["target"], relation_type)
+        for edge in current_edges
+        if edge["source"] not in current_existing_nodes and edge["target"] in current_existing_nodes
+    }
+    outgoing_edges = {
+        (edge["source"], edge["target"], relation_type)
+        for edge in current_edges
+        if edge["source"] in current_existing_nodes and edge["target"] not in current_existing_nodes
+    }
+
+    issues: list[dict[str, Any]] = []
+    incoming_sources = sorted({source for source, _target, _label in incoming_edges})
+    outgoing_targets = sorted({target for _source, target, _label in outgoing_edges})
+    if len(incoming_sources) > 1:
+        issues.append(
+            {
+                "kind": "ambiguous_structural_boundary",
+                "message": "multiple incoming boundary anchors for structural region",
+                "severity": "blocking",
+                "location": "compiled.control_flow_region.incoming_boundary",
+                "anchors": incoming_sources,
+            }
+        )
+    if len(outgoing_targets) > 1:
+        issues.append(
+            {
+                "kind": "ambiguous_structural_boundary",
+                "message": "multiple outgoing boundary anchors for structural region",
+                "severity": "blocking",
+                "location": "compiled.control_flow_region.outgoing_boundary",
+                "anchors": outgoing_targets,
+            }
+        )
+
+    boundary_edges: set[tuple[str, str, str]] = set()
+    if not issues and incoming_sources:
+        source = incoming_sources[0]
+        for target in target_entries:
+            boundary_edges.add((source, target, relation_type))
+    if not issues and outgoing_targets:
+        target = outgoing_targets[0]
+        for source in target_exits:
+            boundary_edges.add((source, target, relation_type))
+
+    return {
+        "target_boundary_edges": boundary_edges,
+        "owned_current_edges": internal_edges | incoming_edges | outgoing_edges,
+        "incoming_anchors": incoming_sources,
+        "outgoing_anchors": outgoing_targets,
+        "issues": issues,
+    }
+
+
 def compile_ir(ir: dict[str, Any], graph_data: dict[str, Any]) -> dict[str, Any]:
     entities: dict[str, dict[str, Any]] = {}
     properties: dict[str, dict[str, Any]] = {}
@@ -3567,23 +3643,29 @@ def compile_ir(ir: dict[str, Any], graph_data: dict[str, Any]) -> dict[str, Any]
     control_flow_regions: list[dict[str, Any]] = []
     for region in ir.get("control_flow_regions", []):
         compiled = compile_structure(region["structure"], region["relation_type"])
-        boundary = _inferred_parallel_boundary(graph_data, region["structure"], region["relation_type"])
-        incomplete_parallel_boundary = region["structure"].get("type") == "parallel" and boundary is None
-        if boundary is not None:
-            upstream_node_id, join_node_id, branch_ids = boundary
-            for branch_id in branch_ids:
-                compiled["edges"].add((upstream_node_id, branch_id, region["relation_type"]))
-                compiled["edges"].add((branch_id, join_node_id, region["relation_type"]))
-            if region["structure"].get("join_mode") == "all":
-                add_property(join_node_id, {"join": {"mode": "all"}})
+        current_nodes = _structure_existing_node_ids(region["structure"])
+        boundary = _region_boundary_lowering(
+            graph_data,
+            region["relation_type"],
+            current_nodes,
+            compiled["entries"],
+            compiled["exits"],
+            compiled["edges"],
+        )
+        compiled["edges"].update(boundary["target_boundary_edges"])
+        if compiled.get("join_mode") == "all" and len(boundary["outgoing_anchors"]) == 1:
+            add_property(boundary["outgoing_anchors"][0], {"join": {"mode": "all"}})
         control_flow_regions.append(
             {
                 "relation_type": region["relation_type"],
                 "edges": sorted(compiled["edges"]),
-                "node_ids": sorted(_structure_existing_node_ids(region["structure"])),
+                "node_ids": sorted(current_nodes),
                 "entries": compiled["entries"],
                 "exits": compiled["exits"],
-                "incomplete_parallel_boundary": incomplete_parallel_boundary,
+                "owned_current_edges": sorted(boundary["owned_current_edges"]),
+                "incoming_anchors": boundary["incoming_anchors"],
+                "outgoing_anchors": boundary["outgoing_anchors"],
+                "compile_issues": boundary["issues"],
             }
         )
     for row in ir.get("properties", []):
@@ -3872,40 +3954,16 @@ def constraints_from_compiled(graph_data: dict[str, Any], compiled: dict[str, An
     target_edges: set[tuple[str, str, str]] = set()
     target_edge_rows: dict[tuple[str, str, str], dict[str, Any]] = {}
     owned_current_edges: set[tuple[str, str, str]] = set()
-    owned_components: dict[str, list[set[str]]] = {}
     for region in compiled.get("control_flow_regions", []):
-        if region.get("incomplete_parallel_boundary") is True:
+        if region.get("compile_issues"):
             continue
         relation_type = region["relation_type"]
-        region_nodes = set(region.get("node_ids", [])) | {
-            endpoint
-            for edge in region.get("edges", [])
-            for endpoint in (edge[0], edge[1])
-            if endpoint not in current_node_ids
-        }
-        components = owned_components.setdefault(relation_type, [])
-        overlaps = [component for component in components if component & region_nodes]
-        if overlaps:
-            merged_nodes = set(region_nodes)
-            for component in overlaps:
-                merged_nodes.update(component)
-                components.remove(component)
-            components.append(merged_nodes)
-        else:
-            components.append(set(region_nodes))
+        for relation in region.get("owned_current_edges", []):
+            if isinstance(relation, (list, tuple)) and len(relation) == 3:
+                owned_current_edges.add((relation[0], relation[1], relation[2]))
         for edge in region.get("edges", []):
             target_edges.add(edge)
             target_edge_rows.setdefault(edge, {"source": edge[0], "target": edge[1], "label": edge[2]})
-    for relation_type, components in owned_components.items():
-        for component in components:
-            for edge in graph_data.get("edges", []):
-                relation = (edge["source"], edge["target"], edge.get("label", ""))
-                if (
-                    edge.get("label", "") == relation_type
-                    and edge.get("source") in component
-                    and edge.get("target") in component
-                ):
-                    owned_current_edges.add(relation)
     aux_by_group: dict[tuple[str, str], list[str]] = {}
     for row in compiled.get("auxiliary_relations", []):
         if isinstance(row, dict):

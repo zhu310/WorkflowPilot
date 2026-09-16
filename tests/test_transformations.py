@@ -182,7 +182,7 @@ def test_incomplete_standalone_parallel_does_not_lower_to_delete_only() -> None:
     compiled = compile_ir(workflow_ir, graph)
     constraints = constraints_from_compiled(graph, compiled)
 
-    assert compiled["control_flow_regions"][0]["incomplete_parallel_boundary"] is True
+    assert compiled["control_flow_regions"][0]["compile_issues"][0]["kind"] == "ambiguous_structural_boundary"
     assert constraints["required_relations"] == []
     assert constraints["forbidden_relations"] == []
     assert constraints["properties"] == []

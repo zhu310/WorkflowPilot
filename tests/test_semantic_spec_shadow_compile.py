@@ -208,9 +208,10 @@ def test_not_ready_validation_result_refuses_to_call_compile(monkeypatch: pytest
     assert result["constraints"] is None
 
 
-def test_compiler_failure_is_separate_from_validation_failure() -> None:
+def test_ambiguous_boundary_failure_is_separate_from_validation_failure() -> None:
     current_graph = graph()
-    current_graph["edges"] = [{"id": "e_a_b", "source": "n_a", "target": "n_b", "label": ""}]
+    current_graph["nodes"].append({"id": "n_y", "type": "task", "label": "Y", "x": -100, "y": 100})
+    current_graph["edges"].append({"id": "e_y_a", "source": "n_y", "target": "n_a", "label": ""})
     grounded = ground_understand_semantic_spec(
         {
             "status": "resolved",
@@ -230,7 +231,7 @@ def test_compiler_failure_is_separate_from_validation_failure() -> None:
     assert validation["deterministic_ready"] is True
     assert result["ok"] is False
     assert result["stage"] == "compile"
-    assert result["issues"][0]["kind"] == "incomplete_parallel_boundary"
+    assert result["issues"][0]["kind"] == "ambiguous_structural_boundary"
 
 
 def test_shadow_path_does_not_call_old_unit_obligation_skeleton_or_ir_llm(monkeypatch: pytest.MonkeyPatch) -> None:
