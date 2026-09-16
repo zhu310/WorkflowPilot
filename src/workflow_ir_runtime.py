@@ -126,7 +126,25 @@ Return exactly:
 {
   "status": "resolved" | "partial" | "clarification",
   "workflow_ir": {
-    "control_flow_regions": [],
+    "control_flow_regions": [
+      {
+        "relation_type": "",
+        "structure": {
+          "type": "sequence",
+          "items": [
+            {
+              "type": "parallel",
+              "join_mode": "all",
+              "branches": [
+                {"type": "node", "id": "existing node id"},
+                {"type": "node", "id": "existing node id"}
+              ]
+            },
+            {"type": "node", "id": "existing node id"}
+          ]
+        }
+      }
+    ],
     "properties": [
       {"node_id": "existing node id", "changes": {"label": "New label"}}
     ],
@@ -148,13 +166,23 @@ Return exactly:
 
 Rules:
 - This is a semantic specification contract for a future execution path. The current production transaction path does not consume it yet.
-- status=resolved means the user semantics appear specifiable; it does not mean deterministic_ready and does not authorize compilation.
-- status=partial means the user goal has a direction but still needs local graph/context completion before it can become executable.
+- status=resolved means the user's final business/topology target is clear enough to express as Workflow IR. It does not mean deterministic_ready and does not authorize compilation.
+- Do not mark a clear topology request partial just because the user did not specify implementation details that the deterministic compiler can infer from the current graph.
+- Compiler responsibilities include predecessor boundary, successor boundary, old serial edge replacement, fan-out reconstruction, fan-in reconstruction, join boundary, owned-region rewiring, and minimum structural diff.
+- For example, if the user says "Validate and Enrich run in parallel then merge into Review" and those nodes are identifiable, output resolved Workflow IR. Do not ask the user to specify whether X connects to A/B, whether A->B is deleted, or which old edges are forbidden.
+- status=partial means the user goal has a direction but still lacks semantic information that deterministic graph logic cannot uniquely infer.
 - status=clarification means there are multiple reasonable business or topology meanings; do not output workflow_ir in this status.
 - deterministic_ready is a future programmatic Ground/Validation decision. Never output deterministic_ready.
 - Reuse the existing Workflow IR structural grammar: node, sequence, parallel, choice. Do not invent merge, insert, redirect, branch, or operation-specific operators.
 - workflow_ir reuses the existing Workflow IR fields directly. Do not create another IR layer.
-- control_flow_regions express compositional topology only. For example, A/B parallel then C is sequence(parallel(A, B), C).
+- control_flow_regions express compositional topology only, using canonical JSON:
+  - node: {"type":"node","id":"A"}
+  - new node: {"type":"node","ref":"new_review","node_type":"human_review","label":"Human Review"}
+  - sequence: {"type":"sequence","items":[{"type":"node","id":"A"},{"type":"node","id":"B"}]}
+  - parallel: {"type":"parallel","join_mode":"all","branches":[{"type":"node","id":"A"},{"type":"node","id":"B"}]}
+  - choice: {"type":"choice","branches":[{"type":"node","id":"A"},{"type":"node","id":"B"}]}
+  - A/B parallel then C: {"type":"sequence","items":[{"type":"parallel","join_mode":"all","branches":[{"type":"node","id":"A"},{"type":"node","id":"B"}]},{"type":"node","id":"C"}]}
+- Every control_flow_regions entry must be {"relation_type":"", "structure": <canonical structure>}. Do not use {"type":"sequence","nodes":[...]} directly as a region.
 - Simple edits such as rename, node properties, edge properties, relation metadata, and entity deletion should use the existing Workflow IR fields directly; do not wrap them in topology structures.
 - Do not output complete topology edge patches. Never output required_edges, forbidden_edges, required_relations, forbidden_relations, hidden fan-out/fan-in, old-edge replacement sets, or minimum diffs.
 - Relation metadata such as success, failure, retry, and exception must stay as relation_type values in auxiliary_relations or control_flow_regions when explicitly requested.

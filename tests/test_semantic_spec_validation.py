@@ -162,6 +162,49 @@ def test_illegal_relation_type_is_not_ready() -> None:
     assert "grounding_issues_present" in issue_kinds(result)
 
 
+def test_metadata_failure_relation_type_is_ready_even_when_not_current_graph_label() -> None:
+    grounded, result = validate_after_ground(
+        {
+            "status": "resolved",
+            "workflow_ir": {"auxiliary_relations": [{"source": "A", "relation_type": "failure", "targets": ["D"]}]},
+        }
+    )
+
+    assert grounded["workflow_ir"]["auxiliary_relations"] == [{"source": "n_a", "relation_type": "failure", "targets": ["n_d"]}]
+    assert result == {"valid": True, "deterministic_ready": True, "issues": []}
+
+
+def test_unknown_auxiliary_relation_type_is_still_rejected() -> None:
+    _, result = validate_after_ground(
+        {
+            "status": "resolved",
+            "workflow_ir": {"auxiliary_relations": [{"source": "A", "relation_type": "manual-review", "targets": ["D"]}]},
+        }
+    )
+
+    assert result["valid"] is False
+    assert result["deterministic_ready"] is False
+    assert "grounding_issues_present" in issue_kinds(result)
+
+
+def test_resolved_malformed_ir_cannot_be_deterministic_ready() -> None:
+    grounded, result = validate_after_ground(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {"type": "sequence", "nodes": [{"type": "node", "id": "A"}, {"type": "node", "id": "B"}]}
+                ]
+            },
+        }
+    )
+
+    assert grounded["workflow_ir"]["control_flow_regions"] == []
+    assert result["valid"] is False
+    assert result["deterministic_ready"] is False
+    assert "semantic_spec_normalization_loss" in issue_kinds(result)
+
+
 def test_invalid_property_target_is_rejected_by_ir_validation() -> None:
     grounded = {
         "status": "resolved",

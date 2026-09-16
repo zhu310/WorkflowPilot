@@ -16,6 +16,7 @@ NON_EDGE_RELATION_TOKENS = (
 )
 
 STRUCTURE_TYPES = {"node", "sequence", "parallel", "choice"}
+CANONICAL_RELATION_TYPES = {"success", "failure", "retry", "exception"}
 TOPOLOGY_SIGNAL_TOKENS = (
     "after",
     "before",
@@ -133,6 +134,10 @@ def graph_labels(graph_data: dict[str, Any]) -> set[str]:
     return {edge.get("label", "") for edge in graph_data.get("edges", []) if isinstance(edge, dict)}
 
 
+def graph_relation_types(graph_data: dict[str, Any]) -> set[str]:
+    return graph_labels(graph_data) | CANONICAL_RELATION_TYPES
+
+
 def selection_edge_ids(selection: dict[str, Any] | None) -> list[str]:
     if not isinstance(selection, dict):
         return []
@@ -175,7 +180,7 @@ def sanitize_relation_type(raw_value: Any, graph_data: dict[str, Any]) -> str | 
     lowered = relation_type.lower()
     if any(token in lowered for token in NON_EDGE_RELATION_TOKENS):
         return None
-    return relation_type if relation_type in _actual_relation_labels(graph_data) else None
+    return relation_type if relation_type in graph_relation_types(graph_data) else None
 
 
 def _node_matches(graph_data: dict[str, Any], raw: str | None) -> list[str]:
@@ -2534,6 +2539,61 @@ UNDERSTAND_SEMANTIC_SPEC_STATUSES = {"resolved", "partial", "clarification"}
 UNDERSTAND_EDGE_PATCH_FIELDS = {"required_edges", "forbidden_edges", "required_relations", "forbidden_relations"}
 
 
+def semantic_spec_normalization_issues(value: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not isinstance(value, dict):
+        return []
+    workflow_ir = value.get("workflow_ir")
+    if not isinstance(workflow_ir, dict):
+        return []
+    canonical, _ = canonicalize_schema_variants(workflow_ir)
+    row = canonical if isinstance(canonical, dict) else workflow_ir
+    issues: list[dict[str, Any]] = []
+
+    for index, region in enumerate(row.get("control_flow_regions", []) if isinstance(row.get("control_flow_regions"), list) else []):
+        location = f"workflow_ir.control_flow_regions[{index}]"
+        if not isinstance(region, dict):
+            issues.append(
+                {
+                    "kind": "invalid_control_flow_region_shape",
+                    "message": "control_flow_region must be an object with relation_type and structure",
+                    "severity": "error",
+                    "location": location,
+                }
+            )
+            continue
+        if not isinstance(region.get("relation_type"), str):
+            issues.append(
+                {
+                    "kind": "invalid_control_flow_region_shape",
+                    "message": "control_flow_region.relation_type must be a string",
+                    "severity": "error",
+                    "location": f"{location}.relation_type",
+                }
+            )
+        if not isinstance(region.get("structure"), dict):
+            issues.append(
+                {
+                    "kind": "invalid_control_flow_region_shape",
+                    "message": "control_flow_region.structure must use the canonical Workflow IR structure object",
+                    "severity": "error",
+                    "location": f"{location}.structure",
+                }
+            )
+
+    normalized = normalize_ir(row)
+    raw_region_count = len(row.get("control_flow_regions", [])) if isinstance(row.get("control_flow_regions"), list) else 0
+    if raw_region_count and not normalized["control_flow_regions"]:
+        issues.append(
+            {
+                "kind": "semantic_spec_normalization_loss",
+                "message": "non-empty control_flow_regions were lost during normalization",
+                "severity": "error",
+                "location": "workflow_ir.control_flow_regions",
+            }
+        )
+    return issues
+
+
 def normalize_understand_semantic_spec(value: dict[str, Any] | None) -> dict[str, Any]:
     value = value if isinstance(value, dict) else {}
     workflow_ir = value.get("workflow_ir") if isinstance(value.get("workflow_ir"), dict) else {}
@@ -2546,7 +2606,7 @@ def normalize_understand_semantic_spec(value: dict[str, Any] | None) -> dict[str
     ]
     clarification = value.get("clarification") if isinstance(value.get("clarification"), dict) else {}
     status = value.get("status") if value.get("status") in UNDERSTAND_SEMANTIC_SPEC_STATUSES else "partial"
-    return {
+    normalized = {
         "status": status,
         "workflow_ir": workflow_normalized,
         "semantic_goals": semantic_goals,
@@ -2556,6 +2616,10 @@ def normalize_understand_semantic_spec(value: dict[str, Any] | None) -> dict[str
             "reason": str(clarification.get("reason", "")),
         },
     }
+    normalization_issues = semantic_spec_normalization_issues(value)
+    if normalization_issues:
+        normalized["normalization_issues"] = normalization_issues
+    return normalized
 
 
 def _contains_edge_patch_fields(value: Any) -> bool:
@@ -2580,8 +2644,10 @@ def validate_understand_semantic_spec(value: dict[str, Any] | None, graph_data: 
         return False, "invalid understand semantic specification status"
 
     normalized = normalize_understand_semantic_spec(value)
+    if normalized.get("normalization_issues"):
+        return False, "semantic spec normalization loss"
     known_nodes = sorted(graph_node_ids(graph_data))
-    known_labels = sorted(graph_labels(graph_data))
+    known_labels = sorted(graph_relation_types(graph_data))
     known_edges = sorted(
         edge["id"]
         for edge in graph_data.get("edges", [])
@@ -2684,11 +2750,12 @@ def ground_understand_semantic_spec(
         return row
 
     if normalized["status"] == "clarification":
-        return {
+        result = {
             **normalized,
             "workflow_ir": normalize_ir({}),
             "grounding": {"issues": issues, "provenance": provenance},
         }
+        return result
 
     raw_workflow_ir = value.get("workflow_ir", {}) if isinstance(value, dict) and isinstance(value.get("workflow_ir"), dict) else {}
     raw_canonical, _ = canonicalize_schema_variants(raw_workflow_ir)
@@ -2778,18 +2845,21 @@ def ground_understand_semantic_spec(
             if changes:
                 grounded_ir["edge_properties"].append({"edge_id": edge["id"], "changes": changes})
 
-    return {
+    result = {
         "status": normalized["status"],
         "workflow_ir": normalize_ir(grounded_ir),
         "semantic_goals": normalized["semantic_goals"],
         "clarification": normalized["clarification"],
         "grounding": {"issues": issues, "provenance": provenance},
     }
+    if normalized.get("normalization_issues"):
+        result["normalization_issues"] = normalized["normalization_issues"]
+    return result
 
 
 def _semantic_spec_validation_contract(graph_data: dict[str, Any]) -> dict[str, Any]:
     known_nodes = sorted(graph_node_ids(graph_data))
-    known_labels = sorted(graph_labels(graph_data))
+    known_labels = sorted(graph_relation_types(graph_data))
     known_edges = sorted(
         edge["id"]
         for edge in graph_data.get("edges", [])
@@ -2830,6 +2900,18 @@ def validate_grounded_semantic_spec(value: dict[str, Any] | None, graph_data: di
     workflow_ir = value.get("workflow_ir")
     clarification = value.get("clarification") if isinstance(value.get("clarification"), dict) else {}
     semantic_goals = value.get("semantic_goals", [])
+    normalization_issues = value.get("normalization_issues", [])
+    if isinstance(normalization_issues, list):
+        for issue in normalization_issues:
+            if isinstance(issue, dict):
+                add_issue(
+                    str(issue.get("kind", "semantic_spec_normalization_loss")),
+                    str(issue.get("message", "semantic spec normalization lost non-empty user intent")),
+                    severity=str(issue.get("severity", "error")),
+                    location=str(issue.get("location", "workflow_ir")),
+                )
+    else:
+        add_issue("invalid_normalization_issues", "normalization_issues must be an array", location="normalization_issues")
     grounding = value.get("grounding") if isinstance(value.get("grounding"), dict) else {}
     grounding_issues = grounding.get("issues", [])
     if isinstance(grounding_issues, list) and grounding_issues:
@@ -2973,7 +3055,7 @@ def validate_ir(value: dict[str, Any] | None, graph_data: dict[str, Any], unit_c
     if not all(isinstance(value.get(key, []), list) for key in ("control_flow_regions", "auxiliary_relations", "absent_entities", "properties", "edge_properties")):
         return False, "workflow ir top-level fields must be arrays"
     known_nodes = graph_node_ids(graph_data)
-    known_labels = graph_labels(graph_data)
+    known_labels = graph_relation_types(graph_data)
     seen_refs: set[str] = set()
     visible_node_ids = set(unit_contract.get("allowed_existing_node_ids", []))
     allowed_structural = set(unit_contract.get("allowed_structural_relation_types", []))

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 from dataclasses import asdict
@@ -17,6 +18,7 @@ if str(ROOT) not in sys.path:
 
 from experiments.stage3_large_graph_acceptance import build_cases, generate_complex_workflow, graph_is_valid  # noqa: E402
 from src.semantic_diagnosis import diagnose_workflow  # noqa: E402
+from src.semantic_shadow import run_semantic_shadow  # noqa: E402
 from src.versioning import (  # noqa: E402
     VersionState,
     as_jsonable,
@@ -213,7 +215,7 @@ def run_edit(payload: dict[str, Any]) -> dict[str, Any]:
         }
     execution = result.execution
     after = result.committed_version.graph_snapshot if result.committed_version else before
-    return {
+    response = {
         "status": execution.status,
         "error": execution.error,
         "clarification_message": execution.clarification_message,
@@ -232,6 +234,21 @@ def run_edit(payload: dict[str, Any]) -> dict[str, Any]:
         "transaction_diff": transaction_diff(result.transaction, before, after) if result.committed_version else None,
         "state": as_jsonable(state),
     }
+    if os.getenv("SEMANTIC_SHADOW") == "1":
+        try:
+            response["semantic_shadow"] = run_semantic_shadow(before, instruction, selection, request_context)
+        except Exception as error:
+            response["semantic_shadow"] = {
+                "enabled": True,
+                "stage": "shadow_error",
+                "failure_stage": "shadow_error",
+                "failure_reason": str(error),
+                "instruction": instruction,
+                "selection": selection,
+                "request_context": request_context,
+                "before_graph": before,
+            }
+    return response
 
 
 def run_undo(payload: dict[str, Any]) -> dict[str, Any]:

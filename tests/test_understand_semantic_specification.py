@@ -65,6 +65,74 @@ def test_resolved_topology_reuses_workflow_ir_composition() -> None:
     assert structure["items"][1] == {"type": "node", "id": "c"}
 
 
+def test_canonical_sequence_json_is_preserved() -> None:
+    normalized = assert_valid(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {"type": "sequence", "items": [{"type": "node", "id": "b"}, {"type": "node", "id": "a"}]},
+                    }
+                ]
+            },
+        }
+    )
+
+    assert normalized["workflow_ir"]["control_flow_regions"] == [
+        {"relation_type": "", "structure": {"type": "sequence", "items": [{"type": "node", "id": "b"}, {"type": "node", "id": "a"}]}}
+    ]
+
+
+def test_canonical_parallel_json_is_preserved() -> None:
+    normalized = assert_valid(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {
+                            "type": "parallel",
+                            "join_mode": "all",
+                            "branches": [{"type": "node", "id": "a"}, {"type": "node", "id": "b"}],
+                        },
+                    }
+                ]
+            },
+        }
+    )
+
+    assert normalized["workflow_ir"]["control_flow_regions"][0]["structure"] == {
+        "type": "parallel",
+        "branches": [{"type": "node", "id": "a"}, {"type": "node", "id": "b"}],
+        "join_mode": "all",
+    }
+
+
+def test_malformed_non_empty_control_flow_region_is_not_silently_dropped() -> None:
+    spec = {
+        "status": "resolved",
+        "workflow_ir": {
+            "control_flow_regions": [
+                {"type": "sequence", "nodes": [{"type": "node", "id": "a"}, {"type": "node", "id": "b"}]}
+            ]
+        },
+    }
+
+    normalized = normalize_understand_semantic_spec(spec)
+    valid, error = validate_understand_semantic_spec(spec, graph())
+
+    assert normalized["workflow_ir"]["control_flow_regions"] == []
+    assert {issue["kind"] for issue in normalized["normalization_issues"]} == {
+        "invalid_control_flow_region_shape",
+        "semantic_spec_normalization_loss",
+    }
+    assert valid is False
+    assert error == "semantic spec normalization loss"
+
+
 def test_resolved_property_edit_does_not_require_topology_structure() -> None:
     normalized = assert_valid(
         {
