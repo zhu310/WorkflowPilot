@@ -23,6 +23,28 @@ def graph() -> dict:
     }
 
 
+def existing_join_graph() -> dict:
+    return {
+        "nodes": [
+            {"id": "submit", "type": "task", "label": "Submit"},
+            {"id": "audit", "type": "task", "label": "Audit"},
+            {"id": "risk", "type": "task", "label": "Risk"},
+            {"id": "anchor", "type": "task", "label": "Aggregation", "join": {"mode": "all"}},
+            {"id": "compliance", "type": "task", "label": "Compliance"},
+            {"id": "ship", "type": "task", "label": "Ship"},
+            {"id": "archive", "type": "task", "label": "Archive"},
+        ],
+        "edges": [
+            {"id": "e_submit_audit", "source": "submit", "target": "audit", "label": ""},
+            {"id": "e_submit_risk", "source": "submit", "target": "risk", "label": ""},
+            {"id": "e_audit_anchor", "source": "audit", "target": "anchor", "label": ""},
+            {"id": "e_risk_anchor", "source": "risk", "target": "anchor", "label": ""},
+            {"id": "e_anchor_ship", "source": "anchor", "target": "ship", "label": ""},
+            {"id": "e_archive_ship", "source": "archive", "target": "ship", "label": "exception"},
+        ],
+    }
+
+
 def validate_after_ground(spec: dict, current_graph: dict | None = None) -> tuple[dict, dict]:
     current_graph = current_graph or graph()
     grounded = ground_understand_semantic_spec(spec, current_graph)
@@ -324,3 +346,129 @@ def test_machine_checkable_validation_does_not_claim_natural_language_completene
     assert result["deterministic_ready"] is True
     assert "semantic_equivalence" not in result
     assert all("semantic_equivalence" not in row["kind"] for row in result["issues"])
+
+
+def test_resolved_region_cannot_omit_existing_anchor_when_boundary_becomes_ambiguous() -> None:
+    _, result = validate_after_ground(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {
+                            "type": "sequence",
+                            "items": [
+                                {"type": "parallel", "join_mode": "all", "branches": [{"type": "node", "id": "audit"}, {"type": "node", "id": "risk"}]},
+                                {"type": "node", "id": "compliance"},
+                                {"type": "node", "id": "ship"},
+                            ],
+                        },
+                    }
+                ]
+            },
+        },
+        existing_join_graph(),
+    )
+
+    assert result["valid"] is True
+    assert result["deterministic_ready"] is False
+    assert "ambiguous_structural_boundary" in issue_kinds(result)
+
+
+def test_existing_anchor_can_be_preserved_by_explicit_structural_representation() -> None:
+    _, result = validate_after_ground(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {
+                            "type": "sequence",
+                            "items": [
+                                {"type": "parallel", "join_mode": "all", "branches": [{"type": "node", "id": "audit"}, {"type": "node", "id": "risk"}]},
+                                {"type": "node", "id": "anchor"},
+                                {"type": "node", "id": "compliance"},
+                                {"type": "node", "id": "ship"},
+                            ],
+                        },
+                    }
+                ]
+            },
+        },
+        existing_join_graph(),
+    )
+
+    assert result == {"valid": True, "deterministic_ready": True, "issues": []}
+
+
+def test_explicit_bypass_can_use_relation_group_rewrite_without_deleting_anchor() -> None:
+    _, result = validate_after_ground(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "auxiliary_relations": [
+                    {"source": "audit", "relation_type": "", "targets": ["compliance"]},
+                    {"source": "risk", "relation_type": "", "targets": ["compliance"]},
+                    {"source": "compliance", "relation_type": "", "targets": ["ship"]},
+                ]
+            },
+        },
+        existing_join_graph(),
+    )
+
+    assert result == {"valid": True, "deterministic_ready": True, "issues": []}
+
+
+def test_explicit_deletion_still_uses_absent_entities() -> None:
+    _, result = validate_after_ground(
+        {
+            "status": "resolved",
+            "workflow_ir": {"absent_entities": [{"node_id": "anchor"}]},
+        },
+        existing_join_graph(),
+    )
+
+    assert result == {"valid": True, "deterministic_ready": True, "issues": []}
+
+
+def test_unrelated_existing_nodes_do_not_need_to_appear_in_workflow_ir() -> None:
+    grounded, result = validate_after_ground(
+        {
+            "status": "resolved",
+            "workflow_ir": {"properties": [{"node_id": "audit", "changes": {"label": "Audit Review"}}]},
+        },
+        existing_join_graph(),
+    )
+
+    assert result == {"valid": True, "deterministic_ready": True, "issues": []}
+    assert "archive" not in str(grounded["workflow_ir"])
+
+
+def test_uncertain_existing_anchor_should_remain_partial() -> None:
+    _, result = validate_after_ground(
+        {
+            "status": "partial",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {
+                            "type": "sequence",
+                            "items": [
+                                {"type": "parallel", "join_mode": "all", "branches": [{"type": "node", "id": "audit"}, {"type": "node", "id": "risk"}]},
+                                {"type": "node", "id": "compliance"},
+                            ],
+                        },
+                    }
+                ]
+            },
+            "semantic_goals": [{"goal_type": "structural_anchor_uncertain", "description": "Need to confirm whether the existing aggregation anchor stays in the path."}],
+        },
+        existing_join_graph(),
+    )
+
+    assert result["valid"] is True
+    assert result["deterministic_ready"] is False
+    assert {"partial_spec", "unresolved_semantic_goals"} <= issue_kinds(result)

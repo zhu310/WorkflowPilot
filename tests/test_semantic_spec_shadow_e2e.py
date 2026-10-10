@@ -175,7 +175,7 @@ def test_topology_edit_preserves_metadata_relations() -> None:
     assert ("n_b", "n_review", "failure") in final_edges
 
 
-def test_ambiguous_boundary_stops_at_compile() -> None:
+def test_ambiguous_boundary_stops_at_validation() -> None:
     current_graph = graph()
     current_graph["nodes"].append({"id": "n_y", "type": "task", "label": "Y", "x": -100, "y": 100})
     current_graph["edges"].append({"id": "e_y_a", "source": "n_y", "target": "n_a", "label": ""})
@@ -193,7 +193,7 @@ def test_ambiguous_boundary_stops_at_compile() -> None:
     shadow = compile_grounded_semantic_spec(grounded, current_graph)
 
     assert shadow["ok"] is False
-    assert shadow["stage"] == "compile"
+    assert shadow["stage"] == "validation"
     assert shadow["issues"][0]["kind"] == "ambiguous_structural_boundary"
 
 
@@ -242,3 +242,403 @@ def test_absent_entity_final_graph_matches_spec() -> None:
 
     assert "n_review" not in {node["id"] for node in result["final_graph"]["nodes"]}
     assert all(edge["source"] != "n_review" and edge["target"] != "n_review" for edge in result["final_graph"]["edges"])
+
+
+def test_new_entity_after_parallel_uses_one_concrete_identity_for_topology_and_join() -> None:
+    current_graph = {
+        "nodes": [
+            {"id": "submit", "type": "start", "label": "提交", "x": 0, "y": 0},
+            {"id": "audit", "type": "task", "label": "审计", "x": 100, "y": -60},
+            {"id": "risk", "type": "task", "label": "风控", "x": 100, "y": 60},
+            {"id": "publish", "type": "end", "label": "发布", "x": 300, "y": 0, "join": {"mode": "all"}},
+        ],
+        "edges": [
+            {"id": "e_submit_audit", "source": "submit", "target": "audit", "label": ""},
+            {"id": "e_submit_risk", "source": "submit", "target": "risk", "label": ""},
+            {"id": "e_audit_publish", "source": "audit", "target": "publish", "label": ""},
+            {"id": "e_risk_publish", "source": "risk", "target": "publish", "label": ""},
+        ],
+    }
+    result = execute_shadow(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {
+                            "type": "sequence",
+                            "items": [
+                                {
+                                    "type": "parallel",
+                                    "join_mode": "all",
+                                    "branches": [{"type": "node", "id": "audit"}, {"type": "node", "id": "risk"}],
+                                },
+                                {"type": "node", "ref": "compliance_confirm", "node_type": "task", "label": "合规确认"},
+                                {"type": "node", "id": "publish"},
+                            ],
+                        },
+                    }
+                ]
+            },
+        },
+        current_graph,
+    )
+
+    new_node_id = result["planned"]["entity_ids"]["compliance_confirm"]
+    final_edges = edge_set(result["final_graph"])
+
+    assert new_node_id != "compliance_confirm"
+    assert {("audit", new_node_id, ""), ("risk", new_node_id, ""), (new_node_id, "publish", "")} <= final_edges
+    assert ("audit", "publish", "") not in final_edges
+    assert ("risk", "publish", "") not in final_edges
+    assert node_by_id(result["final_graph"], new_node_id)["join"] == {"mode": "all"}
+    assert all("compliance_confirm" not in str(step) for step in result["planned"]["steps"])
+
+
+def test_relation_aware_insert_new_ref_preserves_success_metadata_on_rewritten_edge() -> None:
+    result = execute_shadow(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {
+                            "type": "sequence",
+                            "items": [
+                                {"type": "node", "ref": "confirm", "node_type": "task", "label": "Confirm"},
+                                {"type": "node", "id": "Review"},
+                            ],
+                        },
+                    }
+                ],
+                "auxiliary_relations": [{"source": "A", "relation_type": "success", "targets": ["confirm"]}],
+            },
+        }
+    )
+
+    new_node_id = result["planned"]["entity_ids"]["confirm"]
+    final_edges = edge_set(result["final_graph"])
+
+    assert ("n_a", new_node_id, "success") in final_edges
+    assert (new_node_id, "n_review", "") in final_edges
+    assert ("n_a", "n_review", "success") not in final_edges
+    rewritten = next(edge for edge in result["final_graph"]["edges"] if edge["source"] == "n_a" and edge["target"] == new_node_id)
+    assert rewritten["label"] == "success"
+    assert rewritten["branch_label"] == "old"
+    assert rewritten["condition"] == {"expression": "score > 0"}
+    continuation = next(edge for edge in result["final_graph"]["edges"] if edge["source"] == new_node_id and edge["target"] == "n_review")
+    assert continuation.get("label", "") == ""
+    assert "branch_label" not in continuation
+    assert "condition" not in continuation
+    assert all("confirm" not in str(step) for step in result["planned"]["steps"])
+
+
+def test_relation_aware_incoming_boundary_inherits_metadata_for_new_node_before_anchor() -> None:
+    current_graph = {
+        "nodes": [
+            {"id": "risk", "type": "task", "label": "Risk", "x": 0, "y": 0},
+            {"id": "ship", "type": "task", "label": "Ship", "x": 100, "y": 0},
+            {"id": "notify", "type": "task", "label": "Notify", "x": 200, "y": 0},
+        ],
+        "edges": [
+            {
+                "id": "e_risk_ship_success",
+                "source": "risk",
+                "target": "ship",
+                "label": "success",
+                "branch_label": "ok",
+                "condition": {"expression": "risk == low"},
+            },
+            {"id": "e_ship_notify", "source": "ship", "target": "notify", "label": ""},
+        ],
+    }
+    result = execute_shadow(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {
+                            "type": "sequence",
+                            "items": [
+                                {"type": "node", "ref": "confirm", "node_type": "task", "label": "Confirm"},
+                                {"type": "node", "id": "ship"},
+                            ],
+                        },
+                    }
+                ]
+            },
+        },
+        current_graph,
+    )
+
+    new_node_id = result["planned"]["entity_ids"]["confirm"]
+    final_edges = edge_set(result["final_graph"])
+
+    assert ("risk", new_node_id, "success") in final_edges
+    assert (new_node_id, "ship", "") in final_edges
+    assert ("ship", "notify", "") in final_edges
+    assert ("risk", "ship", "success") not in final_edges
+    rewritten = next(edge for edge in result["final_graph"]["edges"] if edge["source"] == "risk" and edge["target"] == new_node_id)
+    assert rewritten["branch_label"] == "ok"
+    assert rewritten["condition"] == {"expression": "risk == low"}
+    continuation = next(edge for edge in result["final_graph"]["edges"] if edge["source"] == new_node_id and edge["target"] == "ship")
+    assert continuation.get("label", "") == ""
+    assert "branch_label" not in continuation
+    assert "condition" not in continuation
+
+
+def test_relation_aware_internal_split_inherits_metadata_for_new_node_between_existing_anchors() -> None:
+    result = execute_shadow(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {
+                            "type": "sequence",
+                            "items": [
+                                {"type": "node", "id": "A"},
+                                {"type": "node", "ref": "confirm", "node_type": "task", "label": "Confirm"},
+                                {"type": "node", "id": "Review"},
+                            ],
+                        },
+                    }
+                ]
+            },
+        }
+    )
+
+    new_node_id = result["planned"]["entity_ids"]["confirm"]
+    final_edges = edge_set(result["final_graph"])
+
+    assert ("n_a", new_node_id, "success") in final_edges
+    assert ("n_a", new_node_id, "") not in final_edges
+    assert (new_node_id, "n_review", "") in final_edges
+    assert ("n_a", "n_review", "success") not in final_edges
+    rewritten = next(edge for edge in result["final_graph"]["edges"] if edge["source"] == "n_a" and edge["target"] == new_node_id)
+    assert rewritten["branch_label"] == "old"
+    assert rewritten["condition"] == {"expression": "score > 0"}
+
+
+def test_relation_aware_outgoing_boundary_inherits_metadata_for_new_node_after_anchor() -> None:
+    current_graph = {
+        "nodes": [
+            {"id": "risk", "type": "task", "label": "Risk", "x": 0, "y": 0},
+            {"id": "ship", "type": "task", "label": "Ship", "x": 100, "y": 0},
+            {"id": "notify", "type": "task", "label": "Notify", "x": 200, "y": 0},
+        ],
+        "edges": [
+            {
+                "id": "e_risk_ship_success",
+                "source": "risk",
+                "target": "ship",
+                "label": "success",
+                "branch_label": "ok",
+                "condition": {"expression": "risk == low"},
+            },
+            {"id": "e_ship_notify", "source": "ship", "target": "notify", "label": ""},
+        ],
+    }
+    result = execute_shadow(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {
+                            "type": "sequence",
+                            "items": [
+                                {"type": "node", "id": "risk"},
+                                {"type": "node", "ref": "confirm", "node_type": "task", "label": "Confirm"},
+                            ],
+                        },
+                    }
+                ]
+            },
+        },
+        current_graph,
+    )
+
+    new_node_id = result["planned"]["entity_ids"]["confirm"]
+    final_edges = edge_set(result["final_graph"])
+
+    assert ("risk", new_node_id, "success") in final_edges
+    assert (new_node_id, "ship", "") in final_edges
+    assert ("risk", "ship", "success") not in final_edges
+    rewritten = next(edge for edge in result["final_graph"]["edges"] if edge["source"] == "risk" and edge["target"] == new_node_id)
+    assert rewritten["branch_label"] == "ok"
+    assert rewritten["condition"] == {"expression": "risk == low"}
+
+
+def test_relation_aware_incoming_boundary_ambiguity_blocks_compile() -> None:
+    current_graph = graph()
+    current_graph["nodes"].append({"id": "n_y", "type": "task", "label": "Y", "x": 0, "y": 100})
+    current_graph["edges"].append({"id": "e_y_review_retry", "source": "n_y", "target": "n_review", "label": "retry"})
+    grounded = ground_understand_semantic_spec(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {
+                            "type": "sequence",
+                            "items": [
+                                {"type": "node", "ref": "confirm", "node_type": "task", "label": "Confirm"},
+                                {"type": "node", "id": "Review"},
+                            ],
+                        },
+                    }
+                ]
+            },
+        },
+        current_graph,
+    )
+    shadow = compile_grounded_semantic_spec(grounded, current_graph)
+
+    assert shadow["ok"] is False
+    assert shadow["stage"] == "validation"
+    assert shadow["issues"][0]["kind"] == "ambiguous_structural_boundary"
+
+
+def placement_graph() -> dict:
+    return {
+        "nodes": [
+            {"id": "p", "type": "task", "label": "P", "x": 0, "y": 0},
+            {"id": "a", "type": "task", "label": "A", "x": 100, "y": 0},
+            {"id": "s", "type": "task", "label": "S", "x": 200, "y": 0},
+            {"id": "x", "type": "task", "label": "X", "x": 100, "y": 100},
+        ],
+        "edges": [
+            {"id": "e_p_a", "source": "p", "target": "a", "label": ""},
+            {"id": "e_a_s", "source": "a", "target": "s", "label": ""},
+        ],
+    }
+
+
+def test_insert_new_node_before_anchor_final_graph() -> None:
+    result = execute_shadow(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {
+                            "type": "sequence",
+                            "items": [
+                                {"type": "node", "id": "p"},
+                                {"type": "node", "ref": "inserted", "node_type": "task", "label": "Inserted"},
+                                {"type": "node", "id": "a"},
+                                {"type": "node", "id": "s"},
+                            ],
+                        },
+                    }
+                ]
+            },
+        },
+        placement_graph(),
+    )
+
+    new_node_id = result["planned"]["entity_ids"]["inserted"]
+    final_edges = edge_set(result["final_graph"])
+
+    assert {("p", new_node_id, ""), (new_node_id, "a", ""), ("a", "s", "")} <= final_edges
+    assert ("p", "a", "") not in final_edges
+
+
+def test_insert_new_node_after_anchor_final_graph() -> None:
+    result = execute_shadow(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {
+                            "type": "sequence",
+                            "items": [
+                                {"type": "node", "id": "p"},
+                                {"type": "node", "id": "a"},
+                                {"type": "node", "ref": "inserted", "node_type": "task", "label": "Inserted"},
+                                {"type": "node", "id": "s"},
+                            ],
+                        },
+                    }
+                ]
+            },
+        },
+        placement_graph(),
+    )
+
+    new_node_id = result["planned"]["entity_ids"]["inserted"]
+    final_edges = edge_set(result["final_graph"])
+
+    assert {("p", "a", ""), ("a", new_node_id, ""), (new_node_id, "s", "")} <= final_edges
+    assert ("a", "s", "") not in final_edges
+
+
+def test_relocate_existing_node_before_anchor_final_graph() -> None:
+    result = execute_shadow(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {
+                            "type": "sequence",
+                            "items": [
+                                {"type": "node", "id": "p"},
+                                {"type": "node", "id": "x"},
+                                {"type": "node", "id": "a"},
+                                {"type": "node", "id": "s"},
+                            ],
+                        },
+                    }
+                ]
+            },
+        },
+        placement_graph(),
+    )
+
+    final_edges = edge_set(result["final_graph"])
+
+    assert {("p", "x", ""), ("x", "a", ""), ("a", "s", "")} <= final_edges
+    assert ("p", "a", "") not in final_edges
+
+
+def test_relocate_existing_node_after_anchor_final_graph() -> None:
+    result = execute_shadow(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {
+                            "type": "sequence",
+                            "items": [
+                                {"type": "node", "id": "p"},
+                                {"type": "node", "id": "a"},
+                                {"type": "node", "id": "x"},
+                                {"type": "node", "id": "s"},
+                            ],
+                        },
+                    }
+                ]
+            },
+        },
+        placement_graph(),
+    )
+
+    final_edges = edge_set(result["final_graph"])
+
+    assert {("p", "a", ""), ("a", "x", ""), ("x", "s", "")} <= final_edges
+    assert ("a", "s", "") not in final_edges

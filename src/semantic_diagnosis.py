@@ -42,7 +42,7 @@ Responsibilities:
 - Ground the answer in graph_summary: mention the relevant visible node labels, edge labels, paths, or local range.
 - Reduce ambiguity only when it changes the possible graph mutation. Do not ask clarification for details that can be read from graph_summary.
 - Recommend proportionally. If one direction is clearly best, recommend that one direction. Offer multiple options only when there are real tradeoffs.
-- Use semantic option titles when options are needed, such as "人工复核后再发布"; do not rely on "方案1/方案2/方案3" as the meaning.
+- Use semantic option titles when options are needed, such as "人工处理后再继续"; do not rely on "方案1/方案2/方案3" as the meaning.
 - If the user appears to want an edit but the request is still abstract, include a natural, user-facing edit sentence they can send next.
 - Do not use a rigid response template. The fields should be concise and shaped by the current question.
 - Return needs_clarification when no safe local recommendation or answer can be given without a real business choice.
@@ -77,8 +77,8 @@ Boundaries:
 - For a clear parallel recommendation in an advisory answer, the hidden draft must include fan-out, fan-in, serial-edge removal, and AND-join. This does not apply to direct explicit edit commands, which should stay out of diagnosis.
 
 Good hidden draft examples:
-- "把 n_report、n_human、n_publish 改成串行主流程：n_report -> n_human -> n_publish。删除 n_report -> n_publish 的直接连线；如果 n_report -> n_human 只有旧的 failure 侧边，则目标里只保留 n_report -> n_human 的无标签主流程边。"
-- "把 n_submit、n_retrieval、n_tool、n_approval_decision 改成并行汇聚结构：n_submit 同时连接 n_retrieval 和 n_tool；n_retrieval 和 n_tool 都连接到 n_approval_decision；删除 n_retrieval -> n_tool 的串行连线；将 n_approval_decision 标记为 AND-join。"
+- "把 graph_summary 中已有的 node_a、node_b、node_c 改成串行主流程：node_a -> node_b -> node_c。删除 node_a -> node_c 的直接连线；如果 node_a -> node_b 只有旧的侧边，则目标里只保留 node_a -> node_b 的无标签主流程边。"
+- "把 graph_summary 中已有的 node_entry、node_branch_1、node_branch_2、node_join 改成并行汇聚结构：node_entry 同时连接 node_branch_1 和 node_branch_2；node_branch_1 和 node_branch_2 都连接到 node_join；删除 node_branch_1 -> node_branch_2 的串行连线；将 node_join 标记为 AND-join。"
 """
 
 

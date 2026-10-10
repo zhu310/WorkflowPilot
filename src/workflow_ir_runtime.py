@@ -120,6 +120,121 @@ Rules:
 """
 
 
+SEMANTIC_GOAL_UNDERSTANDING_SYSTEM = """Return one JSON object describing the user's semantic workflow editing goal without producing Workflow IR, graph ids, coordinates, or mutation steps.
+
+Return exactly:
+{
+  "status": "resolved" | "partial" | "clarification",
+  "semantic_goals": [
+    {
+      "kind": "layout | ordering | branch_property | route",
+      "text": "short natural-language description of the goal",
+      "objects": [
+        {"type": "existing_reference", "text": "object phrase from the user", "role": "target"},
+        {"type": "existing_reference", "text": "object phrase from the user", "role": "anchor"}
+      ],
+      "relation": "right_of",
+      "value": "",
+      "object": {"type": "edge_reference", "text": "exact branch phrase from the user", "role": "branch"},
+      "property": {"name": "label", "value": "new visible branch label from the user"},
+      "explicit_constraints": ["preserve_topology"]
+    }
+  ],
+  "clarification": {"needed": false, "question": "", "reason": ""}
+}
+
+Rules:
+- Output Semantic Goals only. Do not output Workflow IR or compiler-facing structures.
+- For layout right_of: when the user asks to put/move/place one node to the right of another node, return kind="layout", relation="right_of", role target for the moved node, and role anchor for the reference node.
+- For ordering before/after: when the user asks to add a new business step before or after an existing step, return kind="ordering", relation="before" or "after", subject as a new_entity, and anchor as an existing_reference.
+- If the user asks to add after a merge/join/aggregation point and says or implies that the existing merge should stay, include "preserve_existing_join" in explicit_constraints.
+- For branch display-name edits, always return exactly kind="branch_property", object as {"type":"edge_reference","text":"exact branch phrase from the user","role":"branch"}, and property {"name":"label","value":"new visible branch name from the user"}.
+- For branch_property, do not use relation, value, target/source node names, route fields, edge ids, or Workflow IR fields. The edge_reference.text must be the user's original branch phrase. If the user says "这个分支", "当前分支", or "该分支", keep that phrase unchanged and let Semantic Grounding use selection or return candidates.
+- For route target edits: when the user asks to send a route/branch condition to another existing node, return kind="route", relation="route_to", one object {"type":"edge_reference","text":"...","role":"route"}, and one object {"type":"existing_reference","text":"...","role":"target"}. Do not use new_entity targets for route in this phase.
+- For existing graph objects, use {"type":"existing_reference","text":"...","role":"..."}. For requested new business steps, use {"type":"new_entity","label":"...","role":"subject"}.
+- Use only exact object phrases from the current user instruction. Copy the user's referent text; do not expand, translate, normalize, complete, or choose a more specific graph label from the graph. For example, if the user says "提交", output text="提交", not "Submit Order" or a longer matched node label.
+- Apply the exact-phrase rule to route targets too. If the user asks to send a failure route to "manual review", keep target text/label as "manual review"; do not replace it with a similar existing graph label such as "manual handling" unless the user used that phrase.
+- If a route target is requested as a new destination and no existing graph object is explicitly named by the user, represent that target as a new_entity with the exact requested phrase; Grounding and Lowering will decide whether it can be created or needs clarification.
+- If the user says "this node", "current node", "selected node", or equivalent, keep that referent phrase unchanged as an existing_reference object and let Semantic Grounding use selection or ask for clarification.
+- Do not resolve ambiguity in Semantic Understanding. If a phrase could match multiple graph objects, keep the original phrase and let Semantic Grounding return candidates.
+- Emit an executable goal kind only when all required semantic structure is present:
+  - layout requires target object, anchor object, and a supported relation such as right_of.
+  - ordering requires subject, anchor, and relation before or after.
+  - branch_property requires edge_reference object plus property.name and property.value.
+  - route requires route edge_reference, target object, and relation route_to.
+- If the request is abstract, scope-only, missing a selection/scope, delete/parallel/proposal-oriented, or otherwise lacks the required structure for a supported executable goal, set status="clarification", semantic_goals=[], and ask one concise clarification question. Do not force it into layout, ordering, branch_property, or route with empty fields.
+- Do not output node_id, edge_id, x, y, coordinates, graph ids, selected edge ids, or inferred compiler fields.
+- Do not output workflow_ir, control_flow_regions, auxiliary_relations, properties, edge_properties, absent_entities, required_relations, forbidden_relations, mutation steps, planner steps, or graph diffs.
+- Use explicit_constraints only for user-stated or directly implied safety constraints such as preserve_topology for layout-only requests.
+- If the request is ambiguous or not a supported layout/ordering/branch_property/route request, preserve the user's goal in semantic_goals when possible and use status="partial" or status="clarification"; do not invent Workflow IR.
+- Return JSON only.
+"""
+
+
+SEMANTIC_GOAL_UNDERSTANDING_SYSTEM = """Return one JSON object describing the user's semantic workflow editing goal with Semantic Goal v2 primitives. Do not produce Workflow IR, graph ids, coordinates, graph diffs, or mutation steps.
+
+Return exactly:
+{
+  "status": "resolved" | "partial" | "clarification",
+  "semantic_goals": [
+    {
+      "goal_category": "object_state_goal | relation_goal | constraint_goal | composite_goal",
+      "text": "short natural-language description of the goal",
+      "objects": [
+        {"id": "o1", "type": "existing_reference | new_entity | edge_reference | unresolved_reference", "text": "object phrase from the user", "role": "object"}
+      ],
+      "object_desired_states": [
+        {"object": "o1", "state": "exists | absent | preserved | property_equals", "property": "display_label", "value": "new value when state is property_equals"}
+      ],
+      "relation_intents": [
+        {"source": "o1", "relation": "before | after | right_of | route_to | parallel_with | connected_to | joins_before", "target": "o2"}
+      ],
+      "semantic_constraints": [
+        {"type": "preserve", "target": "object/path/scope phrase from the user", "text": "preserve exception path"}
+      ],
+      "unresolved_dimensions": [
+        {"dimension": "transformation | reference | parameter | value | constraint", "object": "o1", "text": "what is still missing"}
+      ]
+    }
+  ],
+  "clarification": {"needed": false, "question": "", "reason": ""}
+}
+
+Rules:
+- Output Semantic Goals only. Do not output Workflow IR or compiler-facing structures.
+- Commit only semantic facts that are explicitly supported by the current user instruction or by trusted structured request_context. If a semantic fact is unknown, represent the unresolved semantic dimension instead of guessing a concrete state, relation, value, or category.
+- goal_category may be an empty string only when status is "clarification" or "partial" and unresolved_dimensions explains the missing commitment. Complete resolved goals must commit a supported goal_category.
+- Unknown transformation is not object_state_goal with an empty property value. Unknown relation is not route_to with a guessed target. Unknown operation is not a default operation.
+- When the user identifies an object but does not specify how to change it, preserve the object in objects, leave goal_category empty, add unresolved_dimensions [{"dimension":"transformation","object":"<object id>"}], and ask what transformation they want.
+- When a property/relation/value is explicit and the user explicitly asks to clear or empty it, an empty string may be a concrete value. Otherwise do not use empty strings as placeholders for missing values.
+- If request_context.semantic_refinement.mode is "refine_partial_goal", treat request_context.semantic_refinement.partial_semantic_state as trusted previous structured facts. Preserve those facts by default, use the current instruction only to fill or revise unresolved_dimensions, and return the refined Semantic Goal v2. Do not concatenate the previous and current instructions as prose, and do not restart from zero unless the user explicitly corrects the previous facts.
+- Do not output operation kinds such as layout, ordering, route, branch_property, delete, parallel, rename, or insert. If useful, use goal_category only as weak semantic grouping.
+- Object Reference: distinguish node/object references from relation references. In existing_reference, "existing" means the user is referring to an entity that already belongs to the current workflow; it does not mean text should be a graph label. Use {"type":"existing_reference","text":"exact phrase","role":"object"} for existing nodes or node-like workflow objects, {"type":"new_entity","label":"exact phrase","role":"object"} for requested new business entities, and {"type":"edge_reference","text":"exact branch/edge/connection phrase","role":"object"} for existing branches, edges, connections, paths, route lines, or the route itself.
+- Unresolved Reference: if a required semantic role is missing but the rest of the user goal is clear, keep the goal and use {"type":"unresolved_reference","role":"source"|"target"|"object"} for the missing role. Do not put runtime slot names such as subject_edge or route_target in Semantic Goals.
+- Object Desired State: use exists, absent, preserved, or property_equals. For naming edits, use property_equals with property="display_label"; do not output rename_node, delete_node, create_node, or update_node.
+- Relation Intent: use before, after, right_of, route_to, parallel_with, connected_to, or joins_before. Do not expand parallel_with into branches, parallel_nodes, join structure, or control_flow_regions.
+- Chained ordered relations: when the user expresses multiple ordered relation acts in one instruction and a later act omits its source/subject, resolve the omitted participant from discourse structure rather than reusing the earliest source. For an ordered chain such as A before B followed by continuation from the resulting sequence to C, output A before B and B before C. If the later act explicitly repeats the same source, such as A before B and A before C, keep the fan-out relation A before B and A before C. If the continuation participant cannot be determined uniquely, use unresolved_reference for the missing role instead of guessing.
+- Semantic Constraint: use semantic_constraints for user-stated protection boundaries such as preserve topology, preserve exception path, preserve existing join, preserve unmentioned branches, or selected scope only. Do not output required_edges, forbidden_edges, required_relations, forbidden_relations, planner_constraints, or mutation authorization.
+- Use only exact object phrases from the current user instruction. Copy the user's referent text; do not expand, translate, normalize, complete, or choose a more specific graph label from the graph. For example, if the user says "提交", output text="提交", not "Submit Order" or a longer matched node label.
+- Apply the exact-phrase rule to route targets too. If the user asks to send a failure route to "manual review", keep target text/label as "manual review"; do not replace it with a similar existing graph label such as "manual handling" unless the user used that phrase.
+- Graph labels are context, not mention text. Reference.text must come from the user utterance even when you can already infer which graph entity is intended; Semantic Grounding performs canonical entity binding.
+- Contrastive reference ownership example: if the user says "先核价再收款" and the graph contains nodes labeled "价格校验" and "支付确认", output existing_reference text="核价" and text="收款". Do not output text="价格校验" or text="支付确认" unless the user used those exact phrases.
+- If a route target is requested as a new destination and no existing graph object is explicitly named by the user, represent that target as a new_entity with the exact requested phrase; Grounding and Lowering will decide whether it can be created or needs clarification.
+- If the user says "this node", "current node", "selected node", or equivalent, keep that referent phrase unchanged as an existing_reference object and let Semantic Grounding use selection or ask for clarification.
+- If the user says "this edge", "this branch", "this connection", "selected edge", "selected branch", or an equivalent branch/connection phrase in any language, keep that referent phrase unchanged as an edge_reference object and let Semantic Grounding use selection or ask for clarification.
+- For route_to intents, the source is the existing relation being redirected when the user's source phrase refers to a branch, edge, connection, path, selected route, route condition, route outcome, or the route itself; represent that source as edge_reference. edge_reference.text must be an edge-local evidence phrase that actually appears in the current utterance, such as the user's branch/edge/connection/outcome/condition wording. Do not concatenate a source node phrase with an outcome phrase to create a new reference text that the user did not say. If the user separately mentions a source node and a branch/outcome phrase, keep the utterance phrases separate; Semantic Grounding combines route relation evidence, source-node hints, and graph facts. The target remains an existing_reference or new_entity according to the user's target phrase.
+- If the user refers to an object from the recent or previous edit, such as "the newly added node", "the node changed in the previous edit", "刚才新增的那个节点", or "刚才修改的那个节点", keep that referent phrase unchanged as an existing_reference object. Do not answer with clarification just because the recent transaction has zero, one, or multiple candidates; Semantic Grounding owns missing/unique/ambiguous recent transaction binding and candidate generation.
+- Do not resolve ambiguity in Semantic Understanding. If a phrase could match multiple graph objects, keep the original phrase and let Semantic Grounding return candidates.
+- Clarification is not the same as no semantic goal. If the request is incomplete but contains clear semantic facts, set status="clarification", keep those facts in semantic_goals, mark only the missing role as unresolved_reference, and ask one concise clarification question. Omission of an unresolved role is not omission of the entire goal.
+- For partial route_to intents with a known target but missing source route, use a relation_goal with an unresolved_reference source and an existing_reference/new_entity target. For a known selected/current/source route but missing destination, use edge_reference source and unresolved_reference target. Do not guess missing roles.
+- Only use semantic_goals=[] when the request is abstract, scope-only, proposal-oriented, or otherwise lacks any concrete semantic relation, object state, or constraint worth preserving.
+- Do not output node_id, edge_id, resolved_id, candidate_id, x, y, coordinates, graph ids, selected edge ids, or inferred compiler fields.
+- Do not output workflow_ir, control_flow_regions, auxiliary_relations, properties, edge_properties, absent_entities, required_relations, forbidden_relations, mutation steps, planner steps, executor steps, graph diffs, incoming_edges, outgoing_edges, boundaries, or owned edges.
+- Preserve unsupported but meaningful user goals as Semantic Goal v2 primitives when possible; deterministic lowering will decide whether the current backend can execute them. Do not invent Workflow IR.
+- Return JSON only.
+"""
+
+
 UNDERSTAND_SEMANTIC_SPECIFICATION_SYSTEM = """Return one JSON object that describes the user's semantic editing target without producing graph mutation steps.
 
 Return exactly:
@@ -175,6 +290,12 @@ Rules:
 - deterministic_ready is a future programmatic Ground/Validation decision. Never output deterministic_ready.
 - Reuse the existing Workflow IR structural grammar: node, sequence, parallel, choice. Do not invent merge, insert, redirect, branch, or operation-specific operators.
 - workflow_ir reuses the existing Workflow IR fields directly. Do not create another IR layer.
+- Workflow IR is a local target structural specification, not a full graph replacement.
+- Omission is not deletion, bypass, or structural replacement. Existing structure that is not explicitly changed and is outside the affected local region is preserved from the current graph.
+- If the requested local structure depends on an existing business anchor in the current graph, such as an aggregation, approval, handoff, or other intermediate business node, include that anchor explicitly in the affected Workflow IR region. If you cannot determine whether that anchor should stay in the path or be bypassed, use status=partial or clarification instead of emitting deterministic-ready-looking structure.
+- If the user explicitly asks to bypass, reconnect around, or replace an existing intermediate node while keeping the node itself, express the explicit structural intent with existing Workflow IR channels, such as auxiliary_relations for owned relation-group rewrites or an unambiguous control_flow_region. Do not rely on merely omitting the existing node.
+- If the user explicitly asks to delete an existing node, use absent_entities. Do not express deletion by omission.
+- The compiler may infer deterministic predecessor/successor boundaries from the current graph, but it must not invent missing business anchors. Include business anchors needed by the target path in Workflow IR, or keep the spec partial.
 - control_flow_regions express compositional topology only, using canonical JSON:
   - node: {"type":"node","id":"A"}
   - new node: {"type":"node","ref":"new_review","node_type":"human_review","label":"Human Review"}

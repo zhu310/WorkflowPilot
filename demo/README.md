@@ -1,6 +1,6 @@
 # AI-Flow-Canvas LogicFlow Demo
 
-This demo connects a LogicFlow canvas to the WorkflowPilot editing backend.
+This demo connects a LogicFlow canvas to the current Semantic Goal editing backend.
 
 ## Run
 
@@ -9,6 +9,7 @@ cd demo/frontend
 npm install
 npm run build
 cd ..\..
+$env:AI_EDIT_PIPELINE="semantic"
 python demo\server.py
 ```
 
@@ -18,32 +19,37 @@ Open:
 http://127.0.0.1:8080
 ```
 
-The server calls the real WorkflowPilot LLM pipeline. Configure `.env` before starting:
+The server can call the real LLM pipeline. Configure `.env` before starting:
 
 ```powershell
 copy .env.example .env
 # Set DEEPSEEK_API_KEY in .env
-python demo\server.py
 ```
-
-The page also exposes undo, redo, multi-turn version history, and a 360-node large graph test entry.
 
 ## Demo Prompts
 
-- 把 AI 初审改名为智能材料初审
-- 把知识检索和工具调用改成并行执行，最后汇总到结果判断
-- 在生成报告前增加事实校验
-- 失败分支统一进入人工复核
+- 把知识检索节点放到解析任务右侧
+- 在发布结果前增加事实校验
+- 失败分支改名为人工审核
+- 失败流程转人工复核
+- 增加通知节点，同时保留异常处理
 
-## Architecture
+## Current Architecture
 
 ```text
 LogicFlow graphData
   -> /api/session/new
   -> /api/ai-edit
-  -> run_versioned_transaction
-  -> run_workflow_ir_transaction
-  -> Workflow IR / constraints / planner steps
-  -> committed version, final graph, and diff
+  -> Semantic Goal Understanding
+  -> Semantic Grounding
+  -> Goal Lowering
+  -> existing Workflow IR / Compiler / Planner / Executor
+  -> committed version, final graph, diff, and user_feedback
   -> LogicFlow render
 ```
+
+## Product Boundary
+
+The demo now exposes user-facing `success`, `partial_success`, `needs_clarification`, `unsupported`, ambiguous, and missing-object feedback. Ambiguous candidates are stored as a session-local pending clarification; the next user turn can select a candidate with natural phrases such as \u201c\u9009\u7b2c\u4e00\u4e2a\u201d or by naming the visible candidate.
+
+This is not a long-term memory system or a full Agent loop. Current limitations include real viewport-based `visible_area`, complex parallel boundary inference, embedding/vector retrieval, and automatic proposal confirmation for abstract optimization requests.

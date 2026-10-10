@@ -43,6 +43,70 @@ def test_insert_and_redirect_use_generic_entity_and_relation_diff() -> None:
     assert pairs(output) == {("A", "new_1", ""), ("new_1", "B", ""), ("A", "end", ""), ("B", "end", "")}
 
 
+def test_new_entity_refs_materialize_consistently_for_relations_and_properties() -> None:
+    value = graph(
+        [("submit", "start"), ("audit", "task"), ("risk", "task"), ("publish", "end")],
+        [("submit", "audit", ""), ("submit", "risk", ""), ("audit", "publish", ""), ("risk", "publish", "")],
+    )
+    planned = plan_constraints(
+        value,
+        {
+            "entities": [{"ref": "compliance_confirm", "type": "task", "label": "合规确认"}],
+            "properties": [{"node_id": "compliance_confirm", "changes": {"join": {"mode": "all"}}}],
+            "required_relations": [
+                {"source": "submit", "target": "audit", "label": ""},
+                {"source": "submit", "target": "risk", "label": ""},
+                {"source": "audit", "target": "compliance_confirm", "label": ""},
+                {"source": "risk", "target": "compliance_confirm", "label": ""},
+                {"source": "compliance_confirm", "target": "publish", "label": ""},
+            ],
+            "forbidden_relations": [
+                {"source": "audit", "target": "publish", "label": ""},
+                {"source": "risk", "target": "publish", "label": ""},
+            ],
+        },
+    )
+
+    assert planned["supported"] is True
+    assert planned["entity_ids"] == {"compliance_confirm": "new_1"}
+    assert all("compliance_confirm" not in str(step) for step in planned["steps"])
+    assert {"op": "set_join", "node_id": "new_1", "join": {"mode": "all"}} in planned["steps"]
+    assert any(
+        row["constraint_rule"] == "property_equals"
+        and row["constraint"]["node_id"] == "compliance_confirm"
+        and row["constraint"]["resolved_node_id"] == "new_1"
+        for row in planned["mutation_authorization"]
+    )
+
+    output = execute(value, planned)
+
+    assert pairs(output) == {
+        ("submit", "audit", ""),
+        ("submit", "risk", ""),
+        ("audit", "new_1", ""),
+        ("risk", "new_1", ""),
+        ("new_1", "publish", ""),
+    }
+    assert next(node for node in output["nodes"] if node["id"] == "new_1")["join"] == {"mode": "all"}
+
+
+def test_unknown_property_ref_is_rejected_before_planning_steps() -> None:
+    value = graph([("A", "start"), ("B", "end")], [("A", "B", "")])
+    planned = plan_constraints(
+        value,
+        {
+            "entities": [],
+            "properties": [{"node_id": "missing_new_ref", "changes": {"join": {"mode": "all"}}}],
+            "required_relations": [],
+            "forbidden_relations": [],
+        },
+    )
+
+    assert planned["supported"] is False
+    assert planned["reason"] == "unresolved entity reference"
+    assert planned["steps"] == []
+
+
 def test_parallel_directive_lowers_to_generic_constraints_without_duplicate_edges() -> None:
     value = graph([("start", "start"), ("identity", "task"), ("risk", "task"), ("approval", "human_review"), ("end", "end")], [("start", "identity", ""), ("identity", "risk", ""), ("risk", "approval", ""), ("approval", "end", "")])
     spec = {"constraints": {"entities": [], "properties": [], "required_relations": [], "forbidden_relations": []}, "directives": [{"kind": "parallelize_selected_chain", "branches": ["identity", "risk"], "upstream": "start", "join": "approval", "completion": "all"}]}

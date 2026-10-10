@@ -38,6 +38,55 @@ def test_strict_preserve_allows_declared_property_change() -> None:
     assert errors == []
 
 
+def test_strict_preserve_allows_declared_nested_leaf_on_new_parent() -> None:
+    before = graph()
+    final = graph()
+    final["nodes"][3]["join"] = {"mode": "all"}
+
+    passed, stage, errors = evaluate_expected(
+        before,
+        final,
+        {"required_properties": [{"node_id": "c", "changes": {"join.mode": "all"}}], "strict_preserve_others": True},
+    )
+
+    assert passed is True
+    assert stage == ""
+    assert errors == []
+
+
+def test_strict_preserve_rejects_undeclared_nested_leaf_on_new_parent() -> None:
+    before = graph()
+    final = graph()
+    final["nodes"][3]["join"] = {"mode": "all", "strategy": "barrier"}
+
+    passed, stage, errors = evaluate_expected(
+        before,
+        final,
+        {"required_properties": [{"node_id": "c", "changes": {"join.mode": "all"}}], "strict_preserve_others": True},
+    )
+
+    assert passed is False
+    assert stage == "preservation_violation"
+    assert "unexpected_property_change: node c" in errors
+
+
+def test_strict_preserve_allows_declared_nested_leaf_update() -> None:
+    before = graph()
+    before["nodes"][3]["join"] = {"mode": "any"}
+    final = graph()
+    final["nodes"][3]["join"] = {"mode": "all"}
+
+    passed, stage, errors = evaluate_expected(
+        before,
+        final,
+        {"required_properties": [{"node_id": "c", "changes": {"join.mode": "all"}}], "strict_preserve_others": True},
+    )
+
+    assert passed is True
+    assert stage == ""
+    assert errors == []
+
+
 def test_strict_preserve_rejects_extra_node_label_change() -> None:
     before = graph()
     final = graph()
@@ -112,6 +161,26 @@ def test_strict_preserve_allows_declared_reorder_edges() -> None:
                 {"source": "a", "target": "b", "label": ""},
                 {"source": "b", "target": "c", "label": ""},
             ],
+            "strict_preserve_others": True,
+        },
+    )
+
+    assert passed is True
+    assert stage == ""
+    assert errors == []
+
+
+def test_strict_preserve_treats_same_id_different_relation_as_topology_replacement() -> None:
+    before = graph()
+    final = graph()
+    final["edges"][1] = {"id": "e_a_b", "source": "a", "target": "c", "label": ""}
+
+    passed, stage, errors = evaluate_expected(
+        before,
+        final,
+        {
+            "required_edges": [{"source": "a", "target": "c", "label": ""}],
+            "forbidden_edges": [{"source": "a", "target": "b", "label": ""}],
             "strict_preserve_others": True,
         },
     )

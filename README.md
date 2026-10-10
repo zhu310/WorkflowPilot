@@ -1,96 +1,88 @@
-# WorkflowPilot
+# WorkflowPilot / AI-Flow-Canvas
 
-WorkflowPilot：基于大模型的智能流程图编辑系统
-
-WorkflowPilot: An LLM-powered workflow graph editing system.
-
-WorkflowPilot turns natural-language editing requests into safe, structured workflow graph transactions. It accepts a current graph plus request context, grounds user intent to graph objects, builds deterministic obligations and target state, uses Workflow IR only where semantic structure is still needed, plans minimal changes, executes them, validates the final graph, and records versioned results.
-
-## Core Pipeline
+WorkflowPilot is a natural-language workflow graph editing system. It does not let the LLM rewrite the graph or emit graph mutations directly. The current production path is:
 
 ```text
 User Instruction
-↓
-LLM Understanding
-↓
-Grounding
-↓
-Desired State
-↓
-Constraint Validation
-↓
-Workflow IR
-↓
-Planner
-↓
-Executor
-↓
-Graph Validation
+-> Semantic Goal Understanding
+-> Semantic Goal Validation
+-> Semantic Grounding
+-> Goal Lowering
+-> Workflow IR
+-> Compiler
+-> Planner
+-> Executor
+-> Versioned Graph
 ```
 
-The LLM is not trusted to directly mutate the graph. Confirmed graph facts are lowered deterministically, ambiguous requests enter clarification, and unauthorized or unintended changes are rejected.
+The main architecture upgrade in this repository is the move from `LLM -> Workflow IR` to `Semantic Goal + Grounding + deterministic Lowering`. The LLM expresses user goals with Semantic Goal v2 primitives; the program binds references to graph objects, lowers executable goals to the existing Workflow IR, plans deterministic edits, and records versioned transactions.
 
-## Verified Results
+## Current Verified Backend Capabilities
 
-| Acceptance area | Result |
-|---|---:|
-| Formal Regression | 200 / 200 correct |
-| Large Graph Acceptance | 360 nodes / 399 edges |
-| Multi-turn Acceptance | 4 / 4 cases |
-| Deterministic Stress | 5100 / 5100 checks |
-| False success | 0 |
-| Unauthorized mutation | 0 |
-| Unintended change | 0 |
+The mocked Semantic Goal and backend regression suite currently covers:
 
-Detailed evidence is in `docs/evidence/`, especially `docs/evidence/capability_matrix.md`.
+- Semantic Goal v2 primitives: object references, object desired states, relation intents, semantic constraints.
+- Context-aware grounding: selection, recent transaction diff, conversation-history fallback, and node/edge semantic reference candidate generation.
+- Core editing closure for exists, node property changes, absent/delete, route-to existing or newly-created targets, simple safe `parallel_with`, and partial execution.
+- Partial Execution Contract: supported subgoals can commit as `partial_success`; unsupported subgoals remain visible in trace/specification instead of becoming false success.
+- User-facing feedback and session-local clarification continuation for ambiguous candidates.
 
-## What It Supports
+Current local regression baseline: `222+` pytest cases for mocked Semantic Goal and deterministic backend behavior. Real LLM prompt stability is covered by static prompt contract tests by default and optional real-LLM regression when `RUN_REAL_LLM_TESTS=1` is set.
 
-- Explicit edits: rename, move, insert, delete, edge redirect.
-- Complex topology edits: move-after, serial-to-parallel, retry/exception/failure combinations, labeled flow.
-- Scope handling: explicit object, selected nodes/edges, visible area, stage/group/subprocess, and global canvas.
-- Clarification: ambiguous object, branch, scope, and historical reference cases.
-- Multi-turn editing: versioned graph continuation, rollback/redo, and recent transaction mutation reference grounding.
-- Conditional branches: branch labels and condition metadata are preserved through local edits and active redirects; selected `branch_label` edits and explicit `condition.expression` replacements are verified as existing edge property mutations.
-- Visualization: before/after graph views, changed objects, preserved objects, transaction steps, and trace summary.
+## Important Boundaries
+
+Implemented, but bounded:
+
+- Demo selection is sent to the backend and can ground phrases such as “这个节点” or “这个分支”.
+- Recent successful transaction diffs can ground “刚才那个节点”.
+- Clarification continuation is session-local and candidate-based; it is not long-term memory or a general Agent loop.
+- Simple parallel lowering is supported only when graph facts make the boundary deterministic.
+
+Not fully implemented:
+
+- Embedding/vector retrieval.
+- Industry ontology or long-term alias database.
+- Long-term conversation memory.
+- Real LogicFlow viewport-based `visible_area` grounding.
+- Complex parallel boundary inference.
+- Automatic proposal -> confirmation -> execution for abstract optimization requests.
+- Guaranteed real LLM stability without running optional real-LLM regression.
 
 ## Repository Layout
 
 ```text
 src/                       core implementation
-tests/                     unit and deterministic tests
-experiments/acceptance/    acceptance runners for final capabilities
-experiments/regression/    formal and safety regression runners
-docs/evidence/             final evidence summaries and capability matrix
-docs/demo/                 before/after visualization demo
-docs/archive/              historical design and diagnosis notes
+tests/                     unit, contract, and deterministic regression tests
+demo/                      LogicFlow demo frontend and API server
+experiments/               optional acceptance and regression runners
+docs/                      architecture notes, evidence, and historical analysis
 ```
 
 ## Setup
 
 1. Install Python 3.12+.
-2. Install test dependencies:
+2. Install Python dependencies:
 
 ```powershell
 pip install -r requirements.txt
 ```
 
-3. Copy `.env.example` to `.env` and set `DEEPSEEK_API_KEY` locally. Do not commit `.env`.
+3. Copy `.env.example` to `.env` and set `DEEPSEEK_API_KEY` locally for real LLM demo usage. Do not commit `.env`.
 
 ## Verification
 
-```powershell
-python -m pytest
-python -m experiments.deterministic_stress
-python -m experiments.stage3_condition_branch_acceptance
-python -m experiments.stage3_node_type_catalog_acceptance
-python -m experiments.stage3_large_graph_acceptance
-```
-
-The full formal regression can be run with:
+Default deterministic regression:
 
 ```powershell
-python -m experiments.workflow_ir_formal_regression
+python -m pytest -q
+python -m compileall src tests
 ```
 
-Raw run artifacts are intentionally excluded from the recommended GitHub upload. Curated summaries live in `docs/evidence/`.
+Optional real LLM prompt regression:
+
+```powershell
+$env:RUN_REAL_LLM_TESTS="1"
+python -m pytest tests/test_llm_semantic_goal_prompt_regression.py -q
+```
+
+Optional historical acceptance runners remain under `experiments/`. Treat their results as evidence for the specific runner conditions, not as a claim that arbitrary workflow edits are supported.

@@ -6,6 +6,10 @@ from datetime import UTC, datetime
 from typing import Any
 
 from .mvp23 import TransactionResult, run_transaction
+from .semantic_shadow import run_semantic_transaction
+
+
+COMMITTABLE_STATUSES = {"success", "partial_success"}
 
 
 def _snapshot(graph: dict[str, Any]) -> dict[str, Any]:
@@ -57,6 +61,7 @@ class VersionState:
     version_order: list[str]
     current_version_id: str
     transactions: list[EditTransaction] = field(default_factory=list)
+    pending_clarification: dict[str, Any] | None = None
 
     def current_graph(self) -> dict[str, Any]:
         return _snapshot(self.versions[self.current_version_id].graph_snapshot)
@@ -91,6 +96,33 @@ def _nodes_by_id(graph: dict[str, Any]) -> dict[str, dict[str, Any]]:
     }
 
 
+def _node_summary(node: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": node["id"],
+        "label": node.get("label", ""),
+        "type": "node",
+        "node_type": node.get("type", ""),
+    }
+
+
+def _edges_by_id(graph: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {
+        edge["id"]: edge
+        for edge in graph.get("edges", [])
+        if isinstance(edge, dict) and isinstance(edge.get("id"), str)
+    }
+
+
+def _edge_summary(edge: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": edge["id"],
+        "type": "edge",
+        "source": edge.get("source"),
+        "target": edge.get("target"),
+        "label": edge.get("label", ""),
+    }
+
+
 def _edge_key(edge: dict[str, Any]) -> tuple[str, str, str]:
     return (str(edge.get("source")), str(edge.get("target")), str(edge.get("label", "")))
 
@@ -110,16 +142,21 @@ def transaction_diff(
 ) -> dict[str, Any]:
     before_nodes = _nodes_by_id(before_graph)
     after_nodes = _nodes_by_id(after_graph)
+    created_nodes = [_node_summary(after_nodes[node_id]) for node_id in sorted(set(after_nodes) - set(before_nodes))]
+    removed_nodes = [_node_summary(before_nodes[node_id]) for node_id in sorted(set(before_nodes) - set(after_nodes))]
+    changed_nodes: list[dict[str, Any]] = []
     mutations: list[dict[str, Any]] = []
     index = 1
     for node_id in sorted(set(before_nodes) & set(after_nodes)):
         before = before_nodes[node_id]
         after = after_nodes[node_id]
+        changed_properties: list[str] = []
         for property_name in sorted(set(before) | set(after)):
             if property_name == "id":
                 continue
             if before.get(property_name) == after.get(property_name):
                 continue
+            changed_properties.append(property_name)
             mutations.append(
                 {
                     "mutation_id": f"{transaction.transaction_id}.m{index}",
@@ -131,6 +168,21 @@ def transaction_diff(
                 }
             )
             index += 1
+        if changed_properties:
+            changed_nodes.append({**_node_summary(after), "changed_properties": changed_properties})
+    before_edges_by_id = _edges_by_id(before_graph)
+    after_edges_by_id = _edges_by_id(after_graph)
+    created_edges = [_edge_summary(after_edges_by_id[edge_id]) for edge_id in sorted(set(after_edges_by_id) - set(before_edges_by_id))]
+    removed_edges = [_edge_summary(before_edges_by_id[edge_id]) for edge_id in sorted(set(before_edges_by_id) - set(after_edges_by_id))]
+    changed_edges = [
+        {**_edge_summary(after_edges_by_id[edge_id]), "changed_properties": sorted(
+            property_name
+            for property_name in set(before_edges_by_id[edge_id]) | set(after_edges_by_id[edge_id])
+            if property_name != "id" and before_edges_by_id[edge_id].get(property_name) != after_edges_by_id[edge_id].get(property_name)
+        )}
+        for edge_id in sorted(set(before_edges_by_id) & set(after_edges_by_id))
+        if before_edges_by_id[edge_id] != after_edges_by_id[edge_id]
+    ]
     before_edges = _edges_by_key(before_graph)
     after_edges = _edges_by_key(after_graph)
     for source, target, label in sorted(set(before_edges) - set(after_edges)):
@@ -155,18 +207,46 @@ def transaction_diff(
             }
         )
         index += 1
+    relation_node_ids = {
+        node_id
+        for mutation in mutations
+        if mutation.get("kind") in {"relation_absent", "relation_present"}
+        for node_id in (mutation.get("source"), mutation.get("target"))
+        if isinstance(node_id, str)
+    }
     return {
         "transaction_id": transaction.transaction_id,
         "from_version_id": transaction.parent_version_id,
         "to_version_id": transaction.resulting_version_id,
         "instruction": transaction.instruction,
         "mutations": mutations,
+        "created_nodes": created_nodes,
+        "changed_nodes": changed_nodes,
+        "removed_nodes": removed_nodes,
+        "created_edges": created_edges,
+        "changed_edges": changed_edges,
+        "removed_edges": removed_edges,
+        "affected_nodes": sorted(
+            {
+                *(node["id"] for node in created_nodes),
+                *(node["id"] for node in changed_nodes),
+                *(node["id"] for node in removed_nodes),
+                *relation_node_ids,
+            }
+        ),
+        "affected_edges": sorted(
+            {
+                *(edge["id"] for edge in created_edges),
+                *(edge["id"] for edge in changed_edges),
+                *(edge["id"] for edge in removed_edges),
+            }
+        ),
     }
 
 
 def recent_successful_transaction_diff(state: VersionState) -> dict[str, Any] | None:
     for transaction in reversed(state.transactions):
-        if transaction.status != "success" or transaction.resulting_version_id != state.current_version_id:
+        if transaction.status not in COMMITTABLE_STATUSES or transaction.resulting_version_id != state.current_version_id:
             continue
         parent = state.versions.get(transaction.parent_version_id)
         current = state.versions.get(transaction.resulting_version_id)
@@ -204,7 +284,7 @@ def run_versioned_transaction(
     )
     committed_version: GraphVersion | None = None
     resulting_version_id: str | None = None
-    if execution.status == "success" and _graph_is_valid(execution.final_graph):
+    if execution.status in COMMITTABLE_STATUSES and _graph_is_valid(execution.final_graph):
         parent_index = state.version_order.index(parent_version_id)
         stale_future = state.version_order[parent_index + 1 :]
         for version_id in stale_future:
@@ -222,7 +302,75 @@ def run_versioned_transaction(
         state.version_order.append(version_id)
         state.current_version_id = version_id
         resulting_version_id = version_id
-    elif execution.status == "success":
+    elif execution.status in COMMITTABLE_STATUSES:
+        execution = TransactionResult(
+            status="execution_error",
+            interpretation=execution.interpretation,
+            boundary=execution.boundary,
+            steps=execution.steps,
+            final_graph=None,
+            error="commit rejected: final graph failed structural validation",
+            normalized_plan_from_fence=execution.normalized_plan_from_fence,
+            planning_path=execution.planning_path,
+            semantic_operation=execution.semantic_operation,
+            compiler_reason=execution.compiler_reason,
+            target=execution.target,
+            graph_context=execution.graph_context,
+            specification=execution.specification,
+            mutation_authorization=execution.mutation_authorization,
+        )
+    transaction = EditTransaction(
+        transaction_id=_next_transaction_id(state),
+        parent_version_id=parent_version_id,
+        instruction=instruction,
+        selection=deepcopy(selection),
+        target=deepcopy(execution.target),
+        specification=deepcopy(execution.specification),
+        plan=deepcopy(execution.steps),
+        resulting_version_id=resulting_version_id,
+        status=execution.status,
+        error=execution.error,
+    )
+    state.transactions.append(transaction)
+    return VersionedTransactionResult(transaction=transaction, execution=execution, committed_version=committed_version)
+
+
+def run_versioned_semantic_transaction(
+    state: VersionState,
+    revision: int,
+    selection: dict[str, Any],
+    instruction: str,
+    request_context: dict[str, Any] | None = None,
+) -> VersionedTransactionResult:
+    del revision
+    parent_version_id = state.current_version_id
+    graph = state.current_graph()
+    transaction_request_context = deepcopy(request_context) if isinstance(request_context, dict) else {}
+    recent_diff = recent_successful_transaction_diff(state)
+    if recent_diff is not None and "recent_transaction_diff" not in transaction_request_context:
+        transaction_request_context["recent_transaction_diff"] = recent_diff
+    execution = run_semantic_transaction(graph, instruction, selection, transaction_request_context)
+    committed_version: GraphVersion | None = None
+    resulting_version_id: str | None = None
+    if execution.status in COMMITTABLE_STATUSES and _graph_is_valid(execution.final_graph):
+        parent_index = state.version_order.index(parent_version_id)
+        stale_future = state.version_order[parent_index + 1 :]
+        for version_id in stale_future:
+            state.versions.pop(version_id, None)
+        if stale_future:
+            state.version_order = state.version_order[: parent_index + 1]
+        version_id = _next_version_id(state)
+        committed_version = GraphVersion(
+            version_id=version_id,
+            parent_version_id=parent_version_id,
+            graph_snapshot=_snapshot(execution.final_graph),
+            created_at=datetime.now(UTC).isoformat(timespec="seconds"),
+        )
+        state.versions[version_id] = committed_version
+        state.version_order.append(version_id)
+        state.current_version_id = version_id
+        resulting_version_id = version_id
+    elif execution.status in COMMITTABLE_STATUSES:
         execution = TransactionResult(
             status="execution_error",
             interpretation=execution.interpretation,
@@ -284,4 +432,5 @@ def as_jsonable(state: VersionState) -> dict[str, Any]:
         "version_order": list(state.version_order),
         "current_version_id": state.current_version_id,
         "transactions": [asdict(transaction) for transaction in state.transactions],
+        "pending_clarification": deepcopy(state.pending_clarification),
     }

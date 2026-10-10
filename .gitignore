@@ -15,6 +15,7 @@ __pycache__/
 .idea/
 
 # Temp
+tmp/
 *.log
 *.tmp
 *.bak

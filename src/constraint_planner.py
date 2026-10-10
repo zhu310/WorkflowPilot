@@ -217,9 +217,30 @@ def _edge_fields_from_relation(row: dict[str, Any], refs: dict[str, str] | None 
     return fields
 
 
+def _unresolved_graph_step_reference(steps: list[dict[str, Any]], logical_refs: set[str]) -> dict[str, Any] | None:
+    if not logical_refs:
+        return None
+    for index, step in enumerate(steps, start=1):
+        fields: list[tuple[str, Any]] = []
+        op = step.get("op")
+        if op == "add_node":
+            node = step.get("node")
+            if isinstance(node, dict):
+                fields.append(("node.id", node.get("id")))
+        elif op == "add_edge":
+            fields.extend([("source", step.get("source")), ("target", step.get("target"))])
+        elif op in {"move_node", "update_node", "set_join", "remove_node"}:
+            fields.append(("node_id", step.get("node_id")))
+        for field, value in fields:
+            if isinstance(value, str) and value in logical_refs:
+                return {"step_index": index, "field": field, "ref": value}
+    return None
+
+
 def plan_constraints(graph: dict[str, Any], constraints: dict[str, Any]) -> dict[str, Any]:
     """Validate constraints, calculate the minimal diff, and attach provenance per mutation."""
     node_map = _nodes(graph)
+    planned_node_state = {node_id: deepcopy(node) for node_id, node in node_map.items()}
     refs: dict[str, str] = {}
     steps: list[dict[str, Any]] = []
     authorization: list[dict[str, Any]] = []
@@ -236,9 +257,20 @@ def plan_constraints(graph: dict[str, Any], constraints: dict[str, Any]) -> dict
             node_id = f"new_{index}"
         refs[entity["ref"]] = node_id
         node = {"id": node_id, "type": entity["type"], "label": entity["label"], "x": entity.get("x", 0), "y": entity.get("y", 0)}
+        planned_node_state[node_id] = deepcopy(node)
         step = {"op": "add_node", "node": node}
         steps.append(step)
         authorization.append({"step": step, "constraint_rule": "entity_exists", "constraint": entity})
+
+    def resolve_node_ref(value: Any) -> tuple[str | None, str | None]:
+        if not isinstance(value, str) or not value:
+            return None, "invalid node reference"
+        if value in node_map:
+            return value, None
+        if value in refs:
+            return refs[value], None
+        return None, "unresolved entity reference"
+
     absent_entities: list[dict[str, Any]] = []
     absent_node_ids: set[str] = set()
     for entity in constraints.get("absent_entities", []):
@@ -255,15 +287,28 @@ def plan_constraints(graph: dict[str, Any], constraints: dict[str, Any]) -> dict
         return {"supported": False, "reason": "invalid relation constraint", "steps": [], "mutation_authorization": []}
     if required & forbidden:
         return {"supported": False, "reason": "relation is both required and forbidden", "steps": [], "mutation_authorization": []}
-    all_nodes = set(node_map) | set(refs.values())
+    all_nodes = set(planned_node_state)
     if any(source not in all_nodes or target not in all_nodes for source, target, _ in required | forbidden):
         return {"supported": False, "reason": "relation endpoint is missing", "steps": [], "mutation_authorization": []}
     if any(source in absent_node_ids or target in absent_node_ids for source, target, _ in required):
         return {"supported": False, "reason": "required relation references a deleted node", "steps": [], "mutation_authorization": []}
     edge_map = _edge_map(graph)
+    edge_id_map = {edge.get("id"): edge for edge in graph.get("edges", [])}
     current = _edge_pairs(graph)
+    required_rows = {
+        relation: _edge_fields_from_relation(row, refs)
+        for row in constraints.get("required_relations", [])
+        if (relation := _relation(row, refs)) is not None
+    }
+    required_edge_ids_for_update = {
+        row.get("edge_id")
+        for relation, row in required_rows.items()
+        if relation not in current and isinstance(row.get("edge_id"), str) and row.get("edge_id") in edge_id_map
+    }
     for relation in sorted(forbidden):
         if relation in current:
+            if edge_map[relation].get("id") in required_edge_ids_for_update:
+                continue
             if edge_map[relation]["id"] in preserved_edges:
                 return {"supported": False, "reason": "preserve constraint blocks edge removal", "steps": [], "mutation_authorization": []}
             step = {"op": "remove_edge", "edge_id": edge_map[relation]["id"]}
@@ -287,32 +332,49 @@ def plan_constraints(graph: dict[str, Any], constraints: dict[str, Any]) -> dict
         step = {"op": "remove_node", "node_id": node_id}
         steps.append(step)
         authorization.append({"step": step, "constraint_rule": "entity_absent", "constraint": entity})
-    required_rows = {
-        relation: _edge_fields_from_relation(row, refs)
-        for row in constraints.get("required_relations", [])
-        if (relation := _relation(row, refs)) is not None
-    }
     for source, target, label in sorted(required):
         if (source, target, label) not in current:
-            step = {"op": "add_edge", **required_rows.get((source, target, label), {"source": source, "target": target, "label": label})}
+            required_row = required_rows.get((source, target, label), {"source": source, "target": target, "label": label})
+            edge_id = required_row.get("edge_id")
+            if isinstance(edge_id, str) and edge_id in edge_id_map:
+                current_edge = edge_id_map[edge_id]
+                changes = {
+                    key: value
+                    for key, value in required_row.items()
+                    if key not in {"id", "edge_id"} and current_edge.get(key) != value
+                }
+                if not changes:
+                    continue
+                if edge_id in preserved_edges:
+                    return {"supported": False, "reason": "preserve constraint blocks edge update", "steps": [], "mutation_authorization": []}
+                step = {"op": "update_edge", "edge_id": edge_id, "changes": changes}
+                steps.append(step)
+                authorization.append({"step": step, "constraint_rule": "relation_required", "constraint": required_row})
+                continue
+            step = {"op": "add_edge", **required_row}
             steps.append(step)
-            authorization.append({"step": step, "constraint_rule": "relation_required", "constraint": required_rows.get((source, target, label), (source, target, label))})
+            authorization.append({"step": step, "constraint_rule": "relation_required", "constraint": required_row})
     for property_constraint in constraints.get("properties", []):
-        node_id, changes = property_constraint.get("node_id"), property_constraint.get("changes")
-        if node_id not in node_map or not isinstance(changes, dict) or not changes:
+        raw_node_id, changes = property_constraint.get("node_id"), property_constraint.get("changes")
+        node_id, resolve_error = resolve_node_ref(raw_node_id)
+        if resolve_error:
+            return {"supported": False, "reason": resolve_error, "steps": [], "mutation_authorization": []}
+        if node_id not in planned_node_state or not isinstance(changes, dict) or not changes:
             return {"supported": False, "reason": "invalid property constraint", "steps": [], "mutation_authorization": []}
-        delta = {key: value for key, value in changes.items() if node_map[node_id].get(key) != value}
+        current_node = planned_node_state[node_id]
+        delta = {key: value for key, value in changes.items() if current_node.get(key) != value}
         if not delta:
             continue
         if set(delta) == {"join"}:
             step = {"op": "set_join", "node_id": node_id, "join": delta["join"]}
         elif set(delta).issubset({"x", "y"}):
-            step = {"op": "move_node", "node_id": node_id, "x": delta.get("x", node_map[node_id].get("x")), "y": delta.get("y", node_map[node_id].get("y"))}
+            step = {"op": "move_node", "node_id": node_id, "x": delta.get("x", current_node.get("x")), "y": delta.get("y", current_node.get("y"))}
         else:
             step = {"op": "update_node", "node_id": node_id, "changes": delta}
         steps.append(step)
-        authorization.append({"step": step, "constraint_rule": "property_equals", "constraint": property_constraint})
-    edge_id_map = {edge.get("id"): edge for edge in graph.get("edges", [])}
+        auth_constraint = property_constraint if raw_node_id == node_id else {**deepcopy(property_constraint), "resolved_node_id": node_id}
+        authorization.append({"step": step, "constraint_rule": "property_equals", "constraint": auth_constraint})
+        current_node.update(deepcopy(delta))
     for property_constraint in constraints.get("edge_properties", []):
         edge_id, changes = property_constraint.get("edge_id"), property_constraint.get("changes")
         if edge_id not in edge_id_map or not isinstance(changes, dict) or not changes:
@@ -322,4 +384,7 @@ def plan_constraints(graph: dict[str, Any], constraints: dict[str, Any]) -> dict
             step = {"op": "update_edge", "edge_id": edge_id, "changes": delta}
             steps.append(step)
             authorization.append({"step": step, "constraint_rule": "edge_property_equals", "constraint": property_constraint})
+    unresolved_step_ref = _unresolved_graph_step_reference(steps, set(refs))
+    if unresolved_step_ref:
+        return {"supported": False, "reason": "unresolved entity reference in plan", "details": unresolved_step_ref, "steps": [], "mutation_authorization": []}
     return {"supported": True, "reason": None, "steps": steps, "mutation_authorization": authorization, "constraints": constraints, "entity_ids": refs}

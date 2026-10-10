@@ -13,7 +13,7 @@ def graph() -> dict:
     }
 
 
-def test_conversation_history_reaches_understand_only(monkeypatch) -> None:
+def test_conversation_history_reaches_understand_and_request_context(monkeypatch) -> None:
     captured_payloads: list[dict] = []
 
     def fake_complete(_system_prompt: str, payload: dict) -> workflow_ir_runtime.JsonRun:
@@ -41,5 +41,5 @@ def test_conversation_history_reaches_understand_only(monkeypatch) -> None:
     assert captured_payloads
     understand_payload = captured_payloads[0]
     assert understand_payload["conversation_history"] == history
-    assert "conversation_history" not in understand_payload["request_context"]
+    assert understand_payload["request_context"]["conversation_history"] == history
     assert "graph_context" not in understand_payload["request_context"]

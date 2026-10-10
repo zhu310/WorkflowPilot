@@ -211,6 +211,104 @@ button:disabled {
   border-top: 1px solid #d8dee9;
 }
 
+.selection-debug {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 10px;
+  border: 1px dashed #98a2b3;
+  border-radius: 6px;
+  padding: 8px;
+  background: #fff;
+  color: #344054;
+  font-size: 12px;
+}
+
+.selection-summary {
+  border-radius: 6px;
+  padding: 8px;
+  background: #f8fafc;
+  color: #344054;
+  line-height: 1.45;
+}
+
+.selection-summary.compact {
+  margin-top: 4px;
+}
+
+.selection-group-title {
+  margin-top: 6px;
+  color: #475467;
+  font-weight: 700;
+}
+
+.selection-group-title:first-child {
+  margin-top: 0;
+}
+
+.selection-list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.selection-list li {
+  margin: 2px 0;
+}
+
+.selection-details {
+  margin-top: 6px;
+}
+
+.selection-details summary {
+  cursor: pointer;
+  color: #475467;
+  font-weight: 700;
+}
+
+.selection-debug strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.selection-debug > strong {
+  display: none;
+}
+
+.selection-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.selection-title-row strong {
+  margin-bottom: 0;
+}
+
+#clearSelection {
+  min-height: 28px;
+  border-color: #cad3df;
+  padding: 0 8px;
+  color: #344054;
+  font-size: 12px;
+}
+
+.selection-debug pre {
+  max-height: 76px;
+  margin: 0;
+  overflow: auto;
+  border-radius: 4px;
+  padding: 6px;
+  background: #f2f4f7;
+  white-space: pre-wrap;
+}
+
+#graph .lf-multiple-select {
+  display: none !important;
+  pointer-events: none !important;
+}
+
 .composer {
   display: grid;
   flex: 0 0 auto;

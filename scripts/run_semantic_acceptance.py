@@ -42,6 +42,15 @@ def contains_changes(row: dict[str, Any], changes: dict[str, Any]) -> bool:
 
 def without_paths(value: dict[str, Any], paths: set[str]) -> dict[str, Any]:
     result = json.loads(json.dumps(value, ensure_ascii=False))
+
+    def prune_empty_containers(current: Any) -> bool:
+        if not isinstance(current, dict):
+            return False
+        empty_children = [key for key, child in current.items() if prune_empty_containers(child)]
+        for key in empty_children:
+            current.pop(key, None)
+        return not current
+
     for path in paths:
         current: Any = result
         parts = path.split(".")
@@ -52,6 +61,7 @@ def without_paths(value: dict[str, Any], paths: set[str]) -> dict[str, Any]:
             current = current.get(part)
         if isinstance(current, dict):
             current.pop(parts[-1], None)
+    prune_empty_containers(result)
     return result
 
 
@@ -98,6 +108,8 @@ def strict_preserve_errors(before: dict[str, Any], final_graph: dict[str, Any], 
         if final_edge is None:
             if before_key not in allowed_removed_edges:
                 errors.append(f"unexpected_edge_change: removed {edge_id}")
+            continue
+        if before_key != edge_key(final_edge):
             continue
         allowed_paths = allowed_edge_properties.get(edge_id, set())
         if without_paths(before_edge, allowed_paths) != without_paths(final_edge, allowed_paths):

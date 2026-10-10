@@ -154,11 +154,37 @@ def normalize_request_context(selection: dict[str, Any] | None, request_context:
     recent_transaction_diff = request_context.get("recent_transaction_diff")
     if not isinstance(recent_transaction_diff, dict):
         recent_transaction_diff = None
+    conversation_history = request_context.get("conversation_history")
+    if not isinstance(conversation_history, list):
+        conversation_history = []
+    candidate_bindings = request_context.get("candidate_bindings")
+    if not isinstance(candidate_bindings, dict):
+        candidate_bindings = {}
+    allow_route_same_target_confirmation = request_context.get("allow_route_same_target_confirmation") is True
+    semantic_refinement = request_context.get("semantic_refinement")
+    if not isinstance(semantic_refinement, dict):
+        semantic_refinement = None
+    semantic_goal_override = request_context.get("semantic_goal_override")
+    if not isinstance(semantic_goal_override, dict):
+        semantic_goal_override = None
+    pending_interaction = request_context.get("pending_interaction")
+    if not isinstance(pending_interaction, dict):
+        pending_interaction = None
+    pending_resume = request_context.get("pending_resume")
+    if not isinstance(pending_resume, dict):
+        pending_resume = None
     return {
         "selected_node_ids": _selection_node_ids(selection),
         "selected_edge_ids": selection_edge_ids(selection),
         "visible_area": visible_area if isinstance(visible_area, dict) else None,
         "recent_transaction_diff": recent_transaction_diff,
+        "conversation_history": conversation_history,
+        "candidate_bindings": candidate_bindings,
+        "allow_route_same_target_confirmation": allow_route_same_target_confirmation,
+        "semantic_refinement": semantic_refinement,
+        "semantic_goal_override": semantic_goal_override,
+        "pending_interaction": pending_interaction,
+        "pending_resume": pending_resume,
     }
 
 
@@ -2466,6 +2492,34 @@ def normalize_changes(changes: dict[str, Any]) -> dict[str, Any]:
 
 
 def normalize_ir(value: dict[str, Any]) -> dict[str, Any]:
+    def normalize_preserve(value: Any) -> dict[str, list[str]]:
+        preserve = value if isinstance(value, dict) else {}
+        return {
+            "node_ids": sorted({item for item in preserve.get("node_ids", []) if isinstance(item, str) and item}),
+            "edge_ids": sorted({item for item in preserve.get("edge_ids", []) if isinstance(item, str) and item}),
+            "abstract": [
+                {
+                    "target": str(item.get("target") or "").strip(),
+                    "text": str(item.get("text") or item.get("target") or "").strip(),
+                    "location": str(item.get("location") or "").strip(),
+                }
+                for item in preserve.get("abstract", [])
+                if isinstance(item, dict) and str(item.get("target") or item.get("text") or "").strip()
+            ],
+        }
+
+    def normalize_entity(entity: dict[str, Any]) -> dict[str, Any] | None:
+        ref = entity.get("ref")
+        node_type = entity.get("node_type", entity.get("type"))
+        label = entity.get("label")
+        if not (isinstance(ref, str) and ref and isinstance(node_type, str) and node_type and isinstance(label, str) and label):
+            return None
+        row: dict[str, Any] = {"ref": ref, "node_type": node_type, "label": label}
+        for layout_key in ("x", "y", "width", "height"):
+            if isinstance(entity.get(layout_key), (int, float)):
+                row[layout_key] = entity[layout_key]
+        return row
+
     def normalize_structure(structure: dict[str, Any]) -> dict[str, Any]:
         row: dict[str, Any] = {"type": structure["type"]}
         if "id" in structure:
@@ -2476,6 +2530,9 @@ def normalize_ir(value: dict[str, Any]) -> dict[str, Any]:
             row["node_type"] = structure["node_type"]
         if "label" in structure:
             row["label"] = structure["label"]
+        for layout_key in ("x", "y", "width", "height"):
+            if isinstance(structure.get(layout_key), (int, float)):
+                row[layout_key] = structure[layout_key]
         if structure["type"] == "sequence":
             row["items"] = [normalize_structure(item) for item in structure.get("items", [])]
         if structure["type"] in {"parallel", "choice"}:
@@ -2484,9 +2541,15 @@ def normalize_ir(value: dict[str, Any]) -> dict[str, Any]:
             row["join_mode"] = structure["join_mode"]
         return row
 
-    return {
+    def normalize_region(row: dict[str, Any]) -> dict[str, Any]:
+        region = {"relation_type": row["relation_type"], "structure": normalize_structure(row["structure"])}
+        if isinstance(row.get("lowering_scope_id"), str) and row["lowering_scope_id"]:
+            region["lowering_scope_id"] = row["lowering_scope_id"]
+        return region
+
+    normalized = {
         "control_flow_regions": [
-            {"relation_type": row["relation_type"], "structure": normalize_structure(row["structure"])}
+            normalize_region(row)
             for row in value.get("control_flow_regions", [])
             if isinstance(row, dict) and isinstance(row.get("relation_type"), str) and isinstance(row.get("structure"), dict)
         ],
@@ -2532,6 +2595,17 @@ def normalize_ir(value: dict[str, Any]) -> dict[str, Any]:
             key=lambda row: row["edge_id"],
         ),
     }
+    normalized_preserve = normalize_preserve(value.get("preserve"))
+    if normalized_preserve["node_ids"] or normalized_preserve["edge_ids"] or normalized_preserve["abstract"]:
+        normalized["preserve"] = normalized_preserve
+    entities = [
+        normalized_entity
+        for entity in value.get("entities", [])
+        if isinstance(entity, dict) and (normalized_entity := normalize_entity(entity)) is not None
+    ]
+    if entities:
+        normalized["entities"] = sorted(entities, key=lambda row: row["ref"])
+    return normalized
 
 
 UNDERSTAND_SEMANTIC_SPEC_KEYS = {"status", "workflow_ir", "semantic_goals", "clarification"}
@@ -2713,6 +2787,29 @@ def ground_understand_semantic_spec(
             add_issue("missing_node_reference", location, raw, [], "no graph node matches reference")
         return None
 
+    def entity_declaration(entity: Any) -> dict[str, Any] | None:
+        if not isinstance(entity, dict):
+            return None
+        ref = entity.get("ref")
+        node_type = entity.get("node_type", entity.get("type"))
+        label = entity.get("label")
+        if not (isinstance(ref, str) and ref and isinstance(node_type, str) and node_type and isinstance(label, str) and label):
+            return None
+        row: dict[str, Any] = {"ref": ref, "node_type": node_type, "label": label}
+        for layout_key in ("x", "y", "width", "height"):
+            if isinstance(entity.get(layout_key), (int, float)):
+                row[layout_key] = entity[layout_key]
+        return row
+
+    def node_declaration_from_structure(structure: Any) -> dict[str, Any] | None:
+        if not isinstance(structure, dict) or structure.get("type") != "node":
+            return None
+        if not (isinstance(structure.get("ref"), str) and structure["ref"].strip()):
+            return None
+        if not (isinstance(structure.get("node_type"), str) and structure["node_type"] and isinstance(structure.get("label"), str) and structure["label"]):
+            return None
+        return entity_declaration(structure)
+
     def ground_structure(structure: Any, location: str) -> dict[str, Any] | None:
         if not isinstance(structure, dict) or structure.get("type") not in STRUCTURE_TYPES:
             add_issue("invalid_structure", location, structure, [], "structure node is invalid")
@@ -2726,6 +2823,9 @@ def ground_understand_semantic_spec(
                     row["node_type"] = structure["node_type"]
                 if isinstance(structure.get("label"), str):
                     row["label"] = structure["label"]
+                for layout_key in ("x", "y", "width", "height"):
+                    if isinstance(structure.get(layout_key), (int, float)):
+                        row[layout_key] = structure[layout_key]
                 add_provenance(location, structure["ref"], structure["ref"], "new_ref")
                 return row
             if isinstance(structure.get("id"), str):
@@ -2749,6 +2849,20 @@ def ground_understand_semantic_spec(
             row["join_mode"] = structure["join_mode"]
         return row
 
+    def collect_new_refs(structure: Any) -> set[str]:
+        if not isinstance(structure, dict) or structure.get("type") not in STRUCTURE_TYPES:
+            return set()
+        if structure["type"] == "node":
+            declaration = node_declaration_from_structure(structure)
+            return {declaration["ref"]} if declaration is not None else set()
+        child_key = "items" if structure["type"] == "sequence" else "branches"
+        refs: set[str] = set()
+        children = structure.get(child_key, [])
+        if isinstance(children, list):
+            for child in children:
+                refs.update(collect_new_refs(child))
+        return refs
+
     if normalized["status"] == "clarification":
         result = {
             **normalized,
@@ -2760,6 +2874,15 @@ def ground_understand_semantic_spec(
     raw_workflow_ir = value.get("workflow_ir", {}) if isinstance(value, dict) and isinstance(value.get("workflow_ir"), dict) else {}
     raw_canonical, _ = canonicalize_schema_variants(raw_workflow_ir)
     raw_workflow_ir = raw_canonical if isinstance(raw_canonical, dict) else raw_workflow_ir
+    entity_declarations = [
+        declaration
+        for entity in raw_workflow_ir.get("entities", [])
+        if (declaration := entity_declaration(entity)) is not None
+    ]
+    known_new_refs: set[str] = {row["ref"] for row in entity_declarations}
+    for region in raw_workflow_ir.get("control_flow_regions", []) if isinstance(raw_workflow_ir.get("control_flow_regions"), list) else []:
+        if isinstance(region, dict):
+            known_new_refs.update(collect_new_refs(region.get("structure")))
     grounded_ir = {
         "control_flow_regions": [],
         "auxiliary_relations": [],
@@ -2767,6 +2890,11 @@ def ground_understand_semantic_spec(
         "properties": [],
         "edge_properties": [],
     }
+    normalized_preserve = normalize_ir({"preserve": raw_workflow_ir.get("preserve")}).get("preserve")
+    if isinstance(normalized_preserve, dict):
+        grounded_ir["preserve"] = normalized_preserve
+    if entity_declarations:
+        grounded_ir["entities"] = entity_declarations
 
     for index, region in enumerate(raw_workflow_ir.get("control_flow_regions", [])):
         if not isinstance(region, dict):
@@ -2777,7 +2905,10 @@ def ground_understand_semantic_spec(
             continue
         structure = ground_structure(region.get("structure"), f"workflow_ir.control_flow_regions[{index}].structure")
         if structure is not None:
-            grounded_ir["control_flow_regions"].append({"relation_type": relation_type, "structure": structure})
+            row = {"relation_type": relation_type, "structure": structure}
+            if isinstance(region.get("lowering_scope_id"), str) and region["lowering_scope_id"]:
+                row["lowering_scope_id"] = region["lowering_scope_id"]
+            grounded_ir["control_flow_regions"].append(row)
 
     for index, row in enumerate(raw_workflow_ir.get("properties", [])):
         if not isinstance(row, dict) or not isinstance(row.get("changes"), dict):
@@ -2797,7 +2928,12 @@ def ground_understand_semantic_spec(
             continue
         targets: list[str] = []
         for target_index, target in enumerate(row.get("targets", []) if isinstance(row.get("targets"), list) else []):
-            target_id = resolve_node_ref(target, f"workflow_ir.auxiliary_relations[{index}].targets[{target_index}]")
+            target_location = f"workflow_ir.auxiliary_relations[{index}].targets[{target_index}]"
+            if isinstance(target, str) and target in known_new_refs:
+                add_provenance(target_location, target, target, "new_ref")
+                target_id = target
+            else:
+                target_id = resolve_node_ref(target, target_location)
             if target_id is not None:
                 targets.append(target_id)
         if source is not None and targets:
@@ -2922,6 +3058,20 @@ def validate_grounded_semantic_spec(value: dict[str, Any] | None, graph_data: di
     valid_ir, ir_error = validate_ir(workflow_ir, graph_data, _semantic_spec_validation_contract(graph_data))
     if not valid_ir:
         add_issue("invalid_workflow_ir", ir_error or "workflow_ir failed validation", location="workflow_ir")
+    elif isinstance(workflow_ir, dict) and status == "resolved":
+        compiled_for_validation = compile_ir(workflow_ir, graph_data)
+        for index, region in enumerate(compiled_for_validation.get("control_flow_regions", [])):
+            if not isinstance(region, dict):
+                continue
+            for issue in region.get("compile_issues", []):
+                if not isinstance(issue, dict):
+                    continue
+                add_issue(
+                    str(issue.get("kind", "structural_boundary_issue")),
+                    str(issue.get("message", "structural boundary is not deterministic")),
+                    severity=str(issue.get("severity", "blocking")),
+                    location=str(issue.get("location", f"workflow_ir.control_flow_regions[{index}]")),
+                )
 
     if status == "clarification" and workflow_ir != normalize_ir({}):
         add_issue("clarification_has_executable_spec", "clarification status must not carry executable workflow_ir", location="workflow_ir")
@@ -3049,11 +3199,11 @@ def is_schema_structural_error(error: str | None) -> bool:
 def validate_ir(value: dict[str, Any] | None, graph_data: dict[str, Any], unit_contract: dict[str, Any]) -> tuple[bool, str | None]:
     if not isinstance(value, dict):
         return False, "invalid workflow ir"
-    if not all(isinstance(value.get(key, []), list) for key in ("control_flow_regions", "auxiliary_relations", "absent_entities", "properties", "edge_properties")):
+    if not all(isinstance(value.get(key, []), list) for key in ("entities", "control_flow_regions", "auxiliary_relations", "absent_entities", "properties", "edge_properties")):
         return False, "workflow ir top-level fields must be arrays"
     known_nodes = graph_node_ids(graph_data)
     known_labels = graph_relation_types(graph_data)
-    seen_refs: set[str] = set()
+    declared_entities: dict[str, dict[str, Any]] = {}
     visible_node_ids = set(unit_contract.get("allowed_existing_node_ids", []))
     allowed_structural = set(unit_contract.get("allowed_structural_relation_types", []))
     allowed_auxiliary = set(unit_contract.get("allowed_auxiliary_relation_types", []))
@@ -3066,6 +3216,40 @@ def validate_ir(value: dict[str, Any] | None, graph_data: dict[str, Any], unit_c
     allowed_property_targets = set(unit_contract.get("allowed_property_targets", []))
     allowed_edge_property_targets = set(unit_contract.get("allowed_edge_property_targets", []))
     allow_absent_entities = bool(unit_contract.get("allow_absent_entities"))
+
+    def normalize_entity_declaration(entity: Any) -> dict[str, Any] | None:
+        if not isinstance(entity, dict):
+            return None
+        ref = entity.get("ref")
+        node_type = entity.get("node_type", entity.get("type"))
+        label = entity.get("label")
+        if not (isinstance(ref, str) and ref and isinstance(node_type, str) and node_type and isinstance(label, str) and label):
+            return None
+        row: dict[str, Any] = {"ref": ref, "node_type": node_type, "label": label}
+        for layout_key in ("x", "y", "width", "height"):
+            if isinstance(entity.get(layout_key), (int, float)):
+                row[layout_key] = entity[layout_key]
+        return row
+
+    def register_entity_declaration(entity: Any) -> tuple[bool, str | None]:
+        if not allow_new_entities:
+            return False, "new entity is not allowed by unit contract"
+        row = normalize_entity_declaration(entity)
+        if row is None:
+            return False, "invalid entity declaration"
+        ref = row["ref"]
+        if ref in known_nodes:
+            return False, "new ref conflicts with existing node id"
+        existing = declared_entities.get(ref)
+        if existing is not None:
+            return (False, "conflicting new ref metadata") if existing != row else (False, "duplicate new ref")
+        declared_entities[ref] = row
+        return True, None
+
+    for entity in value.get("entities", []):
+        ok, error = register_entity_declaration(entity)
+        if not ok:
+            return False, error
 
     def validate_structure(structure: Any) -> tuple[bool, str | None]:
         if not isinstance(structure, dict) or structure.get("type") not in STRUCTURE_TYPES:
@@ -3084,15 +3268,12 @@ def validate_ir(value: dict[str, Any] | None, graph_data: dict[str, Any], unit_c
                 if node_id not in visible_node_ids:
                     return False, "node id outside unit graph context"
             else:
-                if not allow_new_entities:
-                    return False, "new entity is not allowed by unit contract"
-                if ref in seen_refs:
-                    return False, "duplicate new ref"
-                if not isinstance(structure.get("node_type"), str) or not structure["node_type"]:
-                    return False, "new node missing node_type"
-                if not isinstance(structure.get("label"), str) or not structure["label"]:
-                    return False, "new node missing label"
-                seen_refs.add(ref)
+                if isinstance(structure.get("node_type"), str) or isinstance(structure.get("label"), str):
+                    ok, error = register_entity_declaration(structure)
+                    if not ok:
+                        return False, error
+                elif ref not in declared_entities:
+                    return False, "undeclared new ref"
             return True, None
         children = structure.get("items" if kind == "sequence" else "branches")
         if not isinstance(children, list) or not children:
@@ -3105,7 +3286,20 @@ def validate_ir(value: dict[str, Any] | None, graph_data: dict[str, Any], unit_c
                 return False, error
         return True, None
 
-    for region in value["control_flow_regions"]:
+    def declared_new_refs(structure: Any) -> set[str]:
+        if not isinstance(structure, dict) or structure.get("type") not in STRUCTURE_TYPES:
+            return set()
+        if structure["type"] == "node":
+            ref = structure.get("ref")
+            return {ref} if isinstance(ref, str) and ref else set()
+        children = structure.get("items" if structure["type"] == "sequence" else "branches", [])
+        refs: set[str] = set()
+        if isinstance(children, list):
+            for child in children:
+                refs.update(declared_new_refs(child))
+        return refs
+
+    for region in value.get("control_flow_regions", []):
         if not (isinstance(region, dict) and isinstance(region.get("relation_type"), str) and isinstance(region.get("structure"), dict)):
             return False, "invalid control_flow_region"
         if region["relation_type"] not in known_labels:
@@ -3115,7 +3309,11 @@ def validate_ir(value: dict[str, Any] | None, graph_data: dict[str, Any], unit_c
         ok, error = validate_structure(region["structure"])
         if not ok:
             return False, error
-    for row in value["auxiliary_relations"]:
+    known_transaction_refs: set[str] = set(declared_entities)
+    for region in value.get("control_flow_regions", []):
+        if isinstance(region, dict):
+            known_transaction_refs.update(declared_new_refs(region.get("structure")))
+    for row in value.get("auxiliary_relations", []):
         if not (
             isinstance(row, dict)
             and isinstance(row.get("source"), str)
@@ -3123,14 +3321,14 @@ def validate_ir(value: dict[str, Any] | None, graph_data: dict[str, Any], unit_c
             and isinstance(row.get("relation_type"), str)
             and row["relation_type"] in known_labels
             and isinstance(row.get("targets"), list)
-            and all(isinstance(target, str) and target in known_nodes for target in row["targets"])
+            and all(isinstance(target, str) and (target in known_nodes or target in known_transaction_refs) for target in row["targets"])
         ):
             return False, "invalid auxiliary relation"
         if row["relation_type"] not in allowed_auxiliary:
             return False, "auxiliary relation_type is not allowed by unit contract"
         if allowed_auxiliary_groups and (row["source"], row["relation_type"]) not in allowed_auxiliary_groups:
             return False, "auxiliary relation group is not allowed by unit contract"
-    for row in value["properties"]:
+    for row in value.get("properties", []):
         if not (
             isinstance(row, dict)
             and isinstance(row.get("node_id"), str)
@@ -3142,7 +3340,7 @@ def validate_ir(value: dict[str, Any] | None, graph_data: dict[str, Any], unit_c
         if row["node_id"] not in allowed_property_targets:
             return False, "property target is not allowed by unit contract"
     known_edges = {edge.get("id") for edge in graph_data.get("edges", []) if isinstance(edge, dict) and isinstance(edge.get("id"), str)}
-    for row in value["edge_properties"]:
+    for row in value.get("edge_properties", []):
         if not (
             isinstance(row, dict)
             and isinstance(row.get("edge_id"), str)
@@ -3153,14 +3351,14 @@ def validate_ir(value: dict[str, Any] | None, graph_data: dict[str, Any], unit_c
             return False, "invalid edge property row"
         if row["edge_id"] not in allowed_edge_property_targets:
             return False, "edge property target is not allowed by unit contract"
-    for row in value["absent_entities"]:
+    for row in value.get("absent_entities", []):
         if not (isinstance(row, dict) and isinstance(row.get("node_id"), str) and row["node_id"] in known_nodes):
             return False, "invalid absent entity row"
         if not allow_absent_entities:
             return False, "absent_entities are not allowed by unit contract"
-    if not allowed_structural and value["control_flow_regions"]:
+    if not allowed_structural and value.get("control_flow_regions", []):
         return False, "control_flow_regions are not allowed by unit contract"
-    if not allowed_auxiliary and value["auxiliary_relations"]:
+    if not allowed_auxiliary and value.get("auxiliary_relations", []):
         return False, "auxiliary_relations are not allowed by unit contract"
     return True, None
 
@@ -3193,6 +3391,14 @@ def project_generated_ir(raw_ir: dict[str, Any] | None, generation_contract: dic
         for row in generation_contract.get("locked_new_entities", [])
         if isinstance(row, dict) and isinstance(row.get("ref"), str)
     }
+    projected_entities = []
+    for row in raw_ir.get("entities", []):
+        if not isinstance(row, dict) or not isinstance(row.get("ref"), str):
+            continue
+        locked = locked_new_entities.get(row["ref"])
+        node_type = row.get("node_type", row.get("type"))
+        if locked is not None and node_type == locked["node_type"] and row.get("label") == locked["label"]:
+            projected_entities.append({"ref": row["ref"], "node_type": locked["node_type"], "label": locked["label"]})
     projected_regions: list[dict[str, Any]] = []
 
     def structure_allowed(structure: Any) -> bool:
@@ -3203,7 +3409,10 @@ def project_generated_ir(raw_ir: dict[str, Any] | None, generation_contract: dic
                 return structure["id"] in allowed_existing
             if isinstance(structure.get("ref"), str):
                 locked = locked_new_entities.get(structure["ref"])
-                return locked is not None and structure.get("node_type") == locked["node_type"] and structure.get("label") == locked["label"]
+                if locked is None:
+                    return False
+                has_inline_metadata = "node_type" in structure or "label" in structure
+                return not has_inline_metadata or (structure.get("node_type") == locked["node_type"] and structure.get("label") == locked["label"])
             return False
         children = structure.get("items" if structure["type"] == "sequence" else "branches")
         return isinstance(children, list) and bool(children) and all(structure_allowed(child) for child in children)
@@ -3247,13 +3456,14 @@ def project_generated_ir(raw_ir: dict[str, Any] | None, generation_contract: dic
             and row["relation_type"] in allowed_auxiliary
             and (not allowed_auxiliary_groups or (row["source"], row["relation_type"]) in allowed_auxiliary_groups)
             and isinstance(row.get("targets"), list)
-            and all(isinstance(target, str) and target in allowed_existing for target in row["targets"])
+            and all(isinstance(target, str) and (target in allowed_existing or target in locked_new_entities) for target in row["targets"])
         ):
             continue
         projected_auxiliary.append({"source": row["source"], "relation_type": row["relation_type"], "targets": row["targets"]})
 
     return normalize_ir(
         {
+            "entities": projected_entities,
             "control_flow_regions": projected_regions,
             "auxiliary_relations": projected_auxiliary,
             "absent_entities": [],
@@ -3469,13 +3679,20 @@ def _inferred_parallel_boundary(graph_data: dict[str, Any], structure: dict[str,
     if len(branch_set) < 2 or len(branch_set) != len(branch_ids):
         return None
 
+    def is_plain_relation_edge(edge: dict[str, Any]) -> bool:
+        return (
+            edge.get("label", "") == relation_type
+            and not edge.get("branch_label")
+            and not edge.get("condition")
+        )
+
     internal_edges = [
         edge
         for edge in graph_data.get("edges", [])
         if isinstance(edge, dict)
         and edge.get("source") in branch_set
         and edge.get("target") in branch_set
-        and edge.get("label", "") == relation_type
+        and is_plain_relation_edge(edge)
     ]
     if len(internal_edges) != len(branch_set) - 1:
         return None
@@ -3502,7 +3719,7 @@ def _inferred_parallel_boundary(graph_data: dict[str, Any], structure: dict[str,
         if isinstance(edge, dict)
         and edge.get("target") == ordered[0]
         and edge.get("source") not in branch_set
-        and edge.get("label", "") == relation_type
+        and is_plain_relation_edge(edge)
     ]
     join_edges = [
         edge
@@ -3510,11 +3727,140 @@ def _inferred_parallel_boundary(graph_data: dict[str, Any], structure: dict[str,
         if isinstance(edge, dict)
         and edge.get("source") == ordered[-1]
         and edge.get("target") not in branch_set
-        and edge.get("label", "") == relation_type
+        and is_plain_relation_edge(edge)
     ]
     if len(upstream_edges) != 1 or len(join_edges) != 1:
         return None
     return upstream_edges[0]["source"], join_edges[0]["target"], ordered
+
+
+def _parallel_boundary_for_structure(graph_data: dict[str, Any], structure: dict[str, Any] | None, relation_type: str) -> tuple[str, str, list[str]] | None:
+    if not isinstance(structure, dict):
+        return None
+    if structure.get("type") == "parallel":
+        return _inferred_parallel_boundary(graph_data, structure, relation_type)
+    if structure.get("type") != "sequence":
+        return None
+    items = structure.get("items", [])
+    if not isinstance(items, list) or not items:
+        return None
+    first = items[0]
+    boundary = _inferred_parallel_boundary(graph_data, first, relation_type) if isinstance(first, dict) else None
+    if boundary is None:
+        return None
+    _upstream, join, _ordered = boundary
+    continuation_nodes: set[str] = set()
+    for item in items[1:]:
+        if isinstance(item, dict):
+            continuation_nodes.update(_structure_existing_node_ids(item))
+    return boundary if join in continuation_nodes else None
+
+
+def _plain_sequence_node_ids(structure: dict[str, Any] | None) -> list[str] | None:
+    if not isinstance(structure, dict) or structure.get("type") != "sequence":
+        return None
+    result: list[str] = []
+    for item in structure.get("items", []):
+        if not isinstance(item, dict) or item.get("type") != "node" or not isinstance(item.get("id"), str):
+            return None
+        result.append(item["id"])
+    if len(result) < 2 or len(set(result)) != len(result):
+        return None
+    return result
+
+
+def _plain_relation_edge(edge: dict[str, Any], relation_type: str) -> bool:
+    return (
+        edge.get("label", "") == relation_type
+        and not edge.get("branch_label")
+        and not edge.get("condition")
+        and isinstance(edge.get("source"), str)
+        and isinstance(edge.get("target"), str)
+    )
+
+
+def _linear_current_order_for_nodes(graph_data: dict[str, Any], node_ids: set[str], relation_type: str) -> list[str] | None:
+    if len(node_ids) < 2:
+        return None
+    internal_edges = [
+        edge
+        for edge in graph_data.get("edges", [])
+        if isinstance(edge, dict)
+        and _plain_relation_edge(edge, relation_type)
+        and edge["source"] in node_ids
+        and edge["target"] in node_ids
+    ]
+    if len(internal_edges) != len(node_ids) - 1:
+        return None
+    incoming: dict[str, list[str]] = {node_id: [] for node_id in node_ids}
+    outgoing: dict[str, list[str]] = {node_id: [] for node_id in node_ids}
+    for edge in internal_edges:
+        incoming[edge["target"]].append(edge["source"])
+        outgoing[edge["source"]].append(edge["target"])
+    if any(len(values) > 1 for values in incoming.values()) or any(len(values) > 1 for values in outgoing.values()):
+        return None
+    heads = [node_id for node_id in node_ids if not incoming[node_id]]
+    tails = [node_id for node_id in node_ids if not outgoing[node_id]]
+    if len(heads) != 1 or len(tails) != 1:
+        return None
+    ordered = [heads[0]]
+    while outgoing[ordered[-1]]:
+        ordered.append(outgoing[ordered[-1]][0])
+    return ordered if set(ordered) == node_ids and len(ordered) == len(node_ids) else None
+
+
+def _local_sequence_reorder_boundary(
+    graph_data: dict[str, Any],
+    relation_type: str,
+    current_nodes: set[str],
+    target_structure: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    target_order = _plain_sequence_node_ids(target_structure)
+    if target_order is None:
+        return None
+    target_node_set = set(target_order)
+    if target_node_set != current_nodes or not target_node_set <= graph_node_ids(graph_data):
+        return None
+    current_order = _linear_current_order_for_nodes(graph_data, target_node_set, relation_type)
+    if current_order is None or current_order == target_order:
+        return None
+
+    graph_edges = [
+        edge
+        for edge in graph_data.get("edges", [])
+        if isinstance(edge, dict) and _plain_relation_edge(edge, relation_type)
+    ]
+    incoming_edges = [
+        edge
+        for edge in graph_edges
+        if edge["source"] not in target_node_set and edge["target"] == current_order[0]
+    ]
+    outgoing_edges = [
+        edge
+        for edge in graph_edges
+        if edge["source"] == current_order[-1] and edge["target"] not in target_node_set
+    ]
+    if len(incoming_edges) != 1 or len(outgoing_edges) != 1:
+        return None
+    incoming_edge = incoming_edges[0]
+    outgoing_edge = outgoing_edges[0]
+    internal_current_edges = {
+        (source, target, relation_type)
+        for source, target in zip(current_order, current_order[1:])
+    }
+    target_boundary_edges = {
+        (incoming_edge["source"], target_order[0], relation_type),
+        (target_order[-1], outgoing_edge["target"], relation_type),
+    }
+    owned_current_edges = {
+        (incoming_edge["source"], incoming_edge["target"], relation_type),
+        (outgoing_edge["source"], outgoing_edge["target"], relation_type),
+        *internal_current_edges,
+    }
+    return {
+        "target_boundary_edges": target_boundary_edges,
+        "owned_current_edges": owned_current_edges,
+    }
 
 
 def _region_boundary_lowering(
@@ -3524,18 +3870,26 @@ def _region_boundary_lowering(
     target_entries: list[str],
     target_exits: list[str],
     target_edges: set[tuple[str, str, str]],
+    explicit_auxiliary_targets: set[str] | None = None,
+    target_structure: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    explicit_auxiliary_targets = explicit_auxiliary_targets or set()
     existing_nodes = graph_node_ids(graph_data)
     current_existing_nodes = current_nodes & existing_nodes
     target_entry_nodes = {node_id for node_id in target_entries if node_id in existing_nodes}
     target_exit_nodes = {node_id for node_id in target_exits if node_id in existing_nodes}
-    current_edges = [
+    graph_edges = [
         edge
         for edge in graph_data.get("edges", [])
         if isinstance(edge, dict)
         and isinstance(edge.get("source"), str)
         and isinstance(edge.get("target"), str)
-        and edge.get("label", "") == relation_type
+        and isinstance(edge.get("label", ""), str)
+    ]
+    current_edges = [
+        edge
+        for edge in graph_edges
+        if edge.get("label", "") == relation_type
     ]
     internal_edges = {
         (edge["source"], edge["target"], relation_type)
@@ -3578,28 +3932,300 @@ def _region_boundary_lowering(
         )
 
     boundary_edges: set[tuple[str, str, str]] = set()
-    if not issues and incoming_sources:
-        source = incoming_sources[0]
-        for target in target_entries:
-            boundary_edges.add((source, target, relation_type))
-    if not issues and outgoing_targets:
-        target = outgoing_targets[0]
-        for source in target_exits:
-            boundary_edges.add((source, target, relation_type))
+    edge_rows: dict[tuple[str, str, str], dict[str, Any]] = {}
+    remove_target_edges: set[tuple[str, str, str]] = set()
+    owned_boundary_edges: set[tuple[str, str, str]] = set()
+
+    def relation_key(edge: dict[str, Any]) -> tuple[str, str, str]:
+        return edge["source"], edge["target"], edge.get("label", "")
+
+    def inherit_edge_row(edge: dict[str, Any], source: str, target: str) -> dict[str, Any]:
+        row = {key: deepcopy(value) for key, value in edge.items() if key not in {"source", "target", "label"}}
+        row.update({"source": source, "target": target, "label": edge.get("label", "")})
+        return row
+
+    def add_inherited_edge(edge: dict[str, Any], source: str, target: str, replaced_target_edge: tuple[str, str, str] | None = None) -> None:
+        label = edge.get("label", "")
+        relation = (source, target, label)
+        boundary_edges.add(relation)
+        edge_rows[relation] = inherit_edge_row(edge, source, target)
+        if replaced_target_edge is not None and replaced_target_edge != relation:
+            remove_target_edges.add(replaced_target_edge)
+
+    def add_ambiguity(location: str, anchors: list[str], message: str) -> None:
+        issues.append(
+            {
+                "kind": "ambiguous_structural_boundary",
+                "message": message,
+                "severity": "blocking",
+                "location": location,
+                "anchors": anchors,
+            }
+        )
+
+    def node_occurrence_id(structure: Any) -> str | None:
+        if not isinstance(structure, dict) or structure.get("type") != "node":
+            return None
+        node_id = structure.get("id")
+        return node_id if isinstance(node_id, str) and node_id else None
+
+    def explicit_parallel_entries(structure: Any) -> set[str]:
+        if not isinstance(structure, dict):
+            return set()
+        if structure.get("type") == "parallel" and structure.get("join_mode") == "all":
+            entries = {
+                node_occurrence_id(branch)
+                for branch in structure.get("branches", [])
+                if isinstance(branch, dict)
+            }
+            return {entry for entry in entries if isinstance(entry, str)}
+        if structure.get("type") == "sequence":
+            items = structure.get("items", [])
+            if isinstance(items, list) and items:
+                return explicit_parallel_entries(items[0])
+        return set()
+
+    inferred_parallel_boundary = _parallel_boundary_for_structure(graph_data, target_structure, relation_type)
+    if inferred_parallel_boundary is not None:
+        upstream, join, ordered = inferred_parallel_boundary
+        for branch in ordered:
+            boundary_edges.add((upstream, branch, relation_type))
+            boundary_edges.add((branch, join, relation_type))
+        owned_boundary_edges.add((upstream, ordered[0], relation_type))
+
+    inferred_sequence_reorder = None
+    if inferred_parallel_boundary is None and not issues:
+        inferred_sequence_reorder = _local_sequence_reorder_boundary(graph_data, relation_type, current_existing_nodes, target_structure)
+        if inferred_sequence_reorder is not None:
+            boundary_edges.update(inferred_sequence_reorder["target_boundary_edges"])
+            owned_boundary_edges.update(inferred_sequence_reorder["owned_current_edges"])
+
+    # If a target structure deterministically splits an existing edge by placing
+    # a transaction-local node between its endpoints, inherit the old edge's
+    # relation metadata onto the predecessor -> new-node edge.  This is graph
+    # boundary lowering, not language interpretation: it only fires when the
+    # current edge and the target split are both unique in the graph/IR.
+    target_existing_to_new = [
+        (source, target)
+        for source, target, label in target_edges
+        if label == relation_type and source in current_existing_nodes and target not in existing_nodes
+    ]
+    for old_edge in graph_edges:
+        old_source, old_target, old_label = relation_key(old_edge)
+        if old_source not in current_existing_nodes or old_target not in current_existing_nodes:
+            continue
+        matches = [
+            new_ref
+            for source, new_ref in target_existing_to_new
+            if source == old_source and (new_ref, old_target, relation_type) in target_edges
+        ]
+        if len(matches) == 1:
+            new_ref = matches[0]
+            add_inherited_edge(old_edge, old_source, new_ref, (old_source, new_ref, relation_type))
+            internal_edges.add((old_source, old_target, old_label))
+        elif len(matches) > 1:
+            add_ambiguity(
+                "compiled.control_flow_region.internal_boundary",
+                sorted(matches),
+                "multiple target split points for existing relation",
+            )
+
+    incoming_split_matches = [
+        (new_ref, anchor)
+        for new_ref, anchor, label in target_edges
+        if label == relation_type and new_ref in target_entries and new_ref not in existing_nodes and anchor in current_existing_nodes
+        and new_ref not in explicit_auxiliary_targets
+    ]
+    if incoming_split_matches:
+        anchor_targets = {anchor for _new_ref, anchor in incoming_split_matches}
+        incoming_any = [
+            edge
+            for edge in graph_edges
+            if edge["target"] in anchor_targets and edge["source"] not in current_existing_nodes and edge.get("label", "") == relation_type
+        ]
+        if len(incoming_any) == 1 and len(incoming_split_matches) == 1:
+            edge = incoming_any[0]
+            new_ref, _anchor = incoming_split_matches[0]
+            add_inherited_edge(edge, edge["source"], new_ref, (edge["source"], new_ref, relation_type))
+            owned_boundary_edges.add(relation_key(edge))
+        elif incoming_any:
+            add_ambiguity(
+                "compiled.control_flow_region.incoming_boundary",
+                sorted({edge["source"] for edge in incoming_any} | {new_ref for new_ref, _anchor in incoming_split_matches}),
+                "multiple incoming boundary anchors for structural region",
+            )
+
+    outgoing_split_matches = [
+        (anchor, new_ref)
+        for anchor, new_ref, label in target_edges
+        if label == relation_type and anchor in current_existing_nodes and new_ref in target_exits and new_ref not in existing_nodes
+    ]
+    if outgoing_split_matches:
+        anchor_sources = {anchor for anchor, _new_ref in outgoing_split_matches}
+        outgoing_any = [
+            edge
+            for edge in graph_edges
+            if edge["source"] in anchor_sources and edge["target"] not in current_existing_nodes and edge.get("label", "") == relation_type
+        ]
+        if len(outgoing_any) == 1 and len(outgoing_split_matches) == 1:
+            edge = outgoing_any[0]
+            _anchor, new_ref = outgoing_split_matches[0]
+            add_inherited_edge(edge, edge["source"], new_ref, (edge["source"], new_ref, relation_type))
+            boundary_edges.add((new_ref, edge["target"], relation_type))
+            owned_boundary_edges.add(relation_key(edge))
+        elif outgoing_any:
+            add_ambiguity(
+                "compiled.control_flow_region.outgoing_boundary",
+                sorted({edge["target"] for edge in outgoing_any} | {new_ref for _anchor, new_ref in outgoing_split_matches}),
+                "multiple outgoing boundary anchors for structural region",
+            )
+
+    if inferred_sequence_reorder is None and not issues and len(target_entry_nodes) == 1:
+        entry = next(iter(target_entry_nodes))
+        missing_retargets = [
+            edge
+            for edge in current_edges
+            if edge["source"] not in current_existing_nodes
+            and edge["target"] in current_existing_nodes
+            and edge["target"] != entry
+            and (entry, edge["target"], relation_type) in target_edges
+        ]
+        if missing_retargets:
+            add_ambiguity(
+                "compiled.control_flow_region.incoming_boundary",
+                sorted({edge["source"] for edge in missing_retargets} | {edge["target"] for edge in missing_retargets} | {entry}),
+                "structural region requires an incoming boundary retarget that is not supported by current compiler ownership",
+            )
+
+    parallel_entries = explicit_parallel_entries(target_structure)
+    if inferred_parallel_boundary is None and not issues and len(parallel_entries) > 1 and parallel_entries == target_entry_nodes:
+        incoming_by_source: dict[str, set[str]] = defaultdict(set)
+        for edge in current_edges:
+            if edge["source"] not in current_existing_nodes and edge["target"] in target_entry_nodes:
+                incoming_by_source[edge["source"]].add(edge["target"])
+        incomplete_sources = {
+            source: entries
+            for source, entries in incoming_by_source.items()
+            if entries and entries != target_entry_nodes
+        }
+        if incomplete_sources:
+            add_ambiguity(
+                "compiled.control_flow_region.incoming_boundary",
+                sorted(set(incomplete_sources) | set().union(*incomplete_sources.values()) | target_entry_nodes),
+                "parallel structural region requires entry fan-out that is not supported by current compiler ownership",
+            )
 
     return {
         "target_boundary_edges": boundary_edges,
-        "owned_current_edges": internal_edges | incoming_edges | outgoing_edges,
+        "target_edge_rows": sorted(edge_rows.values(), key=lambda row: (row["source"], row["target"], row.get("label", ""))),
+        "remove_target_edges": remove_target_edges,
+        "owned_current_edges": internal_edges | owned_boundary_edges,
         "incoming_anchors": incoming_sources,
         "outgoing_anchors": outgoing_targets,
         "issues": issues,
     }
 
 
+def _edge_relation_key(edge: dict[str, Any]) -> tuple[str, str, str]:
+    return edge["source"], edge["target"], edge.get("label", "")
+
+
+def _inherit_edge_row(edge: dict[str, Any], source: str, target: str) -> dict[str, Any]:
+    row = {key: deepcopy(value) for key, value in edge.items() if key not in {"source", "target", "label"}}
+    row.update({"source": source, "target": target, "label": edge.get("label", "")})
+    return row
+
+
+def _replacement_path_first_hop(
+    target_edges: set[tuple[str, str, str]],
+    *,
+    source: str,
+    target: str,
+    relation_type: str,
+    existing_nodes: set[str],
+) -> str | None:
+    adjacency: dict[str, list[str]] = defaultdict(list)
+    for edge_source, edge_target, edge_label in target_edges:
+        if edge_label == relation_type:
+            adjacency[edge_source].append(edge_target)
+
+    first_hops: set[str] = set()
+
+    def visit(node_id: str, path: list[str]) -> None:
+        if len(first_hops) > 1:
+            return
+        if node_id == target:
+            if len(path) >= 3 and any(part not in existing_nodes for part in path[1:-1]):
+                first_hops.add(path[1])
+            return
+        if len(path) > len(target_edges) + 1:
+            return
+        for next_node in adjacency.get(node_id, []):
+            if next_node in path:
+                continue
+            visit(next_node, [*path, next_node])
+
+    visit(source, [source])
+    return next(iter(first_hops)) if len(first_hops) == 1 else None
+
+
+def _replaced_current_edge_ownership(
+    graph_data: dict[str, Any],
+    relation_type: str,
+    target_edges: set[tuple[str, str, str]],
+) -> tuple[set[tuple[str, str, str]], dict[tuple[str, str, str], dict[str, Any]]]:
+    existing_nodes = graph_node_ids(graph_data)
+    owned_edges: set[tuple[str, str, str]] = set()
+    inherited_rows: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for edge in graph_data.get("edges", []):
+        if not (
+            isinstance(edge, dict)
+            and isinstance(edge.get("source"), str)
+            and isinstance(edge.get("target"), str)
+            and isinstance(edge.get("label", ""), str)
+        ):
+            continue
+        relation = _edge_relation_key(edge)
+        source, target, label = relation
+        if label != relation_type or relation in target_edges:
+            continue
+        first_hop = _replacement_path_first_hop(
+            target_edges,
+            source=source,
+            target=target,
+            relation_type=relation_type,
+            existing_nodes=existing_nodes,
+        )
+        if first_hop is None:
+            continue
+        replacement_relation = (source, first_hop, label)
+        if replacement_relation not in target_edges:
+            continue
+        owned_edges.add(relation)
+        inherited_rows[replacement_relation] = _inherit_edge_row(edge, source, first_hop)
+    return owned_edges, inherited_rows
+
+
 def compile_ir(ir: dict[str, Any], graph_data: dict[str, Any]) -> dict[str, Any]:
     entities: dict[str, dict[str, Any]] = {}
     properties: dict[str, dict[str, Any]] = {}
     edge_properties: dict[str, dict[str, Any]] = {}
+
+    def add_entity(entity: dict[str, Any]) -> None:
+        ref = entity.get("ref")
+        node_type = entity.get("node_type", entity.get("type"))
+        label = entity.get("label")
+        if not (isinstance(ref, str) and ref and isinstance(node_type, str) and node_type and isinstance(label, str) and label):
+            return
+        row = {"ref": ref, "type": node_type, "label": label}
+        for layout_key in ("x", "y", "width", "height"):
+            if isinstance(entity.get(layout_key), (int, float)):
+                row[layout_key] = entity[layout_key]
+        entities.setdefault(ref, row)
+
+    for entity in ir.get("entities", []):
+        if isinstance(entity, dict):
+            add_entity(entity)
 
     def add_property(node_id: str, changes: dict[str, Any]) -> None:
         current = properties.get(node_id, {})
@@ -3610,10 +4236,7 @@ def compile_ir(ir: dict[str, Any], graph_data: dict[str, Any]) -> dict[str, Any]
         kind = structure["type"]
         if kind == "node":
             if "ref" in structure:
-                entities.setdefault(
-                    structure["ref"],
-                    {"ref": structure["ref"], "type": structure["node_type"], "label": structure["label"]},
-                )
+                add_entity(structure)
                 node_key = structure["ref"]
             else:
                 node_key = structure["id"]
@@ -3640,8 +4263,184 @@ def compile_ir(ir: dict[str, Any], graph_data: dict[str, Any]) -> dict[str, Any]
             exits.extend(branch["exits"])
         return {"entries": entries, "exits": exits, "edges": edges, "join_mode": structure.get("join_mode")}
 
+    def compile_region(region: dict[str, Any]) -> dict[str, Any]:
+        compiled = compile_structure(region["structure"], region["relation_type"])
+        current_nodes = _structure_existing_node_ids(region["structure"])
+        return {"region": region, "compiled": compiled, "current_nodes": current_nodes}
+
+    def finish_compiled_region(region: dict[str, Any], compiled: dict[str, Any], current_nodes: set[str], boundary: dict[str, Any]) -> dict[str, Any]:
+        compiled["edges"].difference_update(boundary["remove_target_edges"])
+        compiled["edges"].update(boundary["target_boundary_edges"])
+        if compiled.get("join_mode") == "all" and len(boundary["outgoing_anchors"]) == 1:
+            add_property(boundary["outgoing_anchors"][0], {"join": {"mode": "all"}})
+        row = {
+            "relation_type": region["relation_type"],
+            "edges": sorted(compiled["edges"]),
+            "node_ids": sorted(current_nodes),
+            "entries": compiled["entries"],
+            "exits": compiled["exits"],
+            "owned_current_edges": sorted(boundary["owned_current_edges"]),
+            "edge_rows": boundary["target_edge_rows"],
+            "incoming_anchors": boundary["incoming_anchors"],
+            "outgoing_anchors": boundary["outgoing_anchors"],
+            "compile_issues": boundary["issues"],
+        }
+        if isinstance(region.get("lowering_scope_id"), str) and region["lowering_scope_id"]:
+            row["lowering_scope_id"] = region["lowering_scope_id"]
+        return row
+
+    def scoped_boundary_lowering(parts: list[dict[str, Any]], explicit_auxiliary_targets: set[str]) -> dict[str, Any]:
+        relation_types = {part["region"]["relation_type"] for part in parts}
+        if len(relation_types) != 1:
+            return {
+                "target_boundary_edges": set(),
+                "target_edge_rows": [],
+                "remove_target_edges": set(),
+                "owned_current_edges": set(),
+                "incoming_anchors": [],
+                "outgoing_anchors": [],
+                "issues": [
+                    {
+                        "kind": "unsupported_grouped_scope_boundary",
+                        "message": "scoped control-flow regions must share one relation_type",
+                        "severity": "blocking",
+                        "location": "compiled.control_flow_region.lowering_scope",
+                    }
+                ],
+            }
+        relation_type = next(iter(relation_types))
+        existing_nodes = graph_node_ids(graph_data)
+        scoped_edges: set[tuple[str, str, str]] = set()
+        current_nodes: set[str] = set()
+        entries: list[str] = []
+        exits: list[str] = []
+        for part in parts:
+            scoped_edges.update(part["compiled"]["edges"])
+            current_nodes.update(part["current_nodes"])
+            entries.extend(part["compiled"]["entries"])
+            exits.extend(part["compiled"]["exits"])
+        target_refs = {
+            target
+            for source, target, label in scoped_edges
+            if label == relation_type and source in existing_nodes and target not in existing_nodes
+        }
+        source_nodes = {
+            source
+            for source, target, label in scoped_edges
+            if label == relation_type and source in existing_nodes and target in target_refs
+        }
+        if len(target_refs) == 1 and len(source_nodes) > 1:
+            new_ref = next(iter(target_refs))
+            downstream_by_source: list[set[str]] = []
+            edge_by_pair: dict[tuple[str, str], dict[str, Any]] = {}
+            for source in source_nodes:
+                outgoing = {
+                    edge["target"]
+                    for edge in graph_data.get("edges", [])
+                    if isinstance(edge, dict)
+                    and edge.get("source") == source
+                    and edge.get("label", "") == relation_type
+                    and isinstance(edge.get("target"), str)
+                }
+                downstream_by_source.append(outgoing)
+                for edge in graph_data.get("edges", []):
+                    if (
+                        isinstance(edge, dict)
+                        and edge.get("source") == source
+                        and edge.get("label", "") == relation_type
+                        and isinstance(edge.get("target"), str)
+                    ):
+                        edge_by_pair[(source, edge["target"])] = edge
+            common_downstream = set.intersection(*downstream_by_source) if downstream_by_source else set()
+            if len(common_downstream) == 1:
+                join_anchor = next(iter(common_downstream))
+                boundary_edges = {(source, join_anchor, relation_type) for source in source_nodes}
+                boundary_edges.add((join_anchor, new_ref, relation_type))
+                edge_rows: dict[tuple[str, str, str], dict[str, Any]] = {}
+                for source in source_nodes:
+                    current_edge = edge_by_pair.get((source, join_anchor))
+                    if current_edge is not None:
+                        relation = (source, join_anchor, relation_type)
+                        edge_rows[relation] = deepcopy(current_edge)
+                direct_edges = {
+                    relation
+                    for relation in scoped_edges
+                    if relation[2] == relation_type and relation[0] in source_nodes and relation[1] == new_ref
+                }
+                scoped_edges.update(boundary_edges)
+                resolved_target_edges = (scoped_edges - direct_edges) | boundary_edges
+                replaced_edges, replacement_edge_rows = _replaced_current_edge_ownership(graph_data, relation_type, resolved_target_edges)
+                for relation, row in replacement_edge_rows.items():
+                    edge_rows.setdefault(relation, row)
+                return {
+                    "target_boundary_edges": boundary_edges,
+                    "target_edge_rows": sorted(edge_rows.values(), key=lambda row: (row["source"], row["target"], row.get("label", ""))),
+                    "remove_target_edges": direct_edges,
+                    "owned_current_edges": replaced_edges,
+                    "incoming_anchors": [],
+                    "outgoing_anchors": [],
+                    "issues": [],
+                }
+        replaced_edges, replacement_edge_rows = _replaced_current_edge_ownership(graph_data, relation_type, scoped_edges)
+        if replaced_edges:
+            return {
+                "target_boundary_edges": set(),
+                "target_edge_rows": sorted(replacement_edge_rows.values(), key=lambda row: (row["source"], row["target"], row.get("label", ""))),
+                "remove_target_edges": set(),
+                "owned_current_edges": replaced_edges,
+                "incoming_anchors": [],
+                "outgoing_anchors": [],
+                "issues": [],
+            }
+        return {
+            "target_boundary_edges": set(),
+            "target_edge_rows": [],
+            "remove_target_edges": set(),
+            "owned_current_edges": set(),
+            "incoming_anchors": [],
+            "outgoing_anchors": [],
+            "issues": [
+                {
+                    "kind": "unsupported_grouped_scope_boundary",
+                    "message": "scoped grouped relation has no deterministic compatible structural boundary",
+                    "severity": "blocking",
+                    "location": "compiled.control_flow_region.lowering_scope",
+                    "scope": parts[0]["region"].get("lowering_scope_id"),
+                }
+            ],
+        }
+
     control_flow_regions: list[dict[str, Any]] = []
-    for region in ir.get("control_flow_regions", []):
+    explicit_auxiliary_targets = {
+        target
+        for row in ir.get("auxiliary_relations", [])
+        if isinstance(row, dict) and isinstance(row.get("targets"), list)
+        for target in row["targets"]
+        if isinstance(target, str)
+    }
+    regions = [region for region in ir.get("control_flow_regions", []) if isinstance(region, dict)]
+    scope_counts: dict[str, int] = defaultdict(int)
+    for region in regions:
+        if isinstance(region.get("lowering_scope_id"), str) and region["lowering_scope_id"]:
+            scope_counts[region["lowering_scope_id"]] += 1
+    handled_scopes: set[str] = set()
+    for region in regions:
+        scope_id = region.get("lowering_scope_id") if isinstance(region.get("lowering_scope_id"), str) else ""
+        if scope_id and scope_counts.get(scope_id, 0) > 1:
+            if scope_id in handled_scopes:
+                continue
+            handled_scopes.add(scope_id)
+            parts = [compile_region(candidate) for candidate in regions if candidate.get("lowering_scope_id") == scope_id]
+            scoped_compiled = {
+                "entries": sorted({entry for part in parts for entry in part["compiled"]["entries"]}),
+                "exits": sorted({exit_ for part in parts for exit_ in part["compiled"]["exits"]}),
+                "edges": {edge for part in parts for edge in part["compiled"]["edges"]},
+                "join_mode": None,
+            }
+            current_nodes = {node for part in parts for node in part["current_nodes"]}
+            boundary = scoped_boundary_lowering(parts, explicit_auxiliary_targets)
+            control_flow_regions.append(finish_compiled_region(region, scoped_compiled, current_nodes, boundary))
+            continue
         compiled = compile_structure(region["structure"], region["relation_type"])
         current_nodes = _structure_existing_node_ids(region["structure"])
         boundary = _region_boundary_lowering(
@@ -3651,23 +4450,10 @@ def compile_ir(ir: dict[str, Any], graph_data: dict[str, Any]) -> dict[str, Any]
             compiled["entries"],
             compiled["exits"],
             compiled["edges"],
+            explicit_auxiliary_targets,
+            region.get("structure") if isinstance(region.get("structure"), dict) else None,
         )
-        compiled["edges"].update(boundary["target_boundary_edges"])
-        if compiled.get("join_mode") == "all" and len(boundary["outgoing_anchors"]) == 1:
-            add_property(boundary["outgoing_anchors"][0], {"join": {"mode": "all"}})
-        control_flow_regions.append(
-            {
-                "relation_type": region["relation_type"],
-                "edges": sorted(compiled["edges"]),
-                "node_ids": sorted(current_nodes),
-                "entries": compiled["entries"],
-                "exits": compiled["exits"],
-                "owned_current_edges": sorted(boundary["owned_current_edges"]),
-                "incoming_anchors": boundary["incoming_anchors"],
-                "outgoing_anchors": boundary["outgoing_anchors"],
-                "compile_issues": boundary["issues"],
-            }
-        )
+        control_flow_regions.append(finish_compiled_region(region, compiled, current_nodes, boundary))
     for row in ir.get("properties", []):
         add_property(row["node_id"], row["changes"])
     for row in ir.get("edge_properties", []):
@@ -3681,6 +4467,7 @@ def compile_ir(ir: dict[str, Any], graph_data: dict[str, Any]) -> dict[str, Any]
         "absent_entities": list(ir.get("absent_entities", [])),
         "properties": [{"node_id": node_id, "changes": changes} for node_id, changes in sorted(properties.items()) if changes],
         "edge_properties": [{"edge_id": edge_id, "changes": changes} for edge_id, changes in sorted(edge_properties.items()) if changes],
+        "preserve": deepcopy(ir.get("preserve", {})) if isinstance(ir.get("preserve"), dict) else {},
     }
 
 
@@ -3961,9 +4748,16 @@ def constraints_from_compiled(graph_data: dict[str, Any], compiled: dict[str, An
         for relation in region.get("owned_current_edges", []):
             if isinstance(relation, (list, tuple)) and len(relation) == 3:
                 owned_current_edges.add((relation[0], relation[1], relation[2]))
+        for row in region.get("edge_rows", []):
+            if not (isinstance(row, dict) and isinstance(row.get("source"), str) and isinstance(row.get("target"), str)):
+                continue
+            relation = (row["source"], row["target"], row.get("label", ""))
+            target_edges.add(relation)
+            target_edge_rows.setdefault(relation, deepcopy(row))
         for edge in region.get("edges", []):
             target_edges.add(edge)
             target_edge_rows.setdefault(edge, {"source": edge[0], "target": edge[1], "label": edge[2]})
+    absent_nodes = {row["node_id"] for row in compiled.get("absent_entities", []) if isinstance(row, dict) and isinstance(row.get("node_id"), str)}
     aux_by_group: dict[tuple[str, str], list[str]] = {}
     for row in compiled.get("auxiliary_relations", []):
         if isinstance(row, dict):
@@ -3983,14 +4777,15 @@ def constraints_from_compiled(graph_data: dict[str, Any], compiled: dict[str, An
                 (edge.get("source"), edge.get("target"), edge.get("label", ""))
                 for edge in current_group_edges
             } and len(replaced_edges) == 1:
-                for key, value in replaced_edges[0].items():
-                    if key not in {"source", "target", "label"}:
-                        row.setdefault(key, deepcopy(value))
+                replaced_edge = replaced_edges[0]
+                if replaced_edge.get("source") not in absent_nodes and replaced_edge.get("target") not in absent_nodes:
+                    for key, value in replaced_edge.items():
+                        if key not in {"source", "target", "label"}:
+                            row.setdefault(key, deepcopy(value))
     for relation in sorted(target_edges):
         source, target, label = relation
         constraints["required_relations"].append(target_edge_rows.get(relation, {"source": source, "target": target, "label": label}))
 
-    absent_nodes = {row["node_id"] for row in compiled.get("absent_entities", []) if isinstance(row, dict) and isinstance(row.get("node_id"), str)}
     aux_current_edges = {
         (edge["source"], edge["target"], edge.get("label", ""))
         for edge in graph_data.get("edges", [])
@@ -4002,9 +4797,25 @@ def constraints_from_compiled(graph_data: dict[str, Any], compiled: dict[str, An
     for relation in sorted(owned_current_edges | aux_current_edges):
         if relation not in target_edges:
             constraints["forbidden_relations"].append({"source": relation[0], "target": relation[1], "label": relation[2]})
+    compiled_preserve = compiled.get("preserve") if isinstance(compiled.get("preserve"), dict) else {}
+    explicit_preserve_nodes = {node_id for node_id in compiled_preserve.get("node_ids", []) if isinstance(node_id, str)}
+    explicit_preserve_edges = {edge_id for edge_id in compiled_preserve.get("edge_ids", []) if isinstance(edge_id, str)}
+    abstract_preserve = [
+        row for row in compiled_preserve.get("abstract", [])
+        if isinstance(row, dict)
+    ]
+    if abstract_preserve:
+        explicit_preserve_edges.update(
+            edge.get("id")
+            for edge in graph_data.get("edges", [])
+            if isinstance(edge, dict)
+            and isinstance(edge.get("id"), str)
+            and (edge.get("source"), edge.get("target"), edge.get("label", "")) not in owned_current_edges
+        )
     constraints["preserve"] = {
-        "node_ids": sorted(current_node_ids - absent_nodes),
-        "edge_ids": [],
+        "node_ids": sorted((current_node_ids | explicit_preserve_nodes) - absent_nodes),
+        "edge_ids": sorted(explicit_preserve_edges),
+        "abstract": deepcopy(abstract_preserve),
         "outside_specification": True,
     }
     return constraints
@@ -4057,9 +4868,21 @@ def merge_constraints(graph_data: dict[str, Any], unit_constraints: list[dict[st
     merged["edge_properties"] = [{"edge_id": edge_id, "changes": changes} for edge_id, changes in sorted(edge_property_rows.items()) if changes]
     merged["required_relations"] = [required[key] for key in sorted(required)]
     merged["forbidden_relations"] = [{"source": s, "target": t, "label": l} for s, t, l in sorted(forbidden)]
+    preserved_edge_ids: set[str] = set()
+    for constraints in unit_constraints:
+        preserve = constraints.get("preserve") if isinstance(constraints.get("preserve"), dict) else {}
+        preserved_edge_ids.update(edge_id for edge_id in preserve.get("edge_ids", []) if isinstance(edge_id, str))
+    abstract_preserve = [
+        row
+        for constraints in unit_constraints
+        if isinstance(constraints.get("preserve"), dict)
+        for row in constraints["preserve"].get("abstract", [])
+        if isinstance(row, dict)
+    ]
     merged["preserve"] = {
         "node_ids": sorted(node["id"] for node in graph_data.get("nodes", []) if node.get("id") not in absent_entities),
-        "edge_ids": [],
+        "edge_ids": sorted(preserved_edge_ids),
+        "abstract": deepcopy(abstract_preserve),
         "outside_specification": True,
     }
     return merged, None

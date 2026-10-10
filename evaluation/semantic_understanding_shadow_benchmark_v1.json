@@ -1,0 +1,141 @@
+{
+  "name": "Semantic Understanding Shadow Benchmark v1",
+  "purpose": "Phase 1 evaluates whether Semantic Understanding plus Grounded Goal State preserves user goals better than direct Semantic Spec. Lowering and final execution are diagnostic only.",
+  "graphs": {
+    "g1_ai_agent": {
+      "nodes": [
+        {"id": "need", "type": "start", "label": "User Request", "x": 80, "y": 260},
+        {"id": "parse", "type": "task", "label": "Parse Task", "x": 260, "y": 260},
+        {"id": "retrieval", "type": "retrieval", "label": "Knowledge Retrieval", "x": 460, "y": 180},
+        {"id": "tool", "type": "tool_call", "label": "Tool Call", "x": 460, "y": 340},
+        {"id": "judge", "type": "decision", "label": "Result Decision", "x": 680, "y": 260},
+        {"id": "report", "type": "task", "label": "Generate Report", "x": 900, "y": 220},
+        {"id": "publish", "type": "task", "label": "Publish Result", "x": 1120, "y": 260},
+        {"id": "human", "type": "human_review", "label": "Manual Review", "x": 900, "y": 420},
+        {"id": "end", "type": "end", "label": "End", "x": 1320, "y": 260}
+      ],
+      "edges": [
+        {"id": "e_need_parse", "source": "need", "target": "parse", "label": ""},
+        {"id": "e_parse_retrieval", "source": "parse", "target": "retrieval", "label": ""},
+        {"id": "e_retrieval_tool", "source": "retrieval", "target": "tool", "label": ""},
+        {"id": "e_tool_judge", "source": "tool", "target": "judge", "label": ""},
+        {"id": "e_judge_report", "source": "judge", "target": "report", "label": "success"},
+        {"id": "e_judge_human", "source": "judge", "target": "human", "label": "failure"},
+        {"id": "e_report_publish", "source": "report", "target": "publish", "label": ""},
+        {"id": "e_human_publish", "source": "human", "target": "publish", "label": ""},
+        {"id": "e_publish_end", "source": "publish", "target": "end", "label": ""}
+      ]
+    },
+    "g2_shipping": {
+      "nodes": [
+        {"id": "order", "type": "task", "label": "Receive Order", "x": 120, "y": 260},
+        {"id": "payment", "type": "task", "label": "Payment Confirmation", "x": 320, "y": 260},
+        {"id": "inventory", "type": "task", "label": "Inventory Check", "x": 520, "y": 260},
+        {"id": "ship", "type": "task", "label": "Arrange Shipping", "x": 720, "y": 260},
+        {"id": "notify", "type": "task", "label": "Notify Customer", "x": 920, "y": 260}
+      ],
+      "edges": [
+        {"id": "e_order_payment", "source": "order", "target": "payment", "label": ""},
+        {"id": "e_payment_inventory", "source": "payment", "target": "inventory", "label": ""},
+        {"id": "e_inventory_ship", "source": "inventory", "target": "ship", "label": ""},
+        {"id": "e_ship_notify", "source": "ship", "target": "notify", "label": ""}
+      ]
+    },
+    "g3_branch": {
+      "nodes": [
+        {"id": "submit", "type": "task", "label": "Submit Application", "x": 120, "y": 260},
+        {"id": "risk", "type": "decision", "label": "Risk Decision", "x": 340, "y": 260},
+        {"id": "approve", "type": "task", "label": "Approve", "x": 560, "y": 180},
+        {"id": "reject", "type": "task", "label": "Reject", "x": 560, "y": 340},
+        {"id": "end", "type": "end", "label": "End", "x": 780, "y": 260}
+      ],
+      "edges": [
+        {"id": "e_submit_risk", "source": "submit", "target": "risk", "label": ""},
+        {"id": "e_risk_approve", "source": "risk", "target": "approve", "label": "success", "branch_label": "Approved"},
+        {"id": "e_risk_reject", "source": "risk", "target": "reject", "label": "failure", "branch_label": "Rejected"},
+        {"id": "e_approve_end", "source": "approve", "target": "end", "label": ""},
+        {"id": "e_reject_end", "source": "reject", "target": "end", "label": ""}
+      ]
+    },
+    "g4_multi_failure": {
+      "nodes": [
+        {"id": "audit", "type": "task", "label": "Document Audit", "x": 120, "y": 220},
+        {"id": "risk_eval", "type": "task", "label": "Risk Review", "x": 340, "y": 220},
+        {"id": "judge", "type": "decision", "label": "Final Decision", "x": 560, "y": 220},
+        {"id": "manual", "type": "human_review", "label": "Manual Handling", "x": 340, "y": 420},
+        {"id": "publish", "type": "task", "label": "Publish", "x": 780, "y": 220}
+      ],
+      "edges": [
+        {"id": "e_audit_risk", "source": "audit", "target": "risk_eval", "label": ""},
+        {"id": "e_risk_judge", "source": "risk_eval", "target": "judge", "label": ""},
+        {"id": "e_judge_publish", "source": "judge", "target": "publish", "label": "success"},
+        {"id": "e_audit_manual", "source": "audit", "target": "manual", "label": "failure"},
+        {"id": "e_risk_manual", "source": "risk_eval", "target": "manual", "label": "failure"}
+      ]
+    },
+    "g5_duplicate_submit": {
+      "nodes": [
+        {"id": "create_order", "type": "task", "label": "Create Order", "x": 120, "y": 180},
+        {"id": "submit_order", "type": "task", "label": "Submit Order", "x": 340, "y": 180},
+        {"id": "payment", "type": "task", "label": "Payment", "x": 560, "y": 180},
+        {"id": "create_ticket", "type": "task", "label": "Create Ticket", "x": 120, "y": 360},
+        {"id": "submit_ticket", "type": "task", "label": "Submit Ticket", "x": 340, "y": 360},
+        {"id": "dispatch", "type": "task", "label": "Dispatch", "x": 560, "y": 360}
+      ],
+      "edges": [
+        {"id": "e_create_order_submit_order", "source": "create_order", "target": "submit_order", "label": ""},
+        {"id": "e_submit_order_payment", "source": "submit_order", "target": "payment", "label": ""},
+        {"id": "e_create_ticket_submit_ticket", "source": "create_ticket", "target": "submit_ticket", "label": ""},
+        {"id": "e_submit_ticket_dispatch", "source": "submit_ticket", "target": "dispatch", "label": ""}
+      ]
+    },
+    "g6_existing_join": {
+      "nodes": [
+        {"id": "submit", "type": "task", "label": "Submit", "x": 120, "y": 260},
+        {"id": "audit", "type": "task", "label": "Document Audit", "x": 340, "y": 180},
+        {"id": "risk", "type": "task", "label": "Risk Review", "x": 340, "y": 340},
+        {"id": "merge", "type": "task", "label": "Aggregation", "x": 560, "y": 260, "join": {"mode": "all"}},
+        {"id": "compliance", "type": "task", "label": "Compliance Confirmation", "x": 780, "y": 260},
+        {"id": "ship", "type": "task", "label": "Ship", "x": 1000, "y": 260},
+        {"id": "manual", "type": "human_review", "label": "Manual Handling", "x": 560, "y": 480}
+      ],
+      "edges": [
+        {"id": "e_submit_audit", "source": "submit", "target": "audit", "label": ""},
+        {"id": "e_submit_risk", "source": "submit", "target": "risk", "label": ""},
+        {"id": "e_audit_merge", "source": "audit", "target": "merge", "label": ""},
+        {"id": "e_risk_merge", "source": "risk", "target": "merge", "label": ""},
+        {"id": "e_merge_compliance", "source": "merge", "target": "compliance", "label": ""},
+        {"id": "e_compliance_ship", "source": "compliance", "target": "ship", "label": ""},
+        {"id": "e_risk_manual", "source": "risk", "target": "manual", "label": "exception"}
+      ]
+    }
+  },
+  "cases": [
+    {"id": "layout_right_of", "category": "layout", "graph_id": "g1_ai_agent", "instruction": "Put the Knowledge Retrieval node to the right of Parse Task.", "phase1_expectations": {"goal_types": ["layout"], "grounded_node_ids": ["retrieval", "parse"], "should_clarify": false}, "expected": {"phase1_focus": "layout intent should be preserved without topology."}},
+    {"id": "layout_right_preserve_flow", "category": "layout|preserve", "graph_id": "g1_ai_agent", "instruction": "Move Knowledge Retrieval a bit to the right of Parse Task, but do not change the flow.", "phase1_expectations": {"goal_types": ["layout"], "grounded_node_ids": ["retrieval", "parse"], "should_clarify": false}, "expected": {"phase1_focus": "explicit topology preservation should be preserved."}},
+    {"id": "layout_vague_here", "category": "layout|clarification", "graph_id": "g1_ai_agent", "instruction": "Move this one a little to the right.", "phase1_expectations": {"goal_types": ["layout"], "grounded_node_ids": [], "should_clarify": true}, "expected": {"phase1_focus": "correct clarification for missing selected/anchored target."}},
+    {"id": "insert_shipping_confirm", "category": "insert", "graph_id": "g2_shipping", "instruction": "Add outbound confirmation before shipping.", "phase1_expectations": {"goal_types": ["insert"], "grounded_node_ids": ["ship"], "should_clarify": false}, "expected": {"phase1_focus": "new node intent and before-anchor should be preserved."}},
+    {"id": "insert_human_shipping_confirm", "category": "insert|node-type", "graph_id": "g2_shipping", "instruction": "Before Arrange Shipping, add a manual outbound confirmation step.", "phase1_expectations": {"goal_types": ["insert"], "grounded_node_ids": ["ship"], "should_clarify": false}, "expected": {"phase1_focus": "manual/human nature of the new step should be preserved."}},
+    {"id": "insert_success_route_compliance", "category": "insert|relation-aware", "graph_id": "g3_branch", "instruction": "Add a compliance review before Approve.", "phase1_expectations": {"goal_types": ["insert"], "grounded_node_ids": ["approve"], "should_clarify": false}, "expected": {"phase1_focus": "success-route insertion should not imply changing failure route."}},
+    {"id": "insert_before_publish", "category": "insert|single-route", "graph_id": "g4_multi_failure", "instruction": "Add final confirmation before Publish.", "phase1_expectations": {"goal_types": ["insert"], "grounded_node_ids": ["publish"], "should_clarify": false}, "expected": {"phase1_focus": "unique publish route can be grounded."}},
+    {"id": "insert_before_submit_ambiguous", "category": "insert|clarification|ambiguous-reference", "graph_id": "g5_duplicate_submit", "instruction": "Add review before submit.", "phase1_expectations": {"goal_types": ["insert"], "grounded_node_ids": [], "should_clarify": true}, "expected": {"phase1_focus": "correct clarification for duplicate submit nodes."}},
+    {"id": "insert_before_current_step_scope_ambiguous", "category": "insert|clarification|scope", "graph_id": "g1_ai_agent", "instruction": "Add a review step before the current step.", "phase1_expectations": {"goal_types": ["insert"], "grounded_node_ids": [], "should_clarify": true}, "expected": {"phase1_focus": "current step is unresolved without selection/context."}},
+    {"id": "branch_failure_missing_target", "category": "branch|clarification|missing-target", "graph_id": "g3_branch", "instruction": "When it fails, send it to Manual Handling.", "phase1_expectations": {"goal_types": ["branch_modification"], "grounded_node_ids": [], "should_clarify": true}, "expected": {"phase1_focus": "target does not exist in this graph; should not invent it."}},
+    {"id": "branch_all_failures_manual", "category": "branch|multi-source", "graph_id": "g4_multi_failure", "instruction": "All failure paths should go to Manual Handling.", "phase1_expectations": {"goal_types": ["branch_modification"], "grounded_node_ids": ["manual"], "should_clarify": false}, "expected": {"phase1_focus": "all failure-path intent should be preserved, not only one edge."}},
+    {"id": "branch_label_only", "category": "edge-property", "graph_id": "g3_branch", "instruction": "Change the failure branch text to Not Approved.", "phase1_expectations": {"goal_types": ["property"], "grounded_node_ids": [], "should_clarify": false}, "expected": {"phase1_focus": "branch text is property change, not route change."}},
+    {"id": "branch_this_branch_ambiguous", "category": "edge-property|clarification", "graph_id": "g3_branch", "instruction": "Change this branch text to Not Approved.", "phase1_expectations": {"goal_types": ["property"], "grounded_node_ids": [], "should_clarify": true}, "expected": {"phase1_focus": "this branch needs selected edge/context."}},
+    {"id": "existing_join_insert_after_merge", "category": "existing-join|insert", "graph_id": "g6_existing_join", "instruction": "After Aggregation, add Compliance Review, and do not bypass Aggregation.", "phase1_expectations": {"goal_types": ["insert"], "grounded_node_ids": ["merge"], "should_clarify": false}, "expected": {"phase1_focus": "existing join anchor preservation should be explicit in goal state."}},
+    {"id": "existing_join_preserve_anchor", "category": "existing-join|parallel", "graph_id": "g6_existing_join", "instruction": "Document Audit and Risk Review should still aggregate first, then continue to Compliance Confirmation.", "phase1_expectations": {"goal_types": ["parallel"], "grounded_node_ids": ["audit", "risk", "merge", "compliance"], "should_clarify": false}, "expected": {"phase1_focus": "Aggregation must be preserved as business anchor."}},
+    {"id": "parallel_retrieval_tool_dependency_risk", "category": "parallel|dependency", "graph_id": "g1_ai_agent", "instruction": "Run Knowledge Retrieval and Tool Call in parallel, then decide the result.", "phase1_expectations": {"goal_types": ["parallel"], "grounded_node_ids": ["retrieval", "tool", "judge"], "should_clarify": false}, "expected": {"phase1_focus": "Understanding should capture parallel goal; Phase 2 must decide whether existing dependency makes lowering valid."}},
+    {"id": "parallel_if_tool_uses_retrieval", "category": "parallel|clarification|dependency", "graph_id": "g1_ai_agent", "instruction": "If Tool Call depends on Knowledge Retrieval output, make them parallel anyway.", "phase1_expectations": {"goal_types": ["parallel"], "grounded_node_ids": ["retrieval", "tool"], "should_clarify": true}, "expected": {"phase1_focus": "dependency contradiction should not execute without user decision."}},
+    {"id": "parallel_audit_risk_join", "category": "parallel", "graph_id": "g6_existing_join", "instruction": "Document Audit and Risk Review can run at the same time, and both must finish before Aggregation.", "phase1_expectations": {"goal_types": ["parallel"], "grounded_node_ids": ["audit", "risk", "merge"], "should_clarify": false}, "expected": {"phase1_focus": "parallel plus all-join goal should be preserved."}},
+    {"id": "scope_visible_area_unclear", "category": "scope|clarification", "graph_id": "g1_ai_agent", "instruction": "Clean up the visible part of this flow.", "phase1_expectations": {"goal_types": ["abstract_optimization"], "grounded_node_ids": [], "should_clarify": true}, "expected": {"phase1_focus": "visible scope is absent from benchmark context; should clarify or mark unresolved."}},
+    {"id": "scope_selected_only_no_selection", "category": "scope|clarification", "graph_id": "g1_ai_agent", "instruction": "Only change the selected nodes and make them easier to read.", "phase1_expectations": {"goal_types": ["abstract_optimization"], "grounded_node_ids": [], "should_clarify": true}, "expected": {"phase1_focus": "selected-only request with empty selection must not execute."}},
+    {"id": "delete_safe_obsolete_missing", "category": "delete|clarification|missing-target", "graph_id": "g2_shipping", "instruction": "Delete the obsolete step.", "phase1_expectations": {"goal_types": ["delete"], "grounded_node_ids": [], "should_clarify": true}, "expected": {"phase1_focus": "delete target missing; should not guess."}},
+    {"id": "delete_inventory_risk", "category": "delete|risk", "graph_id": "g2_shipping", "instruction": "Remove Inventory Check and keep the rest of the process connected.", "phase1_expectations": {"goal_types": ["delete"], "grounded_node_ids": ["inventory"], "should_clarify": false}, "expected": {"phase1_focus": "delete plus continuity goal should be preserved; lowering may still need safety checks."}},
+    {"id": "abstract_optimize_reasonable", "category": "abstract|clarification", "graph_id": "g1_ai_agent", "instruction": "Optimize this flow and make it more reasonable.", "phase1_expectations": {"goal_types": ["abstract_optimization"], "grounded_node_ids": [], "should_clarify": true}, "expected": {"phase1_focus": "abstract optimization should not become fixed IR."}},
+    {"id": "abstract_reduce_wait_preserve_exception", "category": "abstract|preserve|clarification", "graph_id": "g1_ai_agent", "instruction": "This flow feels slow; reduce waiting, but do not touch exception or failure handling.", "phase1_expectations": {"goal_types": ["abstract_optimization"], "grounded_node_ids": [], "should_clarify": true}, "expected": {"phase1_focus": "optimization goal and preserve constraint should be retained; no fixed IR yet."}},
+    {"id": "abstract_suggest_options", "category": "abstract|advice|clarification", "graph_id": "g1_ai_agent", "instruction": "What are a few ways to make this flow cleaner?", "phase1_expectations": {"goal_types": ["abstract_optimization"], "grounded_node_ids": [], "should_clarify": true}, "expected": {"phase1_focus": "advice/proposal request should not execute graph changes."}},
+    {"id": "dependency_cannot_execute_without_new_node", "category": "dependency|clarification", "graph_id": "g3_branch", "instruction": "Send failures to Manual Handling, but keep Reject for audit records too.", "phase1_expectations": {"goal_types": ["branch_modification"], "grounded_node_ids": ["reject"], "should_clarify": true}, "expected": {"phase1_focus": "target Manual Handling is missing and preserve Reject creates a nontrivial business choice."}}
+  ]
+}

@@ -3,7 +3,14 @@ from __future__ import annotations
 import pytest
 
 import src.workflow_ir_core as core
-from src.workflow_ir_core import compile_grounded_semantic_spec, ground_understand_semantic_spec, validate_grounded_semantic_spec
+from src.workflow_ir_core import (
+    compile_grounded_semantic_spec,
+    compile_ir,
+    constraints_from_compiled,
+    ground_understand_semantic_spec,
+    validate_grounded_semantic_spec,
+    validate_ir,
+)
 
 
 def graph() -> dict:
@@ -35,6 +42,118 @@ def shadow(spec: dict, current_graph: dict | None = None) -> tuple[dict, dict]:
 
 def relations(rows: list[dict]) -> set[tuple[str, str, str]]:
     return {(row["source"], row["target"], row.get("label", "")) for row in rows}
+
+
+def shared_new_graph() -> dict:
+    return {
+        "nodes": [
+            {"id": "A", "type": "task", "label": "A"},
+            {"id": "B", "type": "task", "label": "B"},
+            {"id": "C", "type": "task", "label": "C"},
+            {"id": "Z", "type": "task", "label": "Z"},
+            {"id": "Y", "type": "task", "label": "Y"},
+        ],
+        "edges": [{"id": "e_z_y", "source": "Z", "target": "Y", "label": ""}],
+    }
+
+
+def shared_new_contract() -> dict:
+    return {
+        "allowed_existing_node_ids": ["A", "B", "C", "Z", "Y"],
+        "allowed_structural_relation_types": [""],
+        "allowed_auxiliary_relation_types": [""],
+        "allowed_property_targets": ["A", "B", "C", "Z", "Y"],
+        "allowed_edge_property_targets": ["e_z_y"],
+        "allow_absent_entities": True,
+        "allow_new_entities": True,
+    }
+
+
+def shared_new_ir() -> dict:
+    occurrence = {"type": "node", "ref": "new_x"}
+    return {
+        "entities": [{"ref": "new_x", "node_type": "task", "label": "X"}],
+        "control_flow_regions": [
+            {"relation_type": "", "structure": {"type": "sequence", "items": [{"type": "node", "id": "A"}, occurrence]}},
+            {"relation_type": "", "structure": {"type": "sequence", "items": [{"type": "node", "id": "B"}, occurrence]}},
+            {"relation_type": "", "structure": {"type": "sequence", "items": [occurrence, {"type": "node", "id": "C"}]}},
+        ],
+    }
+
+
+def test_entity_registry_allows_shared_new_ref_in_multiple_structural_occurrences() -> None:
+    ir = shared_new_ir()
+    valid, error = validate_ir(ir, shared_new_graph(), shared_new_contract())
+
+    assert (valid, error) == (True, None)
+
+    compiled = compile_ir(ir, shared_new_graph())
+    constraints = constraints_from_compiled(shared_new_graph(), compiled)
+
+    assert compiled["entities"] == [{"ref": "new_x", "type": "task", "label": "X"}]
+    assert relations(constraints["required_relations"]) == {
+        ("A", "new_x", ""),
+        ("B", "new_x", ""),
+        ("new_x", "C", ""),
+    }
+    assert constraints["forbidden_relations"] == []
+
+
+def test_undeclared_structural_ref_is_rejected() -> None:
+    ir = shared_new_ir()
+    ir.pop("entities")
+
+    assert validate_ir(ir, shared_new_graph(), shared_new_contract()) == (False, "undeclared new ref")
+
+
+def test_duplicate_entity_declaration_is_rejected() -> None:
+    ir = shared_new_ir()
+    ir["entities"].append({"ref": "new_x", "node_type": "task", "label": "X"})
+
+    assert validate_ir(ir, shared_new_graph(), shared_new_contract()) == (False, "duplicate new ref")
+
+
+def test_conflicting_entity_declaration_metadata_is_rejected() -> None:
+    ir = shared_new_ir()
+    ir["control_flow_regions"][0]["structure"]["items"][1] = {
+        "type": "node",
+        "ref": "new_x",
+        "node_type": "task",
+        "label": "Different X",
+    }
+
+    assert validate_ir(ir, shared_new_graph(), shared_new_contract()) == (False, "conflicting new ref metadata")
+
+
+def test_legacy_inline_new_node_declaration_still_valid() -> None:
+    ir = {
+        "control_flow_regions": [
+            {
+                "relation_type": "",
+                "structure": {
+                    "type": "sequence",
+                    "items": [
+                        {"type": "node", "id": "A"},
+                        {"type": "node", "ref": "new_x", "node_type": "task", "label": "X"},
+                    ],
+                },
+            }
+        ]
+    }
+
+    assert validate_ir(ir, shared_new_graph(), shared_new_contract()) == (True, None)
+    assert compile_ir(ir, shared_new_graph())["entities"] == [{"ref": "new_x", "type": "task", "label": "X"}]
+
+
+def test_auxiliary_relation_can_target_registry_declared_new_ref() -> None:
+    ir = {
+        "entities": [{"ref": "new_x", "node_type": "task", "label": "X"}],
+        "auxiliary_relations": [{"source": "A", "relation_type": "", "targets": ["new_x"]}],
+    }
+
+    assert validate_ir(ir, shared_new_graph(), shared_new_contract()) == (True, None)
+    constraints = constraints_from_compiled(shared_new_graph(), compile_ir(ir, shared_new_graph()))
+    assert relations(constraints["required_relations"]) == {("A", "new_x", "")}
 
 
 def test_sequence_clear_path_compiles_to_constraints() -> None:
@@ -175,6 +294,49 @@ def test_relation_metadata_auxiliary_relations_compile_to_constraints() -> None:
     assert all(row.get("label") == "success" for row in result["constraints"]["required_relations"])
 
 
+def test_auxiliary_relation_can_target_declared_new_ref_and_inherit_metadata() -> None:
+    _, result = shadow(
+        {
+            "status": "resolved",
+            "workflow_ir": {
+                "control_flow_regions": [
+                    {
+                        "relation_type": "",
+                        "structure": {
+                            "type": "sequence",
+                            "items": [
+                                {"type": "node", "ref": "confirm", "node_type": "task", "label": "Confirm"},
+                                {"type": "node", "id": "Review"},
+                            ],
+                        },
+                    }
+                ],
+                "auxiliary_relations": [{"source": "A", "relation_type": "success", "targets": ["confirm"]}],
+            },
+        }
+    )
+
+    assert result["ok"] is True
+    required = result["constraints"]["required_relations"]
+    assert {"source": "n_a", "target": "confirm", "label": "success", "id": "e_a_review_success", "branch_label": "old", "condition": {"expression": "score > 0"}} in required
+    assert {"source": "confirm", "target": "n_review", "label": ""} in required
+    assert {"source": "n_a", "target": "n_review", "label": "success"} in result["constraints"]["forbidden_relations"]
+
+
+def test_auxiliary_relation_unknown_new_ref_is_rejected() -> None:
+    grounded, result = shadow(
+        {
+            "status": "resolved",
+            "workflow_ir": {"auxiliary_relations": [{"source": "A", "relation_type": "success", "targets": ["missing_ref"]}]},
+        }
+    )
+
+    assert result["ok"] is False
+    assert result["stage"] == "validation"
+    assert result["validation"]["deterministic_ready"] is False
+    assert grounded["grounding"]["issues"][0]["kind"] == "missing_node_reference"
+
+
 def test_absent_entity_compiles_to_constraints() -> None:
     _, result = shadow({"status": "resolved", "workflow_ir": {"absent_entities": [{"node_id": "Review"}]}})
 
@@ -208,7 +370,7 @@ def test_not_ready_validation_result_refuses_to_call_compile(monkeypatch: pytest
     assert result["constraints"] is None
 
 
-def test_ambiguous_boundary_failure_is_separate_from_validation_failure() -> None:
+def test_ambiguous_boundary_blocks_deterministic_readiness() -> None:
     current_graph = graph()
     current_graph["nodes"].append({"id": "n_y", "type": "task", "label": "Y", "x": -100, "y": 100})
     current_graph["edges"].append({"id": "e_y_a", "source": "n_y", "target": "n_a", "label": ""})
@@ -228,9 +390,10 @@ def test_ambiguous_boundary_failure_is_separate_from_validation_failure() -> Non
     result = compile_grounded_semantic_spec(grounded, current_graph, validation)
 
     assert validation["valid"] is True
-    assert validation["deterministic_ready"] is True
+    assert validation["deterministic_ready"] is False
+    assert validation["issues"][0]["kind"] == "ambiguous_structural_boundary"
     assert result["ok"] is False
-    assert result["stage"] == "compile"
+    assert result["stage"] == "validation"
     assert result["issues"][0]["kind"] == "ambiguous_structural_boundary"
 
 
