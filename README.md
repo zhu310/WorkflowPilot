@@ -1,88 +1,175 @@
 # WorkflowPilot / AI-Flow-Canvas
 
-WorkflowPilot is a natural-language workflow graph editing system. It does not let the LLM rewrite the graph or emit graph mutations directly. The current production path is:
+WorkflowPilot is a natural-language workflow canvas editing prototype. It targets complex workflow diagrams used in approval, data-processing, and operations scenarios, where manual node/edge editing is inefficient and direct LLM-generated graph mutations can easily create wrong edges, missing links, or unintended changes.
+
+The key design choice is that the LLM does not rewrite the graph directly. It only helps express the user's editing intent as semantic goals. The program then grounds those goals to concrete graph objects, lowers them into Workflow IR, plans constrained graph changes, and executes the final mutations deterministically.
+
+## Architecture
 
 ```text
-User Instruction
--> Semantic Goal Understanding
--> Semantic Goal Validation
--> Semantic Grounding
--> Goal Lowering
+User instruction
+-> Semantic Goal understanding
+-> Grounding to graph objects
+-> Lowering
 -> Workflow IR
 -> Compiler
--> Planner
--> Executor
--> Versioned Graph
+-> Constraint Planner
+-> Deterministic Executor
+-> Transaction / Versioned graph state
 ```
 
-The main architecture upgrade in this repository is the move from `LLM -> Workflow IR` to `Semantic Goal + Grounding + deterministic Lowering`. The LLM expresses user goals with Semantic Goal v2 primitives; the program binds references to graph objects, lowers executable goals to the existing Workflow IR, plans deterministic edits, and records versioned transactions.
+This separation keeps the LLM away from direct business-state mutation. The backend owns object binding, constraint planning, mutation authorization, execution, and graph validation.
 
-## Current Verified Backend Capabilities
+## Implemented Capabilities
 
-The mocked Semantic Goal and backend regression suite currently covers:
+- Natural-language edits for workflow nodes, edges, routing targets, branch labels, and branch conditions.
+- Semantic Goal primitives for object references, object desired states, relation intents, and semantic constraints.
+- Grounding based on the current graph, frontend selection, recent successful transaction diffs, and candidate generation for ambiguous node/edge references.
+- Clarification flow for ambiguous or missing references, with session-local pending clarification state.
+- Workflow IR lowering and compilation into required relations, forbidden relations, property changes, edge property changes, and preservation-related constraints.
+- Constraint planning with per-step mutation authorization before deterministic execution.
+- Session-local transaction and version state, including graph snapshots, undo, redo, rollback, and recent-diff-based context reference such as "the node just added".
+- LogicFlow demo frontend connected to the semantic editing backend.
+- Pytest coverage for grounding, lowering, planning, execution, user feedback, versioning, and deterministic regression cases.
 
-- Semantic Goal v2 primitives: object references, object desired states, relation intents, semantic constraints.
-- Context-aware grounding: selection, recent transaction diff, conversation-history fallback, and node/edge semantic reference candidate generation.
-- Core editing closure for exists, node property changes, absent/delete, route-to existing or newly-created targets, simple safe `parallel_with`, and partial execution.
-- Partial Execution Contract: supported subgoals can commit as `partial_success`; unsupported subgoals remain visible in trace/specification instead of becoming false success.
-- User-facing feedback and session-local clarification continuation for ambiguous candidates.
+## Validation Boundary
 
-Current local regression baseline: `222+` pytest cases for mocked Semantic Goal and deterministic backend behavior. Real LLM prompt stability is covered by static prompt contract tests by default and optional real-LLM regression when `RUN_REAL_LLM_TESTS=1` is set.
+The system performs machine-checkable validation, including:
 
-## Important Boundaries
+- invalid or ambiguous object references;
+- invalid Workflow IR structure;
+- non-deterministic structural boundaries;
+- conflicting required/forbidden relation constraints;
+- unauthorized mutation steps;
+- invalid final graph structure, such as missing node endpoints or duplicate identifiers.
 
-Implemented, but bounded:
+It does not claim general natural-language semantic equivalence checking. In other words, the system can verify whether the generated IR, constraints, plan, and final graph satisfy supported machine-checkable conditions, but it does not prove that an arbitrary natural-language request has been fully and semantically completed.
 
-- Demo selection is sent to the backend and can ground phrases such as “这个节点” or “这个分支”.
-- Recent successful transaction diffs can ground “刚才那个节点”.
-- Clarification continuation is session-local and candidate-based; it is not long-term memory or a general Agent loop.
-- Simple parallel lowering is supported only when graph facts make the boundary deterministic.
+## Supported And Bounded Scenarios
 
-Not fully implemented:
+Supported examples include:
 
-- Embedding/vector retrieval.
-- Industry ontology or long-term alias database.
-- Long-term conversation memory.
-- Real LogicFlow viewport-based `visible_area` grounding.
-- Complex parallel boundary inference.
-- Automatic proposal -> confirmation -> execution for abstract optimization requests.
-- Guaranteed real LLM stability without running optional real-LLM regression.
+- rename or update a selected node;
+- insert a new node before or after an existing node;
+- route a selected or referenced branch to another node;
+- update branch labels and branch conditions;
+- transform a simple deterministic sequence into a parallel structure;
+- continue editing with references such as "this node" or "the node just added";
+- ask for clarification when a reference has multiple candidates.
+
+Known boundaries:
+
+- no long-term memory or persistent alias database;
+- no embedding or vector retrieval layer;
+- no full industry ontology;
+- no guaranteed real-LLM stability unless optional real-LLM regression is run;
+- no general-purpose agent loop for abstract optimization requests;
+- complex parallel boundary inference is only supported when graph facts make the boundary deterministic;
+- real LogicFlow viewport-based `visible_area` grounding is not fully implemented.
 
 ## Repository Layout
 
 ```text
-src/                       core implementation
-tests/                     unit, contract, and deterministic regression tests
+src/                       Core Python backend
+tests/                     Unit, contract, and regression tests
 demo/                      LogicFlow demo frontend and API server
-experiments/               optional acceptance and regression runners
-docs/                      architecture notes, evidence, and historical analysis
+experiments/               Optional acceptance and regression runners
+docs/                      Architecture notes, evidence, and project writeups
+fixtures/                  Sample workflow graphs and regression inputs
 ```
 
 ## Setup
 
-1. Install Python 3.12+.
-2. Install Python dependencies:
+Requirements:
+
+- Python 3.12+
+- Node.js 18+ for the LogicFlow demo frontend
+
+Install Python dependencies:
 
 ```powershell
 pip install -r requirements.txt
 ```
 
-3. Copy `.env.example` to `.env` and set `DEEPSEEK_API_KEY` locally for real LLM demo usage. Do not commit `.env`.
+For real LLM usage, copy the environment template and configure your API key:
+
+```powershell
+copy .env.example .env
+```
+
+Set `DEEPSEEK_API_KEY` in `.env`. Do not commit `.env`.
+
+## Run The Demo
+
+Build the frontend:
+
+```powershell
+cd demo\frontend
+npm install
+npm run build
+cd ..\..
+```
+
+Start the demo server:
+
+```powershell
+$env:AI_EDIT_PIPELINE="semantic"
+python demo\server.py
+```
+
+Open:
+
+```text
+http://127.0.0.1:8080
+```
+
+## Example Prompts
+
+The demo supports prompts such as:
+
+- Put the knowledge retrieval node to the right of the parsing task.
+- Add a fact-checking step before publishing the result.
+- Rename the failure branch to manual review.
+- Route the failure flow to manual handling.
+- Add a notification node while keeping the exception path unchanged.
+- Move the node just added after risk control.
+
+Chinese prompts are also supported when the configured LLM can understand them, for example:
+
+- 把知识检索节点放到解析任务右侧。
+- 在发布结果前增加事实校验。
+- 把失败分支改名为人工审核。
+- 失败流程转人工复核。
+- 把刚才新增的节点放到风控后面。
 
 ## Verification
 
-Default deterministic regression:
+Run the deterministic backend regression suite:
 
 ```powershell
 python -m pytest -q
 python -m compileall src tests
 ```
 
-Optional real LLM prompt regression:
+Run focused checks for versioning and recent-transaction grounding:
+
+```powershell
+python -m pytest tests\test_versioning.py tests\test_recent_transaction_grounding.py -q
+```
+
+Optional real-LLM prompt regression:
 
 ```powershell
 $env:RUN_REAL_LLM_TESTS="1"
-python -m pytest tests/test_llm_semantic_goal_prompt_regression.py -q
+python -m pytest tests\test_llm_semantic_goal_prompt_regression.py -q
 ```
 
-Optional historical acceptance runners remain under `experiments/`. Treat their results as evidence for the specific runner conditions, not as a claim that arbitrary workflow edits are supported.
+Historical acceptance runners remain under `experiments/`. Their outputs should be treated as evidence for the specific runner conditions, not as a claim that arbitrary workflow edits are supported.
+
+## Project Notes
+
+For resume or interview discussion, the most important point is the architecture:
+
+> The LLM does not directly output graph mutations. It outputs semantic editing intent, and the program handles object grounding, IR lowering, constraint planning, deterministic execution, transactions, and validation.
+
+This is the main difference between WorkflowPilot and a simple "LLM draws a flowchart" demo.
